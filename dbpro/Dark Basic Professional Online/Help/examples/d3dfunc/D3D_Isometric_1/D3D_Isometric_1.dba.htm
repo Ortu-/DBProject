@@ -1,0 +1,109 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>
+Gosub InitialiseDemo
+
+REM Make an object
+
+obj=1
+y=0
+for z=-1 to 1
+   for x=-1 to 1
+      if (z=-1 and x=-1) or (z=1 and x=1)
+      else
+         make object cube obj,1
+         position object obj,x,y,z+x
+         inc obj
+      endif
+   next x
+   inc y
+next z
+
+`D3D_Set_Ortho_Projection 0,10
+
+Do
+
+   tmrRotation=timer()
+
+   D3D_Pick_Camera 0,MouseX(),MouseY(),.1
+
+   PX1#=D3D_Vector_X()
+   PY1#=D3D_Vector_Y()
+   PZ1#=D3D_Vector_Z()
+
+   D3D_Pick_Camera 0,MouseX(),MouseY(),100
+
+   PX2#=D3D_Vector_X()
+   PY2#=D3D_Vector_Y()
+   PZ2#=D3D_Vector_Z()
+
+   Text 0,0,STR$(Intersect Object (1,PX1#,PY1#,PZ1#,PX2#,PY2#,PZ2#))
+   Text 0,15,STR$(screen fps())
+
+   cwa#=wrapvalue((tmrRotation mod 2000)*360.0/2000.0)
+
+   `yrotate object 1,cwa#
+   gosub DrawTitle
+
+   sync
+
+Loop
+
+InitialiseDemo:
+
+   D3D_init 3
+   
+   sync on:autocam off:backdrop on:color backdrop rgb(10,10,10)
+
+Rem Position the camera at the location you want to look at
+
+   Position Camera 0,1,0
+
+Rem Turn 45 degrees and pitch down 30 to get isometric projection
+
+   turn camera left 45
+   pitch camera down 30
+
+Rem now move camera back to view the scene. The distance has no impact on
+Rem the field of view.
+
+   move camera -30
+   
+   sh=screen height()
+   sw=screen width()
+   crlf$=chr$(13)+chr$(10)
+
+
+   D3D_Font 1,"Arial",20,0,0,1
+   D3D_Font 2,"Arial",15,0,0,1
+   D3D_Font 3,"Arial",10,0,0,1
+
+   gosub CenterWindow
+
+   return
+
+DrawTitle:
+
+    D3D_Box 0,5,sw/2,70,d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255)
+    D3D_Box sw/2,5,sw,70,d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50)
+    D3D_Line 0,5,sw,5,rgb(128,128,128)
+    D3D_Line 0,70,sw,70,rgb(128,128,128)
+    
+    D3D_StartText
+       D3D_Text 1,sw/2,10,1,"D3DFunc - Isometric Camera"
+       D3D_Text 2,sw/2,40,1,"Jason Clogg - 2008"
+    D3D_EndText
+
+   return
+   
+CenterWindow:
+
+   Rem Get Desktop Size
+
+   DW=D3D_Get_Desktop_Width()
+   DH=D3D_Get_Desktop_Height()
+
+   Rem Not completely accurate but should be good enough
+   set window position DW/2-SW/2,DH/2-SH/2-32
+
+return
+</font></pre>
+</body>

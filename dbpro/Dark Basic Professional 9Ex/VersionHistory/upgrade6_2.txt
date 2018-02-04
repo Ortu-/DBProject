@@ -1,0 +1,34 @@
+Upgrade 6.2
+===========
+
+Information
+-----------
+
+ * Modifications and corrections to permit FPSC source code to compile fully for U6.X
+ * Requires DLLs to be updated; Cloth&Particle, DarkAI, DarkPHYSICS (anything using DBO ptr)
+ * Updated Advanced Terrain and GameFX in the licensed folder
+ 
+Core
+----
+
+ * Changed timing precision of TIMER() to just one millisecond, whether vsync active or not
+
+Basic3D
+-------
+
+ * New DBO structure to provide future-proof fields (reduce minor update incompatibilities)
+ * Optimized SET SHADOW SHADING ON when employing shader conversion = 8 times faster
+ * Fixed erro causing a runtime error to prompt when using SHOW LIMB on an instanced object
+ * Added LIMB COLLISION to be used with instanced objects (CSG now okay in FPSC code)
+ * FX shader files can now be added as media, and detected as an available internal file
+
+Camera
+------
+
+ * Added ONE new command for the creation and removal of an optional camera clipping plane
+ * SET CAMERA CLIP Camera Number, ClipOnOff, X, Y, Z, NX, NY, NZ
+
+Text
+----
+
+ * unpopular negative-value runtime error removed (allows original FPSC code to compile)

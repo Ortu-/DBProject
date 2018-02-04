@@ -1,0 +1,37 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem Image Functionality
+
+rem Fill screen
+load image "image.bmp", 1
+for x=0 to 10 : for y=0 to 10
+paste image 1,x*64,y*64
+next y : next x
+
+rem Main loop
+do
+
+rem Produce random values
+ImageNumber=rnd(10000)
+X=rnd(640)
+Y=rnd(480)
+X1=rnd(320)
+Y1=rnd(240)
+X2=X1+1+rnd(319)
+Y2=Y1+1+rnd(239)
+
+rem Try each command at random
+if rnd(5)=1 then LOAD IMAGE "image.bmp", ImageNumber
+if rnd(5)=1 then GET IMAGE ImageNumber, X1, Y1, X2, Y2
+if IMAGE EXIST(ImageNumber)=1
+ if rnd(5)=1 then PASTE IMAGE ImageNumber, X, Y
+ if rnd(5)=1 then PASTE IMAGE ImageNumber, X, Y, 1
+endif
+
+rem Display data
+set cursor 0,0
+print "IMAGE EXPRESSION DATA"
+print
+print "image:";ImageNumber
+print "exist:";IMAGE EXIST(ImageNumber)
+if IMAGE EXIST(ImageNumber)=1 then DELETE IMAGE ImageNumber
+
+loop</pre></FONT></BODY>

@@ -1,0 +1,73 @@
+Upgrade 7.3
+===========
+
+Editor
+------
+
+ * U72 editor re-introduced as the current U73 editor while the new editor is refined
+ * NOTE: To use the U73 editor, rename 'editor.exe' to 'editorUXX.exe' in LAUNCH.CFG
+
+Help
+----
+
+ * Added LerpingTextures to snippets folder to demonstrate SET BLEND MAPPING ON parameter additions
+ * Modified CSG Help pages in GameFX to specify that CSG objects must not be transformed internally (CSG bug report)
+ * Added ImageBlockExample example to snippets to demonstrate how to use image blocks to hide image files
+ * Added help page for SET CONTROL DEVICE INDEX and new snippet called TwoControlDevicesThatFire]
+ * Added help page for GET VERTEXDATA PTR and small example in help page to show how to call it
+ * Added new snippet called DrawTextOverSprites which shows how to draw text over a sprite
+ * Added new snippet called DeleteArrayStringElement to demonstrate deleting a string element from an array
+ * KEYWORDS file updated to reflect latest command additions (for editor highlighting)
+ * Updated SET GLOBAL OBJECT CREATION help page
+ * Updated Operators help page
+ * Updated SET OBJECT help page
+ * Updated CORE SubMenu to show TEXTURE SCREEN and SET SCREEN EFFECT
+ * Updated the MOUSEX help page
+ * Corrected GET ARRAY TYPE syntax in help page
+ * Corrected MEMBLOCK FLOAT mis-information in help page
+ * Corrected MEMBLOCK DWORD mis-information in help page
+ * Corrected READ AND WRITE LONG with better example
+ * Corrected LIMB NAME$ example
+
+Compiler
+--------
+
+ * Added report of Parameter Count in DBM for User Function Structure read-out (affects external debuggers)
+ * Fixed issue causing some line numbers in DBM to report incorrectly (affects external debuggers)
+ * Added support for Cloth & Particle Module to be allowed as a free plug-in to the language (unsupported)
+ * Added support for DarkNet protection (new network plug-in for TCP and UDP communication; massive multiplayer)
+ * NOTE: Where applicable, manually delete the PhysicsMain_PC.DLL from previous BETA as this was a file in error
+ * Fixed bug in Text command causing wide character text not to render to off-bitmap camera targets
+ * Fixed small bug in DBM writer to show ALL line numbers (for external debuggers)
+
+Basic3D
+-------
+
+ * Added four new parameters to SET BLEND MAPPING ON to allow ARG values to be specified (see LerpingTextures)
+ * Added new GET VERTEXDATA PTR command to obtain internal sMesh pointer (mesh interogation advanced feature)
+ * Added extra parameter to SET OBJECT SPECULAR to include optional FLOAT for Power Value
+ * Added modes [4][5] to SET GLOBAL OBJECT CREATION command to switch ON 'Sort By Object Number' behaviour
+ * Fixed bug introduced in U72/U73 work to cause regular animations not to update (due to mesh LOD additions)
+ * Added modes [6][7] to SET GLOBAL OBJECT CREATION command to switch ON 'Sort By Object Depth' behaviour (DBC)
+ * NOTE: Counter the above behaviour for specific objects by setting SET OBJECT TRANSPARENCY ObjNum,7 (very early)
+
+Input
+-----
+
+ * Added SET CONTROL DEVICE INDEX to INPUT command set (to allow up to eight controller devices in play)
+
+Image
+-----
+
+ * Fixed bug that caused SAVE IMAGE to crash on some configurations (removed double release issue)
+
+Basic3D
+-------
+
+ * Updated animation code so that parents of instances animate itself and LOD variants even when hidden
+ * LOD system improved to handle instanced object (work in progress)
+
+Core
+----
+
+ * Fixed bug in ARRAY DELETE ELEMENT which caused basic string arrays to crash when a specific element was deleted

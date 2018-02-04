@@ -1,0 +1,262 @@
+rem Tutorial 8
+
+rem Initial settings
+sync on : sync rate 100
+backdrop off : hide mouse
+
+rem Select font
+set text font "arial" : set text size 16
+set text to bold : set text transparent
+
+rem Loading prompt
+sync : center text screen width()/2,screen height()/2,"LOADING" : sync
+
+rem Load all media for game
+gosub _load_game
+
+rem Setup all objects for game
+gosub _setup_game
+
+rem Game loop
+do
+
+ rem Control game elements
+ gosub _control_player
+ gosub _control_gunandbullet
+ gosub _control_enemies
+
+ rem Update screen
+ sync
+
+rem End loop
+loop
+
+rem End program
+end
+
+_control_player:
+
+rem Control player direction
+rotate camera camera angle x(0)+(mousemovey()/2.0),camera angle y(0)+(mousemovex()/2.0),0
+
+rem Control player movement
+cx#=camera angle x(0) : cy#=camera angle y(0)
+if upkey()=1 then xrotate camera 0,0 : move camera 0,0.2 : xrotate camera 0,cx#
+if downkey()=1 then xrotate camera 0,0 : move camera 0,-0.2 : xrotate camera 0,cx#
+if leftkey()=1 then yrotate camera 0,cy#-90 : move camera 0.2 : yrotate camera 0,cy#
+if rightkey()=1 then yrotate camera 0,cy#+90 : move camera 0.2 : yrotate camera 0,cy#
+if wrapvalue(camera angle x(0))>40 and wrapvalue(camera angle x(0))<180 then xrotate camera 0,40
+if wrapvalue(camera angle x(0))>180 and wrapvalue(camera angle x(0))<280 then xrotate camera 0,280
+
+rem Apply simple gravity to player
+position camera camera position x(),camera position y()-0.1,camera position z()
+
+rem Player is always focal point of sky
+position object SkyObj,camera position x(),camera position y(),camera position z()
+
+rem Position listener at player for 3D sound
+position listener camera position x(),camera position y(),camera position z()
+rotate listener camera angle x(),camera angle y(),camera angle z()
+
+rem In case of restart
+if restart=1
+   restart=0
+   set bsp collision off 1
+   rotate camera 0,0,0
+   position camera 2,2,2
+   set bsp camera collision 1,0,0.75,0
+endif
+
+return
+
+_control_gunandbullet:
+
+ rem Control gun firing
+ if mouseclick()=1 and bullet=-50
+  bullet=100
+  play sound GunSnd
+  position object BulletObj,camera position x(0),camera position y(0),camera position z(0)
+  rotate object BulletObj,camera angle x(0),camera angle y(0),0
+  set bsp object collision 2,BulletObj,0.1,1
+  move object BulletObj,0.2
+ endif
+
+ rem Control life of bullet
+ if bullet>0
+
+  rem If bullet collides with BSP world
+  if bsp collision hit(2)=1 or bulletimpact=1
+   rem End bullet on wall
+   position sound ImpactSnd,object position x(BulletObj), object position y(BulletObj), object position z(BulletObj)
+   play sound ImpactSnd
+   bulletimpact=0
+   bullet=0
+  else
+   rem Move bullet
+   dec bullet
+   move object BulletObj,0.5
+  endif
+
+  rem Bullet dies
+  if bullet=0
+   set bsp collision off 2
+  endif
+
+ else
+  rem Gun recharge phase
+  if bullet>-50 then dec bullet
+ endif
+
+return
+
+_control_enemies:
+
+ rem Variable for finding closest enemy
+ cdist#=9999.99
+
+ rem Handle enemies within world
+ for ene=EneObj to EneObj+4
+
+  rem If enemy alive
+  if object visible(ene)=1
+
+  rem Kill this enemy
+  killenemy=0
+
+  rem Move enemy on a slow curve for appearance of intelegence
+  if object angle z(ene)=0
+   yrotate object ene,wrapvalue(object angle y(ene)+2)
+  endif
+  if object angle z(ene)=1
+   yrotate object ene,wrapvalue(object angle y(ene)-2)
+  endif
+  if object angle z(ene)=2
+   move object ene,0.05
+  else
+   move object ene,0.02
+  endif
+
+  rem Switch direction of curve based on a random value
+  if rnd(200)=1 then zrotate object ene,rnd(1)
+
+  rem Handle gravity for enemy
+  position object ene,object position x(ene),object position y(ene)-0.01,object position z(ene)
+
+  rem Work out angle and distance between enemy and player
+  dx#=camera position x(0)-object position x(ene)
+  dy#=camera position y(0)-object position y(ene)
+  dz#=camera position z(0)-object position z(ene)
+  dist#=abs(sqrt(abs(dx#*dx#)+abs(dy#*dy#)+abs(dz#*dz#)))
+  viewa#=wrapvalue(atanfull(dx#,dz#))
+  obja#=wrapvalue(object angle y(ene))
+  if viewa#>180 then viewa#=viewa#-360
+  if obja#>180 then obja#=obja#-360
+
+  rem *ADDCODE* TUT8A
+
+  rem *ADDCODE* TUT8B
+
+  rem *ADDCODE* TUT8C
+
+  rem Closest enemy emits the enemy sound
+  if dist#<cdist#
+   cdist#=dist#
+   position sound EnemySnd,object position x(ene), object position y(ene), object position z(ene)
+   position sound EnemygunSnd,object position x(ene), object position y(ene), object position z(ene)
+   position sound EnemydieSnd,object position x(ene), object position y(ene), object position z(ene)
+  endif
+
+  rem Hide enemy when die animation over
+  if object frame(ene)>26+25 and object visible(ene)=1
+   killenemy=1
+  endif
+
+  if killenemy=1
+   set bsp collision off 3+(ene-EneObj)
+   hide object ene : dec aliensleft
+   killenemy=0
+  endif
+
+  rem If enemy alive ENDIF
+  endif
+
+ next ene
+
+return
+
+_control_stats:
+return
+
+_setup_game:
+
+ rem Setup camera
+ set camera range 0.1,5000
+ autocam off
+
+ rem Setup sky model
+ set object SkyObj,1,0,0,0,0,0,0
+ scale object SkyObj,20,20,20
+
+ rem Setup gun for player
+ lock object on GunObj
+ scale object GunObj,2,2,4
+ rotate object GunObj,270,0,0
+ position object GunObj,0.5,-1,2
+ disable object zdepth GunObj
+
+ rem Create object for bullet
+ BulletObj=3 : make object cube BulletObj,0.1
+
+ rem Create simple sprite based crosshair
+ sprite 1,320-16,240-16,CrossHairImg
+ set sprite 1,0,1
+
+ rem *ADDCODE* TUT8D
+
+ rem Start the enemy presence sound
+ loop sound EnemySnd
+ scale listener 0.1
+
+ rem Trigger player initialisation
+ restart=1
+
+return
+
+_load_game:
+
+ rem Load BSP world and sky model
+ load bsp "world\ikzdm1.pk3","ikzdm1.bsp"
+ SkyObj=1 : load object "models\sky\am.x",SkyObj
+
+ rem Load model for gun
+ GunObj=2 : load object "models\gun\gun.x",GunObj
+
+ rem Load models for enemies
+ EneObj=11
+ for ene=EneObj to EneObj+4
+  load object "models\enemy\H-Alien Psionic-Idle.x",ene
+  append object "models\enemy\H-Alien Psionic-Die.x", ene, total object frames(ene)+1
+  position object ene,2,2,4
+  loop object ene,0,25
+ next ene
+
+ rem Load all sounds
+ GunSnd=1 : load sound "sounds\gun.wav",GunSnd
+ ImpactSnd=2 : load 3dsound "sounds\impact.wav",ImpactSnd
+ DieSnd=3 : load sound "sounds\die.wav",DieSnd
+ EnemySnd=11 : load 3dsound "sounds\enemy.wav",EnemySnd
+ EnemygunSnd=12 : load 3dsound "sounds\enemygun.wav",EnemygunSnd
+ EnemydieSnd=13 : load 3dsound "sounds\enemydie.wav",EnemydieSnd
+
+ rem Load music (WAV best for looping)
+ MusicSnd=101 : load sound "sounds\ingame.wav",MusicSnd
+ loop sound MusicSnd : set sound volume MusicSnd,80
+
+ rem Load images
+ FireImg=1 : load image "images\fire.bmp",FireImg
+ CrossHairImg=2 : load image "images\crosshair.bmp",CrossHairImg
+
+return
+
+rem *ADDCODE* TUT8E
+

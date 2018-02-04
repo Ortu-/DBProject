@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<document>
+
+	<element type="div" id="titleMenu" holdMouseFocus="1" holdPause="1">
+		<element_style width="100%" height="100%" opacity="0"></element_style>
+
+		<element type="div" id="titleMenu-bgFill">
+			<element_style width="110%" height="110%"
+				left="-2px" top="-2px" background-color="#ff000000">
+			</element_style>
+		</element>
+
+		<element type="div" id="titleMenu-bg">
+			<element_style width="1920px" height="1080px"
+				position-alignH="center" position-alignV="center"
+				background-image="resource/media/ui/bg-fs-title.jpg">
+			</element_style>
+		</element>
+
+		<element type="div" id="panel-titleMenu-buttons">
+			<element_style width="250px" height="350px"
+				margin-left="8%" position-alignV="center">
+			</element_style>
+
+			<element type="button" id="titleMenu-opt-resumeGame"
+				class="btn-textOption" name="btn-textOption"
+				value="Resume" enableEvents="0"
+				onMouseIn="UI_controller_common_doHoverByType" onMouseOut="UI_controller_common_doUnHoverByType"
+				onPress="UI_controller_titleMenu_resumeGame">
+				<element_style position-alignV="center" color="#555555"></element_style>
+			</element>
+
+			<element type="button" id="titleMenu-opt-newGame"
+				class="btn-textOption" name="btn-textOption"
+				value="New Game" enableEvents="1"
+				onMouseIn="UI_controller_common_doHoverByType" onMouseOut="UI_controller_common_doUnHoverByType"
+				onPress="UI_controller_titleMenu_newGame">
+				<element_style position-alignV="center" top="60px"></element_style>
+			</element>
+
+			<element type="button" id="titleMenu-opt-loadGame"
+				class="btn-textOption" name="btn-textOption"
+				value="Load Game" enableEvents="0"
+				onMouseIn="UI_controller_common_doHoverByType" onMouseOut="UI_controller_common_doUnHoverByType"
+				onPress="UI_controller_titleMenu_loadGame">
+				<element_style position-alignV="center" top="120px" color="#555555"></element_style>
+			</element>
+
+			<element type="button" id="titleMenu-opt-settings"
+				class="btn-textOption" name="btn-textOption"
+				value="Settings" enableEvents="1">
+				<element_style position-alignV="center" top="180px" color="#555555"></element_style>
+			</element>
+
+			<element type="button" id="titleMenu-opt-credits"
+				class="btn-textOption" name="btn-textOption"
+				value="Credits" enableEvents="1">
+				<element_style position-alignV="center" top="240px" color="#555555"></element_style>
+			</element>
+
+			<element type="button" id="titleMenu-opt-quit"
+				class="btn-textOption" name="btn-textOption"
+				value="Quit" enableEvents="1"
+				onMouseIn="UI_controller_common_doHoverByType" onMouseOut="UI_controller_common_doUnHoverByType"
+				onPress="UI_controller_titleMenu_quitGame">
+				<element_style position-alignV="center" top="300px"></element_style>
+			</element>
+		</element>
+	</element>
+
+
+
+
+	<element type="div" id="titleMenu-newGame">
+		<element_style width="100%" height="100%" z-index="9"
+			opacity="0" display="hidden">
+		</element_style>
+
+		<element type="div" id="newGame-bgFill">
+			<element_style width="110%" height="110%"
+				left="-2px" top="-2px" background-color="#ff000000">
+			</element_style>
+		</element>
+
+		<element type="div" id="newGame-bg">
+			<element_style width="1920px" height="1080px"
+				position-alignH="center" position-alignV="center"
+				background-image="resource/media/ui/bg-fs-newGame.jpg">
+			</element_style>
+		</element>
+
+		<element type="div" id="newGame-wrap">
+			<element_style width="1024px" height="768px" opacity="0"
+				position-alignH="center" position-alignV="center" border-left-width="0px" border-left-color="#ffffffff">
+			</element_style>
+
+			<element type="div" id="newGame-buttons">
+				<element_style width="250px" height="150px"
+					margin-left="10px" position-alignV="bottom" top="-300px">
+				</element_style>
+
+				<element type="button" id="newGame-cancel"
+					class="btn-textOption" name="btn-textOption"
+					value="Cancel" enableEvents="1"
+					onMouseIn="UI_controller_common_doHoverByType" onMouseOut="UI_controller_common_doUnHoverByType"
+					onPress="UI_controller_titleMenu_newGameCancel">
+					<element_style position-alignV="bottom" left="50px"></element_style>
+				</element>
+
+				<element type="button" id="newGame-create"
+					class="btn-textOption" name="btn-textOption"
+					value="Create" enableEvents="1"
+					onMouseIn="UI_controller_common_doHoverByType" onMouseOut="UI_controller_common_doUnHoverByType"
+					onPress="UI_controller_titleMenu_newGameCreate">
+					<element_style position-alignV="bottom" top="-60px" left="50px"></element_style>
+				</element>
+
+				<element type="div" id="newGame-profLbl" value="New Profile Name:">
+					<element_style d3d-font="5" color="#fffe9c00" position-alignV="bottom" top="-40px"></element_style>
+				</element>
+
+				<element type="div" id="newGame-profNam" value="Default">
+					<element_style d3d-font="3" position-alignV="bottom" top="-140px" width="160px" height="24px"
+						padding-left="8px"
+						border-bottom-width="1px" border-bottom-color="#ffffffff"></element_style>
+				</element>
+
+			</element>
+		</element>
+
+	</element>
+
+
+
+
+</document>

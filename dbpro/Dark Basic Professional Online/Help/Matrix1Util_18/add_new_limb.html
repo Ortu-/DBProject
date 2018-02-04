@@ -1,0 +1,39 @@
+<html><head><title>Matrix1Util_18 - Making complex objects - ADD NEW LIMB</title><!-- <style type="text/css">a { margin-left: 40px } p { margin-left: 40px }</style> --></head><body color=black background="../gfx/dbpro_bg.jpg" bgproperties=fixed><font face="Verdana, Arial, Helvetica, sans-serif" size=2><table width='100%' border='0' cellpadding='0' cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr><tr><td align='center'><b><font size="4">Matrix1 Utility Plug-ins</font></b></td></tr></table><br><h1>ADD NEW LIMB</h1><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Syntax</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> ADD NEW LIMB VertexCount, IndexCount<br>
+ ADD NEW LIMB VertexCount, IndexCount, Fvf<br>
+ ADD NEW LIMB VertexCount, IndexCount, Fvf, InitialiseBuffers<br>
+ LimbId = ADD NEW LIMB ( VertexCount, IndexCount )<br>
+ LimbId = ADD NEW LIMB ( VertexCount, IndexCount, Fvf )<br>
+ LimbId = ADD NEW LIMB ( VertexCount, IndexCount, Fvf, InitialiseBuffers )<br>
+ LimbId = ADD NEW LIMB ( )</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Description</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> This command adds a new blank limb to the complex object. The command will create the limb with the number of Vertices and Indices requested, and the Fvf set. If one of the forms without an Fvf value is used, the default value of 274 will be used.<br>
+<br>
+ The function form of this command will return a limb id that can be used by a later limb to set as a parent limb (SET NEW LIMB PARENT). This id will become useless after the object has been finalised and should not be used beyond that point.<br>
+<br>
+ If the Index count is not 0, then it needs to be a multiple of 3, as 3 points are required for each polygon.<br>
+<br>
+ If the Index count is 0, then the Vertex count needs to be a multiple of 3 for the same reason.<br>
+<br>
+ Note that unlike the other object creation commands in this plug-in, it is legal and safe to create a limb with no vertices. This new limb can then be used as a parent to other limbs. There is a version of the function specifically for this circumstance (shown last in the usage list).<br>
+<br>
+ The InitialiseBuffers parameter allows you to skip initialising the buffers with zeros by using an Initialise value of 0 - use only when you are going to immediately set the values yourself using the VERTEXDATA commands.<br>
+<br>
+ Constants for all allowable FVF settings:<br>
+ #constant FVF_XYZ = 0x002<br>
+ #constant FVF_XYZRHW = 0x004<br>
+ #constant FVF_XYZB1 = 0x006<br>
+ #constant FVF_XYZB2 = 0x008<br>
+ #constant FVF_XYZB3 = 0x00a<br>
+ #constant FVF_XYZB4 = 0x00c<br>
+ #constant FVF_XYZB5 = 0x00e<br>
+ #constant FVF_NORMAL = 0x010<br>
+ #constant FVF_PSIZE = 0x020<br>
+ #constant FVF_DIFFUSE = 0x040<br>
+ #constant FVF_SPECULAR = 0x080<br>
+ #constant FVF_TEX0 = 0x000<br>
+ #constant FVF_TEX1 = 0x100<br>
+ #constant FVF_TEX2 = 0x200<br>
+ #constant FVF_TEX3 = 0x300<br>
+ #constant FVF_TEX4 = 0x400<br>
+ #constant FVF_TEX5 = 0x500<br>
+ #constant FVF_TEX6 = 0x600<br>
+ #constant FVF_TEX7 = 0x700<br>
+ #constant FVF_TEX8 = 0x800</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Go back to ...</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='0'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1Util_18_index.html">Matrix1Util_18 Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Index.html">Matrix1 Utils Main Index</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Commands.html">Matrix1 Utils Command List</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Commands.htm">Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../main.htm">Main Menu</A></font></td></table><p align="center"><font size="1">Copyright &copy; Ian Mold - Matrix1 Software 2006 - 2011</font></p><table width='100%' border='0' Cellpadding='0' Cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr></table></font></body></html>

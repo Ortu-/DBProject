@@ -1,0 +1,77 @@
+rem Display Functionality
+set gamma 255,128,128
+center text 320,240,"GAMMA"
+sleep 2000
+set gamma 255,255,255
+sleep 1000
+
+cls
+print "GRAPHICS CARDS"
+print
+perform checklist for graphics cards
+for c=1 to checklist quantity()
+ name$=checklist string$(c)
+ print "found:";name$
+next c
+set graphics card name$
+print "using:";current graphics card$()
+sleep 2000
+
+rem Screen Management
+cls
+print "DISPLAY MODES"
+print
+perform checklist for display modes
+for c=1 to checklist quantity()
+ width=checklist value a(c)
+ height=checklist value b(c)
+ depth=checklist value c(c)
+ print "found:";checklist string$(c)
+next c
+set display mode width, height, depth
+if check display mode(width, height, depth)=1
+ print "using:";width;" ";height;" ";depth
+endif
+
+rem Screen Data Expressions
+cls
+print "SCREEN DATA"
+print
+print "type:";screen type()
+print "width:";screen width()
+print "height:";screen height()
+print "depth:";screen depth()
+print "invalid:";screen invalid()
+print "fps:";screen fps()
+sleep 2000
+
+rem Window Management
+set window on
+set window title "Test Window"
+set window layout 1,1,1
+set window size 320,240
+set window position 160,120 : sleep 2000
+maximize window : sleep 2000
+minimize window : sleep 2000
+restore window : sleep 2000
+hide window : sleep 1000
+show window : sleep 2000
+set window off
+sleep 2000
+
+rem Backbuffer Management
+lock backbuffer
+cls
+print "BACKBUFFER DATA"
+print
+print "ptr:";get backbuffer ptr()
+print "width:";get backbuffer width()
+print "height:";get backbuffer height()
+print "depth:";get backbuffer depth()
+print "pitch:";get backbuffer pitch()
+unlock backbuffer
+sleep 2000
+
+rem End program
+end
+

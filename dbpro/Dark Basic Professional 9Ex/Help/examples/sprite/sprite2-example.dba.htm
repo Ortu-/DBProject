@@ -1,0 +1,58 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem Sprite Functionality
+
+load image "image.bmp",1 : load image "image.bmp",2
+
+rem Main loop
+do
+
+rem Produce random values
+SpriteNumber=rnd(22000000)
+BackSave=rnd(2)
+Transparency=rnd(1)
+X=rnd(640)
+Y=rnd(480)
+ImageNumber=1+rnd(1)
+XSize=rnd(64)
+YSize=rnd(64)
+Scale=rnd(100)
+XScale=rnd(100)
+YScale=rnd(100)
+TargetSpriteNumber=rnd(22000000)
+
+rem Try each command at random
+SPRITE SpriteNumber, X, Y, ImageNumber
+if rnd(100)=1 then SET SPRITE SpriteNumber, BackSave, Transparency
+if rnd(5)=1 then SIZE SPRITE SpriteNumber, XSize, YSize
+if rnd(5)=1 then SCALE SPRITE SpriteNumber, Scale
+if rnd(5)=1 then STRETCH SPRITE SpriteNumber, XScale, YScale
+if rnd(5)=1 then OFFSET SPRITE SpriteNumber, X, Y
+if rnd(5)=1 then MIRROR SPRITE SpriteNumber
+if rnd(5)=1 then FLIP SPRITE SpriteNumber
+if rnd(5)=1 then PASTE SPRITE SpriteNumber, X, Y
+if rnd(5)=1 then HIDE SPRITE SpriteNumber
+if rnd(5)=1 then SHOW SPRITE SpriteNumber
+if rnd(5)=1 then HIDE ALL SPRITES
+if rnd(5)=1 then SHOW ALL SPRITES
+
+rem Display data
+set cursor 0,0
+print "SPRITE EXPRESSION DATA"
+print
+print "sprite:";SpriteNumber
+print "exist:";SPRITE EXIST(SpriteNumber)
+print "x:";SPRITE X(SpriteNumber)
+print "y:";SPRITE Y(SpriteNumber)
+print "offsetx:";SPRITE OFFSET X(SpriteNumber)
+print "offsetx:";SPRITE OFFSET Y(SpriteNumber)
+print "width:";SPRITE WIDTH(SpriteNumber)
+print "height:";SPRITE HEIGHT(SpriteNumber)
+print "image:";SPRITE IMAGE(SpriteNumber)
+print "scalex:";SPRITE SCALE X(SpriteNumber)
+print "scaley:";SPRITE SCALE Y(SpriteNumber)
+print "mirrored:";SPRITE MIRRORED(SpriteNumber)
+print "flipped:";SPRITE FLIPPED(SpriteNumber)
+print "hit:";SPRITE HIT(SpriteNumber, TargetSpriteNumber)
+print "collision:";SPRITE COLLISION(SpriteNumber, TargetSpriteNumber)
+if rnd(5)=1 then DELETE SPRITE SpriteNumber
+
+loop</pre></FONT></BODY>

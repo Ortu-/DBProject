@@ -1,0 +1,579 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	3d Object Animation
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides loading, handling, and playback of bone-based keyframe animation for 3d objects.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+
+	*******************************************
+	Classes:
+
+		Requires system.dbx
+		Requires media.dbx
+
+		=========================================
+		Defines STATIC CLASS: Anim3d
+
+			------------------------
+			public functions:
+
+				Anim3d_updateActiveAnimations()
+					- Animation update handler. Calculates new frame for objects with applied animations. Executes callbacks, loops, and advances the queue as needed.
+
+				Anim3d_addAppliedAnimation(rAnim as CLASS_AppliedAnimation3d)
+					- Add an animation sequence to an object's animation queue.
+
+				Anim3d_clearAppliedAnimations(rObjectNum as integer)
+					- Removes all animation sequences from an object's animation queue
+
+				Anim3d_getActiveAnimationByObjectNumber(rObjectNum as integer)
+					+ Returns the currently playing animation of the specified object.
+
+				Anim3d_getAnimSetNumber(rFilename as string)
+					+ Returns the animation set id of the .anim file specified.
+					- This will load the file to a new animation set if not previously loaded.
+
+			------------------------
+			public data
+
+				Anim3d.animResult as Anim3d_type_activeAnimationData
+					-
+
+			------------------------
+			private functions
+
+				_Anim3d_init()
+					- Module initialization
+
+				_Anim3d_loadObjectAnimation(rFilename as string, rAnimSetNum as integer)
+					- Called internall by Anim3d_getAnimSetNumber if a file has not previously been loaded.
+					- Handle the actual processing of the .anim file.
+
+			------------------------
+			private data:
+
+				_Anim3d_animSets[] as Anim3d_type_animationSetData
+					-
+
+				_Anim3d_animVariants[] as Anim3d_type_variantData
+					-
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+anim3d_module_init:
+
+	if ANIM3D_MODULE_LOADED = FALSE
+
+		<?System_log("anim3d.dbx", 2, "main", "Begin module load: anim3d.")?>
+		App_updateSplashScreen("- Animation")
+
+		`Declare Anim3d -----------------------------------------------------------
+
+		type Anim3d_type_animationSetData
+			file as string
+			animSetNum as integer
+			keyName as string
+			firstFrame as integer
+			lastFrame as integer
+			enableVariants as boolean
+		endtype
+
+		type Anim3d_type_variantData
+			animSetNum as integer
+			baseKeyName as string `name of variant 0 sans id# ie 'idle0' = 'idle'
+			baseLen as integer `length of name sans id# ie 'idle0' = 4
+			variantCount as integer
+		endtype
+
+		type Anim3d_type_activeAnimationData
+			index as integer
+			keyName as string
+			animSetNum as integer
+		endtype
+
+		type STATIC_CLASS_Anim3d
+			nextAnimSetNum as integer
+			keyedFPS as integer
+			minVariantDelay as integer
+			maxVariantDelay as integer
+			animResult as Anim3d_type_activeAnimationData
+		endtype
+
+		`private data -------------------------------------------------------------
+
+		dim _Anim3d_animSets[] as Anim3d_type_animationSetData
+		dim _Anim3d_animVariants[] as Anim3d_type_variantData
+		dim _Anim3d_appliedAnimations[] as CLASS_AppliedAnimation3d
+		dim _Anim3d_processedObjects[] as integer
+
+		`public data --------------------------------------------------------------
+
+		dim Anim3d_deferredAnimationFlush[] as integer
+
+		`Declare AppliedAnimation3d -----------------------------------------------------------
+
+		type CLASS_AppliedAnimation3d
+			objectNum as integer // req //TODO: use object's guid$ instead ?
+			animSetNum as integer // req
+			keyName as string // req?
+			speedFactor as float //opt default 1.0
+			enableLoop as boolean //opt default false
+			callback as string // opt
+			callbackArgs as string // opt
+			//Do not set below props when creating a new object: (these are handled by the system)
+			currentFrame as float //animation does not progress if this uses integer
+			firstFrame as integer
+			lastFrame as integer
+			variantCount as integer
+			variantMark as integer
+			variantDelay as integer
+		endtype
+
+		`private data -------------------------------------------------------------
+
+
+
+		`public data --------------------------------------------------------------
+
+
+
+		`Init ---------------------------------------------------------------------
+
+		`==================================
+
+		GLOBAL Anim3d as STATIC_CLASS_Anim3d
+
+		$construct CLASS_AppliedAnimation3d{
+			objectNum = -1
+			animSetNum = -1
+			speedFactor = 1.0
+			enableLoop = FALSE
+		}
+
+		`==================================
+
+		_Anim3d_init()
+
+		ANIM3D_MODULE_LOADED = TRUE
+
+		<?System_log("anim3d.dbx", 2, "main", "End module load: anim3d.")?>
+
+	endif
+return
+
+
+function _Anim3d_init()
+
+	Anim3d.keyedFPS = 30 //45
+	Anim3d.minVariantDelay = 15000
+	Anim3d.maxVariantDelay = 65000
+
+	`register updates
+	App_addUpdate("Anim3d_updateActiveAnimations", "", FALSE)
+
+	`inject new dependancies
+	App_addRequiredToUpdate("Media_updateBoundObjects", "Anim3d_updateActiveAnimations")
+
+endfunction
+
+
+function Anim3d_unload()
+	empty array _Anim3d_animSets[]
+	empty array _Anim3d_animVariants[]
+	empty array _Anim3d_appliedAnimations[]
+	empty array _Anim3d_processedObjects[]
+	empty array Anim3d_deferredAnimationFlush[]
+endfunction
+
+
+function Anim3d_updateActiveAnimations()
+
+	<?System_log("anim3d.dbx", 2, "main", "Begin Update: Anim3d_updateActiveAnimations")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	empty array _Anim3d_processedObjects[]
+
+	for i = 0 to array count(_Anim3d_appliedAnimations[])
+		<?System_log("anim3d.dbx", 1, "anim3d", " > checking if object exists: " + str$(_Anim3d_appliedAnimations[i].objectNum) + " using key: " + _Anim3d_appliedAnimations[i].keyName + " with callback: " + _Anim3d_appliedAnimations[i].callback)?>
+		if object exist(_Anim3d_appliedAnimations[i].objectNum)
+
+			objHasProcessed = FALSE
+			totalCountProcessed = array count(_Anim3d_processedObjects[])
+			if totalCountProcessed > -1
+				for o = 0 to totalCountProcessed
+					if _Anim3d_processedObjects[o] = _Anim3d_appliedAnimations[i].objectNum
+						objHasProcessed = TRUE
+						exit
+					endif
+				next o
+			endif
+
+			if objHasProcessed = FALSE
+
+				appliedDelta# = System.timing.delta - System.timing.pauseElapsed
+
+				newFrame# = _Anim3d_appliedAnimations[i].currentFrame + (Anim3d.keyedFPS * _Anim3d_appliedAnimations[i].speedFactor * 0.001 * appliedDelta#)
+
+				if newFrame# < _Anim3d_appliedAnimations[i].firstFrame
+					newFrame# = _Anim3d_appliedAnimations[i].firstFrame
+				endif
+
+				if newFrame# >= _Anim3d_appliedAnimations[i].lastFrame
+
+					if _Anim3d_appliedAnimations[i].enableLoop
+
+						newFrame# = _Anim3d_appliedAnimations[i].firstFrame
+
+						_Anim3d_appliedAnimations[i].currentFrame = newFrame#
+
+						set object frame _Anim3d_appliedAnimations[i].objectNum, newFrame#
+
+						`check for variant switch
+						for s = 0 to array count(_Anim3d_animSets[])
+							if _Anim3d_animSets[s].animSetNum = _Anim3d_appliedAnimations[i].animSetNum
+								tSetIndex = s
+								exit
+							endif
+						next s
+						if _Anim3d_animSets[tSetIndex].enableVariants
+							if abs(timer() - _Anim3d_appliedAnimations[i].variantMark) > _Anim3d_appliedAnimations[i].variantDelay
+								newVariant = 1 + rnd(_Anim3d_appliedAnimations[i].variantCount - 1)
+								for v = 0 to array count(_Anim3d_animVariants[])
+									if _Anim3d_animVariants[v].animSetNum = _Anim3d_appliedAnimations[i].animSetNum
+										if _Anim3d_animVariants[v].baseKeyName + str$(newVariant) = _Anim3d_appliedAnimations[i].keyName
+											_Anim3d_appliedAnimations[i].firstFrame = _Anim3d_animSets[tSetIndex].firstFrame
+											_Anim3d_appliedAnimations[i].lastFrame = _Anim3d_animSets[tSetIndex].lastFrame
+											exit
+										endif
+									endif
+								next v
+								_Anim3d_appliedAnimations[i].variantMark = timer()
+								_Anim3d_appliedAnimations[i].variantDelay = Anim3d.minVariantDelay + rnd(Anim3d.maxVariantDelay)
+							endif
+						endif
+
+						array insert at bottom _Anim3d_processedObjects[]
+						_Anim3d_processedObjects[] = _Anim3d_appliedAnimations[i].objectNum
+
+						`handle loop callback
+						<?System_log("anim3d.dbx", 1, "anim3d", " > checking loopIsDone callback")?>
+						loopIsDone = FALSE
+						if _Anim3d_appliedAnimations[i].callback > ""
+							loopIsDone = intval(App_callFunction(_Anim3d_appliedAnimations[i].callback, _Anim3d_appliedAnimations[i].callbackArgs))
+							<?System_log("anim3d.dbx", 1, "anim3d", "  loopIsDone: " + str$(loopIsDone))?>
+							if loopIsDone
+								<?System_log("anim3d.dbx", 1, "anim3d", "  > loop completed cycle, loop condition failed. flag applied animation for obj " + str$(_Anim3d_appliedAnimations[i].objectNum) + " to GC -1")?>
+								_Anim3d_appliedAnimations[i].objectNum = -1
+								inc GCcount
+								GCindex = i
+							endif
+						endif
+
+					else
+
+						`played once, end the sequence and remove
+						newFrame# = _Anim3d_appliedAnimations[i].lastFrame
+						set object frame _Anim3d_appliedAnimations[i].objectNum, newFrame#
+
+						array insert at bottom _Anim3d_processedObjects[]
+						_Anim3d_processedObjects[] = _Anim3d_appliedAnimations[i].objectNum
+
+						<?System_log("anim3d.dbx", 1, "anim3d", "  > played once and finished. flag applied animation for obj " + str$(_Anim3d_appliedAnimations[i].objectNum) + " to GC -1")?>
+						if _Anim3d_appliedAnimations[i].callback > ""
+							<?System_log("anim3d.dbx", 1, "anim3d", " > Executing callback play once finished: " + _Anim3d_appliedAnimations[i].callback + " " + _Anim3d_appliedAnimations[i].callbackArgs)?>
+							App_callFunction(_Anim3d_appliedAnimations[i].callback, _Anim3d_appliedAnimations[i].callbackArgs)
+						endif
+
+						_Anim3d_appliedAnimations[i].objectNum = -1
+						inc GCcount
+						GCindex = i
+
+					endif
+
+				else
+
+					`sequence is not complete, continue it
+					_Anim3d_appliedAnimations[i].currentFrame = newFrame#
+
+					set object frame _Anim3d_appliedAnimations[i].objectNum, newFrame#
+
+					array insert at bottom _Anim3d_processedObjects[]
+					_Anim3d_processedObjects[] = _Anim3d_appliedAnimations[i].objectNum
+
+					`handle variable length animation callback
+					<?System_log("anim3d.dbx", 1, "anim3d", " > checking loopIsDone callback")?>
+					loopIsDone = FALSE
+					if _Anim3d_appliedAnimations[i].enableLoop and _Anim3d_appliedAnimations[i].callback > ""
+						loopIsDone = intval(App_callFunction(_Anim3d_appliedAnimations[i].callback, _Anim3d_appliedAnimations[i].callbackArgs))
+						<?System_log("anim3d.dbx", 1, "anim3d", "  loopIsDone: " + str$(loopIsDone))?>
+						if loopIsDone
+							<?System_log("anim3d.dbx", 1, "anim3d", "  > loop not complete, loop condition failed. flag applied animation for obj " + str$(_Anim3d_appliedAnimations[i].objectNum) + " to GC -1")?>
+							_Anim3d_appliedAnimations[i].objectNum = -1
+							inc GCcount
+							GCindex = i
+						endif
+					endif
+
+				endif
+			endif
+		else
+			_Anim3d_appliedAnimations[i].objectNum = -1
+			inc GCcount
+			GCindex = i
+		endif
+	next i
+
+	`process deferred flush
+	for i = 0 to array count(Anim3d_deferredAnimationFlush[])
+		for a = 0 to array count(_Anim3d_appliedAnimations[])
+			if _Anim3d_appliedAnimations[a].objectNum = Anim3d_deferredAnimationFlush[i]
+				<?System_log("anim3d.dbx", 1, "anim3d", "  > process deferred flush. flagged " + _Anim3d_appliedAnimations[a].keyName + " on obj " + str$(_Anim3d_appliedAnimations[a].objectNum) + " to GC -1")?>
+				_Anim3d_appliedAnimations[a].objectNum = -1
+				inc GCcount
+				GCindex = a
+			endif
+		next a
+	next i
+	empty array Anim3d_deferredAnimationFlush[]
+
+	`garbage collect
+	<?System_log("anim3d.dbx", 1, "anim3d", " > garbage collect anim3d, total: " + str$(GCcount))?>
+	if GCcount > 0
+		if GCcount > 1
+			for c = 1 to GCcount
+				for i = 0 to array count(_Anim3d_appliedAnimations[])
+					if _Anim3d_appliedAnimations[i].objectNum = -1
+						<?System_log("anim3d.dbx", 1, "anim3d", "  deleting: " + _Anim3d_appliedAnimations[i].keyName)?>
+						array delete element _Anim3d_appliedAnimations[], i
+						exit
+					endif
+				next i
+			next c
+		else
+			<?System_log("anim3d.dbx", 1, "anim3d", "  deleting: " + _Anim3d_appliedAnimations[GCindex].keyName + " from object " + str$(_Anim3d_appliedAnimations[i].objectNum))?>
+			array delete element _Anim3d_appliedAnimations[], GCindex
+		endif
+	endif
+
+	<?System_log("anim3d.dbx", 2, "main", "End Update: Anim3d_updateActiveAnimations," + str$(hitimer(1000000) - updateMark) + "us")?>
+endfunction
+
+
+function _Anim3d_loadObjectAnimation(rFilename as string, rAnimSetNum as integer)
+
+	<?System_log("anim3d.dbx", 2, "anim3d", "Loading animation config file: "+ rFilename +" to setNum: "+ str$(rAnimSetNum))?>
+
+	fHandle = find free file()
+	open to read fHandle, rFilename
+
+	while file end(fHandle) = FALSE
+		read string fHandle, inputData$
+		tKeyName$ = fast lower$(first token$(inputData$, ","))
+		tFirstFrame = intval(next token$(","))
+		tLastFrame = intval(next token$(","))
+		tHasVariants = intval(next token$(","))
+
+		if tFirstFrame > 0
+			<?System_log("anim3d.dbx", 1, "anim3d", "> adding key: " + tKeyName$)?>
+			if tHasVariants
+				<?System_log("anim3d.dbx", 1, "anim3d", "  key has variants")?>
+				isNewKey = TRUE
+				for i = 0 to array count(_Anim3d_animVariants[])
+					if _Anim3d_animVariants[i].baseKeyName = tKeyName$
+						isNewKey = FALSE
+						inc _Anim3d_animVariants[i].variantCount
+						exit
+					endif
+				next i
+				if isNewKey
+					array insert at bottom _Anim3d_animVariants[]
+					_Anim3d_animVariants[].animSetNum = rAnimSetNum
+					_Anim3d_animVariants[].baseKeyName = tKeyName$
+					_Anim3d_animVariants[].baseLen = fast len(tKeyName$)
+					_Anim3d_animVariants[].variantCount = 0
+					tKeyName$ = tKeyName$ + str$(_Anim3d_animVariants[].variantCount)
+				endif
+			endif
+
+			array insert at bottom _Anim3d_animSets[]
+			_Anim3d_animSets[].animSetNum = rAnimSetNum
+			_Anim3d_animSets[].keyName = tKeyName$
+			_Anim3d_animSets[].firstFrame = tFirstFrame
+			_Anim3d_animSets[].lastFrame = tLastFrame
+			_Anim3d_animSets[].enableVariants = tHasVariants
+			<?System_log("anim3d.dbx", 1, "anim3d", "  " + tKeyName$ + " added")?>
+		endif
+	endwhile
+
+	close file fHandle
+
+endfunction TRUE
+
+
+function Anim3d_addAppliedAnimation(rAnim as CLASS_AppliedAnimation3d)
+
+	<?System_log("anim3d.dbx", 1, "anim3d", "Requested apply animation: " + rAnim.keyName + " to queue for objectNum: " + str$(rAnim.objectNum) + " speedFactor: " + str$(rAnim.speedFactor))?>
+
+	rAnim.keyName = fast lower$(rAnim.keyName)
+
+	`check for variants, default to base variant
+	tVariantCount = -1
+	for tVariantIndex = 0 to array count(_Anim3d_animVariants[])
+		if _Anim3d_animVariants[tVariantIndex].animSetNum = rAnim.animSetNum
+			if _Anim3d_animVariants[tVariantIndex].baseKeyName = fast left$(rAnim.keyName, _Anim3d_animVariants[tVariantIndex].baseLen)
+				rAnim.keyName = rAnim.keyName + "0"
+				tVariantCount = _Anim3d_animVariants[tVariantIndex].variantCount
+				exit
+			endif
+		endif
+	next tVariantIndex
+
+	`get animation data by set and key
+	for i = 0 to array count(_Anim3d_animSets[])
+		if _Anim3d_animSets[i].animSetNum = rAnim.animSetNum
+			if _Anim3d_animSets[i].keyName = rAnim.keyName
+
+				array insert at bottom _Anim3d_appliedAnimations[]
+
+				_Anim3d_appliedAnimations[].objectNum = rAnim.objectNum
+				_Anim3d_appliedAnimations[].animSetNum = rAnim.animSetNum
+				_Anim3d_appliedAnimations[].keyName = rAnim.keyName
+				_Anim3d_appliedAnimations[].enableLoop = rAnim.enableLoop
+				_Anim3d_appliedAnimations[].speedFactor = rAnim.speedFactor
+				_Anim3d_appliedAnimations[].callback = rAnim.callback
+				_Anim3d_appliedAnimations[].callbackArgs = rAnim.callbackArgs
+
+				_Anim3d_appliedAnimations[].currentFrame = _Anim3d_animSets[i].firstFrame
+				_Anim3d_appliedAnimations[].firstFrame = _Anim3d_animSets[i].firstFrame
+				_Anim3d_appliedAnimations[].lastFrame = _Anim3d_animSets[i].lastFrame
+
+				if _Anim3d_animSets[i].enableVariants
+					_Anim3d_appliedAnimations[].variantCount = tVariantCount
+					`set random variation change delay
+					_Anim3d_appliedAnimations[].variantMark = timer()
+					_Anim3d_appliedAnimations[].variantDelay = Anim3d.minVariantDelay + (rnd(Anim3d.maxVariantDelay - Anim3d.minVariantDelay))
+				endif
+
+				<?System_log("anim3d.dbx", 1, "anim3d", "> Applied. key: " + _Anim3d_appliedAnimations[].keyName + " obj: " + str$(_Anim3d_appliedAnimations[].objectNum) + " speed: " + str$(_Anim3d_appliedAnimations[].speedFactor) + " loop: " + str$(_Anim3d_appliedAnimations[].enableLoop))?>
+				exitfunction
+			endif
+		endif
+	next i
+	<?System_log("anim3d.dbx", 3, "anim3d", "WARNING: Requested animation key "+ rAnim.keyName +" was not found. Did not add to queue.")?>
+endfunction
+
+
+function Anim3d_clearAppliedAnimations(rObjectNum as integer)
+	<?System_log("anim3d.dbx", 1, "anim3d", "Begin flush applied animations for object number " + str$(rObjectNum))?>
+	GCcount = 0
+	GCindex = -1
+	for i = 0 to array count(_Anim3d_appliedAnimations[])
+		if _Anim3d_appliedAnimations[i].objectNum = rObjectNum
+			_Anim3d_appliedAnimations[i].objectNum = -1
+			inc GCcount
+			GCindex = i
+		endif
+	next i
+	if GCcount > 0
+		if GCcount > 1
+			for c = 1 to GCcount
+				for i = 0 to array count(_Anim3d_appliedAnimations[])
+					if _Anim3d_appliedAnimations[i].objectNum = -1
+						array delete element _Anim3d_appliedAnimations[], i
+					endif
+				next i
+			next c
+		else
+			array delete element _Anim3d_appliedAnimations[], GCindex
+		endif
+	endif
+endfunction
+
+
+function Anim3d_clearAppliedAnimationsDeferred(rObjectNum as integer)
+	array insert at bottom Anim3d_deferredAnimationFlush[]
+	Anim3d_deferredAnimationFlush[] = rObjectNum
+endfunction
+
+
+function Anim3d_getActiveAnimationByObjectNumber(rObjectNum as integer)
+	Anim3d.animResult.index = -1
+	Anim3d.animResult.keyName = ""
+	Anim3d.animResult.animSetNum = -1
+	for i = 0 to array count(_Anim3d_appliedAnimations[])
+		if _Anim3d_appliedAnimations[i].objectNum = rObjectNum
+			Anim3d.animResult.index = i
+			Anim3d.animResult.keyName = _Anim3d_appliedAnimations[i].keyName
+			Anim3d.animResult.animSetNum = _Anim3d_appliedAnimations[i].animSetNum
+			exitfunction
+		endif
+	next i
+endfunction
+
+
+function Anim3d_getAnimSetNumber(rFilename as string)
+	rFilename = fast lower$(rFilename)
+	tSet = -1
+
+	<?System_log("anim3d.dbx", 1, "anim3d", "Requested animation set for file: " + rFilename)?>
+
+	for i = 0 to array count(_Anim3d_animSets[])
+		if _Anim3d_animSets[i].file = rFilename
+			tSet = _Anim3d_animSets[i].animSetNum
+			exitfunction tSet
+		endif
+	next i
+
+	`set has not been loaded, verify file and load
+	if file exist(rFilename)
+		tSet = Anim3d.nextAnimSetNum
+		if _Anim3d_loadObjectAnimation(rFilename, tSet)
+			array insert at bottom _Anim3d_animSets[]
+			_Anim3d_animSets[].file = rFilename
+			_Anim3d_animSets[].animSetNum = tSet
+			inc Anim3d.nextAnimSetNum
+			exitfunction tSet
+		else
+			System_log("anim3d.dbx", 4, "error", "ERROR: Could not process requested animation file: " + rFilename)
+			App_closeGame(TRUE)
+		endif
+	else
+		System_log("anim3d.dbx", 4, "error", "ERROR: Requested animation file not found: " + rFilename)
+		App_closeGame(TRUE)
+	endif
+
+endfunction tSet

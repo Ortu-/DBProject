@@ -1,0 +1,442 @@
+<html>
+
+<style type="text/css">
+	body {
+		margin: .5cm .5cm;
+		font-family: verdana;
+		font-size: 13px;
+	}
+	.contents {
+		border-style: dashed;
+		border-width: 1;
+		padding: .5cm;
+	}
+	tt {
+		font-size: medium;
+	}
+	.command_heading {
+		position: relative;
+		background-color: palegreen;
+		width: 100%;
+	}
+	.container {
+		line-height: 16px;
+		margin-left: 200px;
+	}
+	.error {
+		position: absolute;
+		margin-left: .5cm;
+		left: 0;
+		font-size: smaller;
+		font-weight: bold;
+		font-style: italic;
+		line-height: 16px;
+	}
+	.option {
+		position: absolute;
+		margin-left: .5cm;
+		left: 0;
+		font-size: smaller;
+		font-weight: bold;
+		line-height: 16px;
+	}
+	.serv_only {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		text-align: right;
+		font-weight: bold;
+		font-size: 9px;
+		line-height: 16px;
+		color: white;
+	}
+	.para1 {
+		
+		padding: .5cm;
+	}
+	.footer {
+		font-size: smaller;
+		color: gray;
+	}
+	.heading_1 {
+		position: absolute;
+		font-size: 16px;
+		font-weight: bold;
+		width: 100%;
+		border-bottom: thin solid gray;
+		line-height: 20px;
+	}
+
+	.heading_2 {
+		position: absolute;
+		font-size: 13px;
+		font-weight: bold;
+		font-style: italic;
+	}
+	.code_rem {
+		color: gray;
+	}
+	.footer2 {
+		text-align: center;
+		font-size: smaller;
+		color: gray;
+	}
+</style>
+
+<head><title>Multisync v1.2 Manual</title></head>
+<body link="blue" vlink="blue">
+<h2>Multisync v1.2 Manual</h2>
+<div class=contents>
+	<h3>Table of Contents</h3>
+	<ul>
+		<li><a href="#preface">I. Preface</a></li><br>
+		<ul>
+			<li><a href="#preface_1">1. About</a></li>
+			<li><a href="#preface_2">2. Converting from v0.5</a></li>
+			<li><a href="#preface_3">3. Changes in v1.2</a></li>
+		</ul><br>
+		<li><a href="#basics">II. Basics of Use</a></li><br>
+		<ul>
+			<li><a href="#basics_1">1. General Tips</a></li>
+			<li><a href="#basics_2">2. Serving</a></li>
+			<li><a href="#basics_3">3. Initializing a connection</a></li>
+			<li><a href="#basics_4">4. Processing Messages</a></li>
+		</ul><br>
+		<li><a href="#outsidedbp">III. Using outside of DBP</a></li><br>
+		<ul>
+			<li><a href="#outsidedbp_1">1. DBC Enhanced</a></li>
+			<li><a href="#outsidedbp_2">2. Communicating with Multisync v1 using TCP</a></li>
+		</ul><br>
+		<li><a href="#ref">IV. Command Reference</a></li>
+	</ul>
+</div><br>
+
+<a id="preface"><span class=heading_1>I. Preface</span><br></a>
+<div class=para1>
+
+	<a id="preface_1"><span class=heading_2>1. About</span><br></a><br>
+	Multisync is a multiplayer plugin designed for DarkBASIC Professional, utilizing the TCP protocol
+	and the client/server networking model, created by me, Benjamin Wharton.<br>
+	<br>
+	It has been completely rewritten from scratch since version 0.5, and some of its functionality
+	is a little different. For full description on the changes, see the next subsection.<br>
+	<br>
+	I would like to thank Carlos Wilkes (known as Darkcoder on the TGC forums) for his much
+	encouraging support and advice, and the extensive testing he endured. I would also like to thank
+	everyone* who bugged me on MSN while I was trying to write this, it really increased the rate
+	of progress.<br>
+	<br>
+	<span class=footer>* Darkcoder.</span><br>
+	<br>
+	<a id="preface_2"><span class=heading_2>2. Converting from v0.5</span><br></a><br>
+	One of the major changes is that message data is now read in the correct order (last in - last out).<br>
+	<br>
+	Some of the command names have been changed since version 0.5, and are listed below, with
+	the new command name following. It is also worth noting that words are seperated in all command
+	names now.<br>
+	<ul>
+		<li>net join -> net connect</li>
+		<li>net finish -> net disconnect</i>
+		<li>net kill -> net kick</li>
+		<li>net newplayer -> net player joined</li>
+		<li>net get player state -> net player connected</i>
+		<li>net set port local -> net set port</li>
+		<li>net set port remote -> net set port</li>
+		<li>net push char -> net put byte</li>
+		<li>net push word -> net put word</li>
+		<li>net push float -> net put float</li>
+		<li>net pop char -> net get byte</li>
+		<li>net pop word -> net get word</li>
+		<li>net pop float -> net get float</li>
+		<li>net get msginsize -> net get message remainder</li>
+		<li>net get msgtotalsize -> net get message size</li>
+		<li>net get msg -> net get message</li>
+	</ul>
+
+	The following commands have been removed, either due to redundancy or otherwise:<br><i>
+	net receive, net forcekill, net get packetspersecond, net make buffers, net set buffers, net set port local*, net set port remote*, net seek in, net seek out, net get msgoutsize, net stack on, net stack off, net get msg amount.</i><br>
+	<br>
+	<span class=footer>* These have become a single command, <i>net set port</i>.</span>
+	<br><br>
+	<a id="preface_3"><span class=heading_2>3. Changes in v1.2</span><br></a><br>
+	* Added commands to configure Windows Firewall.<br>
+
+</div>
+
+<a id="basics"><span class=heading_1>II. Basics of Use</span><br></a>
+<div class=para1>
+
+	<a id="basics_1"><span class=heading_2>1. General Tips</span><br></a><br>
+	The commands NET HOST and NET CONNECT return a boolean value indicating whether the operation
+	succeeded or not. It is recommended that you always check this value and take necessary
+	measures if said command fails.<br>
+	<br>
+	When NET HOST or NET CONNECT fail, or you discover disconnection through use of NET CONNECTED, 
+	an error string can be obtained from NET GET ERROR. This error can be helpful in determining
+	what went wrong. Relevant errors are listed under the commands in the command reference.<br>
+	<br>
+
+	<a id="basics_2"><span class=heading_2>2. Serving</span><br></a><br>
+	Starting a server can be accomplished by calling NET HOST, with the first parameter indicating the maximum amount of players you want the server to support.
+	If a player tries to connect when the game is full, the connection will fail with the error <i>GAME FULL</i>.<br>
+	<br>
+	To acknowledge new players in the game, NET PLAYER JOINED is called. This command returns the ID of the player who recently joined. The next time this
+	command is called, it'll return the next player waiting to join (or 0 if there are none), so store the value returned if necessary.<br>
+	<br>
+	To acknowledge players that have left the game, NET PLAYER LEFT is called. This command works in a similar way to the above command, except it indicated
+	players that have disconnected.<br>
+	<br>
+
+	<a id="basics_3"><span class=heading_2>3. Initializing a Connection</span><br></a><br>
+	Connecting to a server is achieved by calling NET CONNECT, with the first parameter indicating the IP address of the server.<br>
+	<br>
+
+	<a id="basics_4"><span class=heading_2>4. Processing Messages</span><br></a><br>
+	Messages are constructed with a series of NET PUSH commands, up to 2048 bytes in total. You must
+	read data in the same order as it was written. For instance, if you send an integer value and
+	then send a string, the receiver must then read the integer value first and then the string.<br>
+	<br>
+	The command NET GET MESSAGE is called to indicate if there is a new message, and to retrieve it 
+	for reading. It is recommended that you use a loop to read messages until NET GET MESSAGE returns
+	0. Below is some practical code for sending/receiving messages:<br>
+	<pre>
+<span class=code_rem>rem Message writing code</span>
+net put string "hello world"
+net put byte 123
+net send
+
+<span class=code_rem>rem Message reading code</span>
+while net get message()
+	myString$ = net get string()
+	myValue = net get byte()
+
+	print myString$
+	print myValue
+endwhile
+</pre>
+
+</div>
+
+<a id="outsidedbp"><span class=heading_1>III. Using outside of DBP</span><br></a>
+<div class=para1>
+
+	<b>Note:</b> Outside of DBP, Multisync v1 will not return strings larger than 256 bytes in size.<br>
+	<br>
+	<a id="outsidedbp_1"><span class=heading_2>1. DBC Enhanced</span><br></a><br>
+	It is possible to use Multisync v1 from DarkBASIC Classic if you have the enhancements pack. The plugin
+	is called via DLL commands, however a .dba file is included that allows you to call the commands like user functions.
+	<br><br>
+	<b>Note: </b>In order to test a server application programmed in DBC you must create an EXE and run it outside the
+	editor, else problems may arise.<br><br>
+	The following steps will allow you to compile an example application included with Multisync v1:<br>
+	1. Copy MultisyncV1.dll to the <i>Example - Using in DBC Enhanced</i> folder located in the examples directory.<br>
+	2. Open server.dba and client.dba in DBC and create an executable for them both.<br>
+	3. Execute the server outside of the editor, followed by the client (preferably outside of the editor also).<br>
+	<br>
+	<a id="outsidedbp_2"><span class=heading_2>2. Communicating with Multisync v1 using TCP</span><br></a><br>
+	For the most part communicating with Multisync v1 is easy because it uses almost no protocol on top of TCP. These
+	are the things worth noting:
+	<br>
+	<ul>
+		<li>When the client initially connects, it waits for 3 bytes of data from the server. The first unsigned 
+		short integer (2 bytes) is set to 0 if the client is allowed to join the game, else it is set to 1. The
+		third byte is ignored at this time but must be transmitted anyway.
+		<li>Each message is prefixed with an unsigned short integer defining the size of the message.</li>
+		<li>The ping message sent by the server, and the ping response sent by the client, consists of 2 bytes set to zero.
+	</ul>
+
+</div>
+
+<a id="ref"><span class=heading_1>IV. Command Reference</span><br></a>
+
+<ul><tt>
+	<li><a href="#net_host">NET HOST</a></li>
+	<li><a href="#net_connect">NET CONNECT</a></li>
+	<li><a href="#net_disconnect">NET DISCONNECT</a></li>
+	<li><a href="#net_send">NET SEND</a></li>
+	<li><a href="#net_sendall">NET SEND ALL</a></li>
+	<li><a href="#net_getmessage">NET GET MESSAGE</a></li>
+	<li><a href="#net_getmessagesize">NET GET MESSAGE SIZE</a></li>
+	<li><a href="#net_getmessageremainder">NET GET MESSAGE REMAINDER</a></li>
+	<li><a href="#net_messagefrom">NET MESSAGE FROM</a></li>
+	<li><a href="#net_playerjoined">NET PLAYER JOINED</a></li>
+	<li><a href="#net_playerleft">NET PLAYER LEFT</a></li>
+	<li><a href="#net_getplayeramount">NET GET PLAYER AMOUNT</a></li>
+	<li><a href="#net_playerconnected">NET PLAYER CONNECTED</a></li>
+	<li><a href="#net_kick">NET KICK</a></li>
+	<li><a href="#net_connected">NET CONNECTED</a></li>
+	<li><a href="#net_geterror">NET GET ERROR</a></li>
+	<li><a href="#net_setport">NET SET PORT</a></li>
+	<li><a href="#net_setoption">NET SET OPTION</a></li>
+	<li><a href="#net_getplayerip">NET GET PLAYER IP</a></li>
+	<li><a href="#net_getplayerport">NET GET PLAYER PORT</a></li>
+	<br>
+	<li><a href="#net_putbyte">NET PUT BYTE</a></li>
+	<li><a href="#net_putword">NET PUT WORD</a></li>
+	<li><a href="#net_putlong">NET PUT LONG</a></li>
+	<li><a href="#net_putint">NET PUT INT</a></li>
+	<li><a href="#net_putfloat">NET PUT FLOAT</a></li>
+	<li><a href="#net_putstring">NET PUT STRING</a></li>
+	<li><a href="#net_getbyte">NET GET BYTE</a></li>
+	<li><a href="#net_getword">NET GET WORD</a></li>
+	<li><a href="#net_getlong">NET GET LONG</a></li>
+	<li><a href="#net_getint">NET GET INT</a></li>
+	<li><a href="#net_getfloat">NET GET FLOAT</a></li>
+	<li><a href="#net_getstring">NET GET STRING</a></li>
+	<br>
+	<li><a href="#net_firewallenabled">NET FIREWALL ENABLED</a></li>
+	<li><a href="#net_firewallappenabled">NET FIREWALL APPLICATION ENABLED</a></li>
+	<li><a href="#net_firewallenableapp">NET FIREWALL ENABLE APPLICATION</a></li>
+</tt></ul><br>
+
+<i>CORE COMMANDS</i><br><br>
+
+<a id="net_host"></a><div class=command_heading><b>NET HOST</b> Player Amount</div>
+Begins hosting a server. This command returns 1 if it succeeds, else it returns 0. The error can be obtained by calling <i>NET GET ERROR</i>.<br><br>
+
+Possible errors:<br>
+<div class=container>
+	<span class=error>VERSION NOT SUPPORTED</span>The version of Winsock currently installed on the system is not supported.<br>
+	<span class=error>SERVICE UNAVAILABLE</span>Winsock is unavailable. <br>
+	<span class=error>INSUFFICIENT MEMORY</span>The system lacks sufficient memory for the requested operation.<br>
+	<span class=error>NETWORK DOWN</span>Failure of the network system, network interface, or the local network itself.<br>
+	<span class=error>ADDRESS IN USE</span>The IP/port combination used when hosting are in use.<br>
+</div><br>
+
+<a id="net_connect"></a><div class=command_heading><b>NET CONNECT</b> IP Address$</div>
+Connects to a server. This command returns 1 if it succeeds, else it returns 0. The error can be obtained by calling <i>NET GET ERROR</i>.<br><br>
+
+Possible errors:<br>
+<div class=container>
+	<span class=error>VERSION NOT SUPPORTED</span>The version of Winsock currently installed on the system is not supported.<br>
+	<span class=error>SERVICE UNAVAILABLE</span>Winsock is unavailable.<br>
+	<span class=error>INSUFFICIENT MEMORY</span>The system lacks sufficient memory for the requested operation.<br>
+	<span class=error>NETWORK DOWN</span>Failure of the network system, network interface, or the local network itself.<br>
+	<span class=error>SERVER UNAVAILABLE</span>Unable to make connection with server because it doesn't exist.<br>
+	<span class=error>TIMED OUT</span>The connection attempt timed out. This usually results from either side using a firewall that is blocking the connection.<br>
+	<span class=error>GAME FULL</span>The server cannot be connected to because the game it is serving is full.
+</div><br>
+
+<a id="net_disconnect"></a><div class=command_heading><b>NET DISCONNECT</b></div>
+Disconnects from the server.<br><br>
+
+<a id="net_send"></a><div class=command_heading><b>NET SEND</b> [Player Number] [Player Number, Lock Flag]</div>
+Sends message. The server must specify a player number. The server can also optionally specify a flag that makes the system retain the message data after sending. This data is cleared next time you make a regular send. You can also reset the message data by calling NET SEND with a player number of 0.<br><br>
+
+<a id="net_sendall"></a><div class=command_heading><b>NET SEND ALL</b><div class=serv_only>Server only</div></div>
+Sends message to all clients.<br><br>
+
+<a id="net_getmessage"></a><div class=command_heading><b>NET GET MESSAGE</b></div>
+If there is at least one available message waiting, this command retrieves it and returns 1 to indicate success. If no message exists, 0 is returned.<br><br>
+
+<a id="net_getmessagesize"></a><div class=command_heading><b>NET GET MESSAGE SIZE</b></div>
+Returns the size of the message received in bytes.<br><br>
+
+<a id="net_getmessageremainder"></a><div class=command_heading><b>NET GET MESSAGE REMAINDER</b></div>
+Returns the size of the remaining data in bytes.<br><br>
+
+<a id="net_messagefrom"></a><div class=command_heading><b>NET MESSAGE FROM</b><div class=serv_only>Server only</div></div>
+Returns the ID of the player who sent the last message received.<br><br>
+
+<a id="net_playerjoined"></a><div class=command_heading><b>NET PLAYER JOINED</b><div class=serv_only>Server only</div></div>
+If a player has newly joined, this will return their ID. If there are no newly joined players since the last call, 0 is returned.<br><br>
+NOTE: It is necessary to call this command in order to let players join the game.<br>
+<br>
+
+<a id="net_playerleft"></a><div class=command_heading><b>NET PLAYER LEFT</b><div class=serv_only>Server only</div></div>
+If a player has disconnected from the server, this returns their former ID. If no player has left since the last call, 0 is returned.<br>
+<br>
+NOTE: It is necessary to call this command in order to let the system reuse player IDs.<br><br>
+
+<a id="net_getplayeramount"></a><div class=command_heading><b>NET GET PLAYER AMOUNT</b><div class=serv_only>Server only</div></div>
+Returns the amount of currently connected players.<br><br>
+
+<a id="net_playerconnected"></a><div class=command_heading><b>NET PLAYER CONNECTED</b> Player Number<div class=serv_only>Server only</div></div>
+Returns 1 if the selected player exists, 0 if not.<br><br>
+
+<a id="net_kick"></a><div class=command_heading><b>NET KICK</b> Player Number<div class=serv_only>Server only</div></div>
+Kicks the selected player from the game.<br><br>
+
+<a id="net_connected"></a><div class=command_heading><b>NET CONNECTED</b></div>
+Returns 1 if currently connected to the server (or acting as server), 0 if not. If not, you can obtain the error by calling <i>NET GET ERROR</i>.<br><br>
+
+Possible errors:<br>
+<div class=container>
+	<span class=error>NETWORK DOWN</span>Failure of the network system, network interface, or the local network itself.<br>
+	<span class=error>CONNECTION TERMINATED</span>The connection was terminated by the server. This usually results from being kicked from the game.<br>
+	<span class=error>CONNECTION FAILED</span>There was a problem causing the connection to abnormally terminate. This can result from the server application closing without calling <i>NET DISCONNECT</i>.<br>
+</div><br>
+
+<a id="net_geterror"></a><div class=command_heading><b>NET GET ERROR</b></div>
+Returns a string containing the last set error.<br><br>
+
+<a id="net_setport"></a><div class=command_heading><b>NET SET PORT</b> Port Number</div>
+Allows the setting of the server port. This command is used for both the client and the server.<br><br>
+
+<a id="net_setoption"></a><div class=command_heading><b>NET SET OPTION</b> Option, Value</div>
+Allows the setting of various options.<br><br>
+
+Posible options:<br>
+<div class=container>
+	<span class=option>1</span>Sets the connection timeout. The parameter <i>Value</i> is set to the desired amount of seconds that connecting will be attempted for. A value of 0 will make the system use the default timeout.
+</div><br>
+
+<a id="net_getplayerip"></a><div class=command_heading><b>NET GET PLAYER IP</b> Player Number</div>
+Returns the IP address of the selected player. If the player doesn't exist, a blank string is returned.<br><br>
+
+<a id="net_getplayerport"></a><div class=command_heading><b>NET GET PLAYER PORT</b> Player Number</div>
+Returns the port number of the selected player. If the player doesn't exist, 0 is returned.<br><br>
+
+<br>
+<i>MESSAGE COMMANDS</i><br><br>
+
+<a id="net_putbyte"></a><div class=command_heading><b>NET PUT BYTE</b> Value</div>
+Writes a byte to the message. This value may range from 0 to 255.<br><br>
+
+<a id="net_putword"><div class=command_heading><b>NET PUT WORD</b> Value</div>
+Writes a word to the message. This value may range from 0 to 65536.<br><br>
+
+<a id="net_putlong"><div class=command_heading><b>NET PUT LONG</b> Value</div>
+Writes a long integer (DWORD) to the message. This value may range from 0 to 4294967296.<br><br>
+
+<a id="net_putint"><div class=command_heading><b>NET PUT INT</b> Value</div>
+Writes a signed integer to the message. This value may range from -2147483648 to 2147483647.<br><br>
+
+<a id="net_putfloat"><div class=command_heading><b>NET PUT FLOAT</b> Value</div>
+Writes a float to the message.<br><br>
+
+<a id="net_putstring"><div class=command_heading><b>NET PUT STRING</b> String$</div>
+Writes a string to the message.<br><br>
+
+<a id="net_getbyte"><div class=command_heading><b>NET GET BYTE</b></div>
+Reads a byte from the message.<br><br>
+
+<a id="net_getword"><div class=command_heading><b>NET GET WORD</b></div>
+Reads a word from the message.<br><br>
+
+<a id="net_getlong"><div class=command_heading><b>NET GET LONG</b></div>
+Reads a long integer from the message.<br><br>
+
+<a id="net_getint"><div class=command_heading><b>NET GET INT</b></div>
+Reads a signed integer from the message.<br><br>
+
+<a id="net_getfloat"><div class=command_heading><b>NET GET FLOAT</b></div>
+Reads a float from the message.<br><br>
+
+<a id="net_getstring"><div class=command_heading><b>NET GET STRING</b></div>
+Reads a string from the message.<br><br>
+
+<br><i>FIREWALL COMMANDS</i><br><br>
+
+<a id="net_firewallenabled"><div class=command_heading><b>NET FIREWALL ENABLED</b></div>
+Returns 1 if Windows Firewall is enabled.<br><br>
+
+<a id="net_firewallappenabled"><div class=command_heading><b>NET FIREWALL APPLICATION ENABLED</b> ApplicationFilename$</div>
+Returns 1 if the specified application is enabled in Windows Firewall.<br><br>
+
+<a id="net_firewallenableapp"><div class=command_heading><b>NET FIREWALL ENABLE APPLICATION</b> ApplicationFilename$, EntryName$</div>
+Adds an application to Windows Firewall and enables it. <i>EntryName$</i> is the name as you want it to appear in the list in Windows Firewall. Returns 1 if the operation is successful or if the application is already enabled.<br><br>
+
+<div class=footer2>Copyright @ Benjamin Wharton 2007 - Revision 0.2 (3/May/2007)</div>
+</body></html>

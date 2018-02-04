@@ -1,0 +1,19 @@
+Upgrade 6.1
+===========
+
+Information
+-----------
+
+ * Primary purpose of this upgrade is to make the compiler compatible with new licensed plugins
+
+Compiler
+--------
+
+ * Added support for DarkAI and DarkPHYSICS as licensed plugins
+
+Basic3D
+-------
+
+ * GetObjectPtr (internal call) now accepts INSTANCED OBJECTS as valid objects to use
+ * ATTACH, DETATCH, OBJECT IN SCREEN, X and Y can now be used with instanced objects again
+ * OBJECT VISIBLE() now works with instanced objects

@@ -1,0 +1,131 @@
+Upgrade 7.4
+===========
+
+Extras
+------
+
+ * Updated FPSCreator source code engine in EXTRAS (for V115 version)
+ * Provided fix to allow lighting to work properly (fix thanks to S4REAL)
+
+Help
+----
+
+ * Added new TextureCameraBackdrop to SNIPPETS to show how to use TEXTURE BACKDROP
+ * Added new ZBiasUsage to SNIPPETS to show how to use the ZBIAS command for 3D
+ * Modified SET BLEND MAPPING ON command with better example
+ * Added new SimpleBlendMapping to SNIPPETS to show how to use basic blend mapping
+ * NOTE: Icelandic keyboards will only work with Service Pack 3 or above!
+
+Compiler
+--------
+
+ * Now detects for and produces an error on RETURN commands inside user functions
+ * Above only happens when the 'RemoveSafetyCode=Yes' flag is set in SETUP.INI
+ * Updated to allow new DarkCLOUDS official plug-in for U74 onwards
+ * Updated to allow new DarkKFS official plug-in for U74 onwards
+
+Basic3D
+-------
+
+ * Modified internal bounds computation for certain X files used by FPSCV115
+ * Added new GAMEFX command called SET UNIVERSE CULLING for FPSCV115 source code
+ * Fixed camera distance calculation for LOCKED objects (wrong zdepth sort in mode 6)
+ * Added extra parameter to SET BLEND MAPPING ON to allow limb number to be used:
+ * SET BLEND MAPPING ON Object Number, Limb Number, Stage Index, Image Number, TexCoordMode, Blend Mode, Arg1, Arg2, Arg0, ArgResult
+ * Fixed culling issue for scaled objects (sw)
+ * Fixed unpredictable order of rendering for ghosted objects at the same distance from camera (sw)
+ * Replaced sort routines for rendering order when sorting by texture, object id or distance - all are now much faster
+ * Disabled removal of reflection and shadow stencil effects when changing an object texture
+ * When reflection shading is disabled on all objects, the double-render is now also disabled
+ * PICK OBJECT with a flag of 0 will now only pick non-locked objects. When used with a flag of 1 will now only pick locked objects
+ * When creating a new instance from an existing instance, the new instance will be allowed and will refer to the original object, not the source instance
+ * Relocated retrieval of camera settings when rendering to reduce the number of retrievals carried out (performance)
+ * OBJECT IN SCREEN has been change to use a more accurate method of detection
+ * Ensure that when carrying out distance checks for object render order that the current camera is used, not camera 0.
+ * When using creation mode 6/7, sorting is carried out every frame to ensure that correct camera distances are used - this may have a minor impact on performance in those modes.
+ * (REMOVED FROM BETA 7) Ensured U/V ADDRESS states updated when shader used (solves cartoon model issue)
+ * (REMOVED FROM BETA 8) Creating a plane with a flag value of 0 would create a plane with a Y rotation of 180 degrees - this would be lost when instancing the plane (instances don't inherit rotation or position). The initial plane is now created with a fixed rotation that is not lost
+ * Each render phase now has it's own object list, to avoid repeated checks during rendering for a performance increase.
+ * Fixed Transparency and Camera Mask problem in Basic3D DLL from BETA8
+ * (REINTRODUCED FOR BETA 9) Ensured U/V ADDRESS states updated when shader used (but moved before BEGINPASS)
+
+Particles
+---------
+
+ * Fixed bug reintroduced through DarkGDK, fog no longer resets when particles used
+
+Debugger
+--------
+
+ * Copied MFC71.DLL and MSVCR71.DLL into the Compiler folder for compatibility
+
+Core
+----
+
+ * Fixed bug causing array element deletion to cause wrong string to be released
+ * Corrected the updates of the DATA pointer so that it can never point outside of the data
+ * New method implemented for fixed-rate syncing. The new method will provide the exact frame rate requested
+ * Fixed bug where FAST SYNC would incorrectly update the time of last sync, causing a slow-down when using a fixed sync rate
+ * New implementation of a render order list for more third party flexibility
+
+Camera
+------
+
+ * Restored Camera DLL to use d3dx9_31.dll from October 2006 DirectX SDK (legacy)
+ * Implemented the TEXTURE BACKDROP and related commands
+ * Reorder of internal structures to avoid breaking third-party plug-ins.
+ 
+Sound
+-----
+
+ * Updated main sound updater loop to perform faster when large sound list used
+ * A second RECORD SOUND statement while a first is still recording is no longer ignored. The first recording is now stopped and created (if anything was recorded) before the second recording is started. A STOP RECORDING statement is still needed for the second recording, but not for the first
+
+Setup
+-----
+
+ * Added two more parameters to SET DISPLAY MODE to allow backbuffer to be a different size than resolution
+ * Above syntax: SET DISPLAY MODE w,h,d,vsync,msfactor,mmmode,bkwidth,bkheight
+ * Added an additional parameter to SET DISPLAY MODE to allow virtual reality mode
+ * Above syntax: SET DISPLAY MODE w,h,d,vsync,msfactor,mmmode,bkwidth,bkheight,vrmode
+ * Added new command: SET NVPERFHUD Flag (0=use HAL and 1=use NVPerfHUD HEL mode)
+ * Above command will allow your application to run with NVPerfHUD if set to one
+
+Input
+-----
+
+ * When using multiple controllers, forcefeedback would only work on the first device it was used on. Now works for all devices
+ * Forcefeedback is now determined by device rather than only for the last controller activated
+ * New function CONTROL DEVICE INDEX can be used to determine which controller is currently active
+ * New command SET JOYSTICK DEADZONE can be used with the 'digital' joystick commands (eg JOYSTICK UP) to make them less sensitive to values returned from the current controller
+ * New multi-function JOYSTICK INFORMATION can be used to get various pieces of information about the current controller
+ * Updated PERFORM CHECKLIST FOR CONTROL DEVICES to place an index value in CHECKLIST VALUE B, making the use of multiple controllers with identical names much easier
+ * New command SET KEY STATE TOGGLE allows the current toggle value of a key to be set to the specified value - see GET KEY STATE for more information
+
+Light
+-----
+
+ * Implemented SET LIGHT TO OBJECT POSITION and SET LIGHT TO OBJECT ORIENTATION to work - previously they did nothing
+ * SET VECTOR3 TO LIGHT ROTATION changed to return angles rather than a direction vector
+
+Sprite
+------
+
+ * Changed horizontal sprite texture scrolling mode from clamped to wrapping, in line with vertical scrolling
+ * Replaced priority sorting system with a much faster method - sprite priority will now have little to no effect on sprite rendering time
+ * Rewrite of sprite rendering process to group sprites with common priority and textures together to enhance the speed of rendering
+ * Sprites outside the display area are culled early to reduce the amount of rendering
+
+Text
+----
+
+ * FIRST TOKEN$ and NEXT TOKEN$ changed to avoid corrupting the input string
+ * APPEND$ command removed - corrupts memory and there is no way to fix it to work correctly
+ * Fixed FIRST TOKEN bug which caused internal string overflow with large string handling
+
+Image
+-----
+
+ * Fixed creation of internal long filename for textures to correct path
+ * Modified earlier V109 BETA8 fix to allow image info load from physical file (imageblock bug)
+

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Advanced Lighting - AL_Directional</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    </head>
+    <body background="..\gfx\dbpro_bg.jpg">
+        <!--Title banner-->
+        <div>
+            <center><img src="..\gfx\dbph_head_1.jpg"></td></tr></center>
+            <center><h3>Advanced Lighting</h3></center>
+        </div><br>
+        
+        <!--Title heading-->
+        <h1>DirLight_SetVisible</h1><br>
+        
+        <!--Syntax block heading-->
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Syntax</b></font></td></tr>
+        </table><br>
+        
+        <!--Syntax block contents-->
+        <table>
+            <tr><td>
+                DirLight_SetVisible(boolean SetVisible)
+            </td></tr>
+        </table><br>
+       
+		<ul>
+			<li>[boolean SetVisible] - A value of 0 will hide the directional light and lens flare, a value of 1 will show them.
+		</ul><br/>
+		
+        <!--Description block heading-->
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Description</b></font></td></tr>
+        </table><br>
+        
+        <!--Description block contents-->
+        <table>
+            <tr><td>
+                <p>This command will set the visible status of the directional light.
+				<p>This value is stored internally as the global variable: boolean AL_DirLightVisible
+				<p>When hiding the directional light, the object referenced by AL_DirLightObject is excluded and hidden, and the object referenced by AL_AmbientObject is included and shown. The lensflare is hidden through a call to <a href="lensflare_setVisible.html">LensFlare_SetVisible</a>(i LensFlareIndex, i Value)
+				<p>When showing the directional light, the object referenced by AL_DirLightObject is included and shown, and the object referenced by AL_AmbientObject is excluded and hidden. The lensflare is shown through a call to <a href="lensflare_setVisible.html">LensFlare_SetVisible</a>(i LensFlareIndex, i Value)
+				<p><font color="#ff0000">BUG WARNING:</font>There is a bug in the default 20150325 distribution of Advanced Lighting in this command.<br/>
+				<p>When showing the directional light via DirLight_SetVisible(1), the call to LensFlare_SetVisible(i LensFlareIndex, i Value) incorrectly uses a value of 0 (hide) this must be changed to 1 in order to correctly restore the lensflare when using DirLight_SetVisible(1).
+				<p>This occurs on line 94 of .\Advanced Lighting\Include\Advanced Lighting\AL_Directional.dba
+				<p>if AL_DirLightLensFlare.x>-1 then LensFlare_SetVisible(AL_DirLightLensFlare.x,0) 
+				<p>Replace with:
+				<p>if AL_DirLightLensFlare.x>-1 then LensFlare_SetVisible(AL_DirLightLensFlare.x,1)
+			</td></tr>
+        </table><br>
+        
+        <!--Samples block heading-->
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Samples</b></font></td></tr>
+        </table><br>
+        
+        <!--Samples block contents-->
+        <table>
+            <tr><td>
+                <p>DirLight_SetVisible(1)
+            </td></tr>
+        </table><br>
+        
+        <!--Navigation block heading-->
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Menu</b></font></td></tr>
+        </table><br>
+        
+        <!--Navigation block contents-->
+        <ul>
+            <li><a href="AL_Directional_index.html">AdvLighting AL_Directional Menu</a></li>
+            <li><a href="index.html">AdvLighting Index</a></li>
+            <li><a href="../main.htm">DBPro Main Menu</a></li>
+        </ul>
+        
+        <p align="center">Advanced Lighting - Copyright &copy; <a href="http://www.evolved-software.com">Evolved Software</a></p>
+        <p align="center">The documentation project is a public community effort. <a href="http://www.github.com/ortu-/ALdocs">Get involved on Github.</a></p>
+        <center><img src="../gfx/dbph_head_1.jpg" /></center>
+    </body>
+</html>
+

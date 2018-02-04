@@ -1,0 +1,132 @@
+<body background="../gfx/backdrop.jpg">
+	<pre><font face="courier" size="2">
+Rem Isometric Camera Example
+Rem Written By Jason Clogg
+
+h=d3d_get_desktop_height()
+w=d3d_get_desktop_width()
+d=d3d_get_desktop_depth()
+set display mode w,h,d
+sync on
+autocam off
+
+d3d_init
+color backdrop 0,0
+make camera 1:color backdrop 1,0
+make camera 2:color backdrop 2,0
+make camera 3:color backdrop 3,0
+
+set camera view 0,0,0,w/2,h/2
+set camera view 1,w/2,0,w,h/2
+set camera view 2,0,h/2,w/2,h
+set camera view 3,w/2,h/2,w,h
+
+D3D_Font 1,&quot;Arial&quot;,10,0,0,1
+D3D_Font 2,&quot;Arial&quot;,9,0,0,1
+
+D3D_MAKE_3DTEXT 1, 1, &quot;Isometric&quot;, .5, 2, 1
+
+D3D_MAKE_TEAPOT 2
+
+position camera 0,0,0,-10:point camera 0,0,0,0
+position camera 1,0,10,0:point camera 1,0,0,0
+position camera 2,10,0,0:point camera 2,0,0,0
+position camera 3,0,5,-10:point camera 3,0,0,0
+d3d_set_ortho_projection 0,10
+d3d_set_ortho_projection 1,10
+d3d_set_ortho_projection 2,10
+
+angle#=0
+
+title$=&quot;Perspective&quot;
+ShowIsometric=0
+clicking=0
+
+do
+
+d3d_line w/2,0,w/2,h,d3d_rgba(255,255,255,255)
+d3d_line 0,h/2,w,h/2,d3d_rgba(255,255,255,255)
+
+rem Find out which camera view the cursor is in
+
+CurrentCam=D3D_CURSOR_IN_CAMERA(0,4)
+
+D3D_PICK_CAMERA CurrentCam, MouseX(), MouseY(),0
+
+x1#=D3D_CAMERA_VECTOR_X()
+y1#=D3D_CAMERA_VECTOR_Y()
+z1#=D3D_CAMERA_VECTOR_Z()
+
+D3D_PICK_CAMERA CurrentCam, MouseX(), MouseY(),500
+
+x2#=D3D_CAMERA_VECTOR_X()
+y2#=D3D_CAMERA_VECTOR_Y()
+z2#=D3D_CAMERA_VECTOR_Z()
+
+PickObject#=Intersect object(1,x1#,y1#,z1#,x2#,y2#,z2#)
+
+if mouseclick()=1 and CurrentCam=3
+   if clicking=0
+      clicking=1
+      if ShowIsometric=0
+         title$=&quot;Isometric&quot;
+         d3d_set_ortho_projection 3,10
+         ShowIsometric=1
+      else
+         title$=&quot;Perspective&quot;
+         d3d_reset_camera 3
+         ShowIsometric=0
+      endif
+   endif
+else
+   clicking=0
+endif
+
+d3d_startText
+   D3D_GET_CAMERA_NORMAL 0
+   d3d_text 1,1,2,0,&quot;Front - Camera Normal= (&quot; + str$(D3D_CAMERA_VECTOR_X()) + &quot;,&quot; + str$(D3D_CAMERA_VECTOR_Y()) + &quot;,&quot; + str$(D3D_CAMERA_VECTOR_Z()) + &quot;)&quot;
+   D3D_GET_CAMERA_NORMAL 1
+   d3d_text 1,w/2+2,0,0,&quot;Top - Camera Normal= (&quot; + str$(D3D_CAMERA_VECTOR_X()) + &quot;,&quot; + str$(D3D_CAMERA_VECTOR_Y()) + &quot;,&quot; + str$(D3D_CAMERA_VECTOR_Z()) + &quot;)&quot;
+   D3D_GET_CAMERA_NORMAL 2
+   d3d_text 1,1,h/2+1,0,&quot;Left - Camera Normal= (&quot; + str$(D3D_CAMERA_VECTOR_X()) + &quot;,&quot; + str$(D3D_CAMERA_VECTOR_Y()) + &quot;,&quot; + str$(D3D_CAMERA_VECTOR_Z()) + &quot;)&quot;
+   D3D_GET_CAMERA_NORMAL 3
+   d3d_text 1,w/2+1,h/2+1,0,title$ + &quot; - Camera Normal= (&quot; + str$(D3D_CAMERA_VECTOR_X()) + &quot;,&quot; + str$(D3D_CAMERA_VECTOR_Y()) + &quot;,&quot; + str$(D3D_CAMERA_VECTOR_Z()) + &quot;)&quot;
+   d3d_text 1,w,2,2,&quot;Current Camera=&quot; + str$(CurrentCam)
+   d3d_text 1,w,25,2,&quot;Cursor on Object 1=&quot; + str$(PickObject#)
+   d3d_text 1,w,48,2,&quot;FPS=&quot; + str$(screen fps())
+   d3d_text 2,w,h-15,2,&quot;Isometric Camera examples by Jason Clogg&quot;
+d3d_endtext
+
+select CurrentCam
+   case 0
+      DrawBox(0,0,w/2,h/2, rgb(255,0,0))
+   endcase
+   case 1
+      DrawBox(w/2,0,w-1,h/2, rgb(255,0,0))
+   endcase
+   case 2
+      DrawBox(0,h/2,w/2,h-1, rgb(255,0,0))
+   endcase
+   case 3
+      DrawBox(w/2,h/2,w-1,h-1, rgb(255,0,0))
+   endcase
+endselect
+
+position object 2,sin(angle#)*3,0,cos(angle#)*3
+angle#=wrapvalue(angle#-.1)
+
+turn object right 1,.1
+sync
+loop
+end
+
+function DrawBox( x1, y1, x2, y2, color)
+
+d3d_line x1,y1,x2,y1,color
+d3d_line x1,y1,x1,y2,color
+d3d_line x2,y1,x2,y2,color
+d3d_line x1,y2,x2,y2,color
+
+endfunction
+</font></pre>
+</body>

@@ -1,0 +1,58 @@
+Upgrade 6.6
+===========
+
+Compiler
+--------
+
+ * Fixed error line reporting bug, caused by comments between CASE statements in SELECT statement (Statement.cpp:1540)
+
+Basic3D
+-------
+
+ * No longer scans for shared vertex/index resources if object flagged as using unique buffers (speed-up)
+ * Fixed a memory crash caused by a recent attempt to free up all object resource allocations (one exit)
+ * Fixed ability of objects to self-cull when off camera, and harmonized with the never-cull mode (radius=0)
+ * Fixed object culling so that it uses the camera set by SET CURRENT CAMERA instead of the last camera rendered
+ * Added an epsilon value to the automated object culling for very fine edge contact with spherical objects
+
+Core
+----
+
+ * Modified PRINT float code so that a regular precision is used (rather than .12g precision)
+
+Math
+----
+
+ * Added undocumented command to extract data from a MATRIX4 ( f# = GET MATRIX4 ELEMENT ( M, Index ) )
+
+Sync With GDK Fixes (does not affect DBPRO)
+-------------------
+
+ * NOTE: U6.5 used DLLs from U6.4. U6.6 contains the actual DLLS for the changes below
+ * SetCameraClip function added to Camera DLL
+ * Added 'm_dwUseDynamicTextureMask' field to reintroduce U64
+ * Added to code to support above flag (DBPFormat.cpp)
+ * Added code to set the stage value when TEXTURE OBJECT used (DBOMesh.cpp)
+ * New function added caled getKeyStateEX (GDK)
+ * Function WriteToRegistryS parameter change (GDK)
+ * GHOST ON function reactivates flag to promote object to the ghost layer
+ * GLUE TO LIMB added commentry, no functional changes
+ * INTERSECT OBJECT activates ability for instanced object use
+ * Exposed full LOAD OBJECT parameters to GDK
+ * VertexSystemMemory function name corrected to GDK
+ * SetObjectDisableTransform function name updated to GDK
+ * Instance Object return flag code added to common.cpp for GDK
+ * Commented out FOG COLOR render state in built-in particle update function (GDK fix)
+ * VALR reintroduced to GDK with support of new compiler options in TEXT DLL
+ * Added an extra parameter to COMPARECASE function of GDK
+ * Fixed several 3D MATH VECTOR bugs in GDK (also exposed in DBPRO)
+ * SET CAMERA TO IMAGE - when alpha-surface mode 2 is used, backdrop clear works again
+ * dbSetShadowShadingOff was listed incorrectly in the header files, this is now correct
+ * added dbSetShadowPosition into Basic 3D
+ * dbDeleteEffect caused a crash, this function now checks all objects that may reference this effect and clears the reference
+ * added float dbObjectSize / dbObjectSizeX / dbObjectSizeY / dbObjectSizeZ ( int iID, int iUseScaling ) into Basic 3D
+ * dbObjectSize now works with instanced objects
+ * dbObjectCollisionCenterX, dbObjectCollisionCenterY and dbObjectCollisionCenterZ now work with instanced objects
+ * corrected function listings for dbLoadDLL, dbDLLCallExist and dbCallDLL
+ * resolved a problem with fog colour not being reset in the particle manager
+ * changed to statically linking into the C++ runtime libraries

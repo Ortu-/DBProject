@@ -1,0 +1,68 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem Bitmap Functionality
+
+rem Load Simple Bitmap to Screen
+load bitmap "foliage.jpg" : sleep 2000
+cls : sleep 100
+
+rem Load Bitmap into Offscreen Bitmap
+BitmapNumber=0
+OffscreenBitmapNumber=1
+load bitmap "foliage.jpg",OffscreenBitmapNumber
+if bitmap exist(OffscreenBitmapNumber)=1
+ copy bitmap OffscreenBitmapNumber,BitmapNumber : sleep 2000
+endif
+set current bitmap 0
+cls : sleep 100
+
+rem Stretch Copy A Bitmap
+SecondBitmap=2
+load bitmap "foliage.jpg",SecondBitmap
+if bitmap exist(SecondBitmap)=1
+ copy bitmap SecondBitmap,0,0,640,480,BitmapNumber,0,0,100,480 : sleep 2000
+ copy bitmap SecondBitmap,0,0,320,240,BitmapNumber,320,240,640,480 : sleep 2000
+ copy bitmap SecondBitmap,0,240,320,480,BitmapNumber,100,100,540,380 : sleep 2000
+endif
+set current bitmap 0
+
+rem Flip and Mirror a Bitmap
+if bitmap exist(BitmapNumber)=1
+ flip bitmap BitmapNumber : sleep 2000
+ mirror bitmap BitmapNumber : sleep 2000
+endif
+
+rem Fade and Blur a Bitmap
+FadeValue=50 : BlurLevel=2
+if bitmap exist(BitmapNumber)=1
+ blur bitmap BitmapNumber,BlurLevel : sleep 2000
+ fade bitmap BitmapNumber,FadeValue : sleep 2000
+endif
+
+rem Draw to offscreen bitmap
+DrawBitmapNumber=3
+create bitmap DrawBitmapNumber,300,300
+if bitmap exist(DrawBitmapNumber)=1
+ set current bitmap DrawBitmapNumber
+ circle 150,150,40
+ set current bitmap BitmapNumber
+ if current bitmap()=BitmapNumber
+  copy bitmap DrawBitmapNumber,BitmapNumber
+ endif
+endif
+
+rem Show Bitmap Data
+print "BITMAP DATA"
+print
+print "exist:";bitmap exist(BitmapNumber)
+print "width:";bitmap width(BitmapNumber)
+print "height:";bitmap height(BitmapNumber)
+print "depth:";bitmap depth(BitmapNumber)
+print "mirrored:";bitmap mirrored(BitmapNumber)
+print "flipped:";bitmap flipped(BitmapNumber)
+
+rem Delete Bitmaps
+if bitmap exist(OffscreenBitmapNumber)=1 then delete bitmap OffscreenBitmapNumber
+if bitmap exist(SecondBitmap)=1 then delete bitmap SecondBitmap
+if bitmap exist(DrawBitmapNumber)=1 then delete bitmap DrawBitmapNumber
+
+rem Wait for user keypress
+wait key</pre></FONT></BODY>

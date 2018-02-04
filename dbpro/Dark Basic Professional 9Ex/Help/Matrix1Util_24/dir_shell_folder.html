@@ -1,0 +1,60 @@
+<html><head><title>Matrix1Util_24 - System Folder Locations - DIR SHELL FOLDER</title><!-- <style type="text/css">a { margin-left: 40px } p { margin-left: 40px }</style> --></head><body color=black background="../gfx/dbpro_bg.jpg" bgproperties=fixed><font face="Verdana, Arial, Helvetica, sans-serif" size=2><table width='100%' border='0' cellpadding='0' cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr><tr><td align='center'><b><font size="4">Matrix1 Utility Plug-ins</font></b></td></tr></table><br><h1>DIR SHELL FOLDER</h1><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Syntax</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> Directory = DIR SHELL FOLDER ( FolderId )</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Description</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> Returns the location of the specified FolderId.<br>
+<br>
+ This function takes into account any local system settings that may cause the folder to be in a non-standard location.<br>
+<br>
+ The following list can be used to specify which folder is required:<br>
+ #constant CSIDL_DESKTOP = 0x0000 ` <desktop><br>
+ #constant CSIDL_PROGRAMS = 0x0002 ` Start Menu\Programs<br>
+ #constant CSIDL_PERSONAL = 0x0005 ` My Documents<br>
+ #constant CSIDL_FAVORITES = 0x0006 ` <user name>\Favorites<br>
+ #constant CSIDL_STARTUP = 0x0007 ` Start Menu\Programs\Startup<br>
+ #constant CSIDL_RECENT = 0x0008 ` <user name>\Recent<br>
+ #constant CSIDL_SENDTO = 0x0009 ` <user name>\SendTo<br>
+ #constant CSIDL_STARTMENU = 0x000b ` <user name>\Start Menu<br>
+ #constant CSIDL_MYMUSIC = 0x000d ` "My Music" folder<br>
+ #constant CSIDL_MYVIDEO = 0x000e ` "My Videos" folder<br>
+ #constant CSIDL_DESKTOPDIRECTORY = 0x0010 ` <user name>\Desktop<br>
+ #constant CSIDL_NETHOOD = 0x0013 ` <user name>\nethood<br>
+ #constant CSIDL_FONTS = 0x0014 ` windows\fonts<br>
+ #constant CSIDL_TEMPLATES = 0x0015<br>
+ #constant CSIDL_COMMON_STARTMENU = 0x0016 ` All Users\Start Menu<br>
+ #constant CSIDL_COMMON_PROGRAMS = 0x0017 ` All Users\Start Menu\Programs<br>
+ #constant CSIDL_COMMON_STARTUP = 0x0018 ` All Users\Startup<br>
+ #constant CSIDL_COMMON_DESKTOPDIRECTORY = 0x0019 ` All Users\Desktop<br>
+ #constant CSIDL_APPDATA = 0x001a ` <user name>\Application Data<br>
+ #constant CSIDL_PRINTHOOD = 0x001b ` <user name>\PrintHood<br>
+ #constant CSIDL_LOCAL_APPDATA = 0x001c ` <user name>\Local Settings\Application Data (non roaming)<br>
+ #constant CSIDL_ALTSTARTUP = 0x001d ` non localized startup<br>
+ #constant CSIDL_COMMON_ALTSTARTUP = 0x001e ` non localized common startup<br>
+ #constant CSIDL_COMMON_FAVORITES = 0x001f<br>
+ #constant CSIDL_INTERNET_CACHE = 0x0020<br>
+ #constant CSIDL_COOKIES = 0x0021<br>
+ #constant CSIDL_HISTORY = 0x0022<br>
+ #constant CSIDL_COMMON_APPDATA = 0x0023 ` All Users\Application Data<br>
+ #constant CSIDL_WINDOWS = 0x0024 ` GetWindowsDirectory()<br>
+ #constant CSIDL_SYSTEM = 0x0025 ` GetSystemDirectory()<br>
+ #constant CSIDL_PROGRAM_FILES = 0x0026 ` C:\Program Files<br>
+ #constant CSIDL_MYPICTURES = 0x0027 ` C:\Program Files\My Pictures<br>
+ #constant CSIDL_PROFILE = 0x0028 ` USERPROFILE<br>
+ #constant CSIDL_SYSTEMX86 = 0x0029 ` x86 system directory on RISC<br>
+ #constant CSIDL_PROGRAM_FILESX86 = 0x002a ` x86 C:\Program Files on RISC<br>
+ #constant CSIDL_PROGRAM_FILES_COMMON = 0x002b ` C:\Program Files\Common<br>
+ #constant CSIDL_PROGRAM_FILES_COMMONX86 = 0x002c ` x86 Program Files\Common on RISC<br>
+ #constant CSIDL_COMMON_TEMPLATES = 0x002d ` All Users\Templates<br>
+ #constant CSIDL_COMMON_DOCUMENTS = 0x002e ` All Users\Documents<br>
+ #constant CSIDL_COMMON_ADMINTOOLS = 0x002f ` All Users\Start Menu\Programs\Administrative Tools<br>
+ #constant CSIDL_ADMINTOOLS = 0x0030 ` <user name>\Start Menu\Programs\Administrative Tools<br>
+ #constant CSIDL_COMMON_MUSIC = 0x0035 ` All Users\My Music<br>
+ #constant CSIDL_COMMON_PICTURES = 0x0036 ` All Users\My Pictures<br>
+ #constant CSIDL_COMMON_VIDEO = 0x0037 ` All Users\My Video<br>
+ #constant CSIDL_RESOURCES = 0x0038 ` Resource Directory<br>
+ #constant CSIDL_RESOURCES_LOCALIZED = 0x0039 ` Localized Resource Direcotry<br>
+ #constant CSIDL_COMMON_OEM_LINKS = 0x003a ` Links to All Users OEM specific apps<br>
+ #constant CSIDL_CDBURN_AREA = 0x003b ` USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning<br>
+<br>
+ The value passed can also contain one of the following modifiers (bitwise or-ed with a folder id):<br>
+ #constant CSIDL_FLAG_CREATE = 0x8000 ` combine with CSIDL_ value to force folder creation in SHGetFolderPath()<br>
+ #constant CSIDL_FLAG_DONT_VERIFY = 0x4000 ` combine with CSIDL_ value to return an unverified folder path<br>
+<br>
+ If the folder does not exist, and neither of the CREATE or DONT_VERIFY flags are set, the function will return an empty string.<br>
+ Incorrect values passed as the folder id will result in an empty string being returned, rather than triggering an error.</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Go back to ...</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='0'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1Util_24_index.html">Matrix1Util_24 Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Index.html">Matrix1 Utils Main Index</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Commands.html">Matrix1 Utils Command List</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Commands.htm">Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../main.htm">Main Menu</A></font></td></table><p align="center"><font size="1">Copyright &copy; Ian Mold - Matrix1 Software 2006 - 2011</font></p><table width='100%' border='0' Cellpadding='0' Cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr></table></font></body></html>

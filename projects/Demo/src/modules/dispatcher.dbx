@@ -1,0 +1,75 @@
+function App_callFunction(rFunctionName as string, rArgs as string)
+`NOTE: this is a workaround replacement for matrix1 call function name
+`	there is an odd conflict between AdvLighting and the mat1 command which causes a graphical error.
+
+	<?System_log("main.dbx", 2, "main", "Executing callback " + rFunctionName)?>
+	err = TRUE
+	returnStr$ = ""
+
+	select rFunctionName
+
+		//TODO: build this function list via the preprocessor.
+
+		//anim3d.dbx
+		case "Anim3d_updateActiveAnimations": Anim3d_updateActiveAnimations() : err = FALSE : endcase
+		case "Anim3d_clearAppliedAnimationsDeferred": Anim3d_clearAppliedAnimationsDeferred(intval(rArgs)) : err = FALSE : endcase
+
+		//characters.dbx
+		case "Characters_updateCharacterStates": Characters_updateCharacterStates() : err = FALSE : endcase
+		case "CharacterEntity_addJump": CharacterEntity_addJump(rArgs) : err = FALSE : endcase
+		case "CharacterEntity_resetLocomotion": CharacterEntity_resetLocomotion(intval(rArgs)) : err = FALSE : endcase
+		case "CharacterEntity_setToDead" : CharacterEntity_setToDead(intval(rArgs)) : err = FALSE : endcase
+
+`		`controls.dbx
+		case "Camera_updatePhysicalState": Camera_updatePhysicalState() : err = FALSE : endcase
+		case "Controls_getGameplayInput": Controls_getGameplayInput() : err = FALSE : endcase
+		<?case "Controls_getDevInput": Controls_getDevInput() : err = FALSE : endcase?>
+
+		`events
+		case "Events_updateInteractableTarget": Events_updateInteractableTarget() : err = FALSE : endcase
+		case "Events_setInteractableTargetState": Events_setInteractableTargetState(rArgs) : err = FALSE : endcase
+		case "Events_setInteractableCollisionState": Events_setInteractableCollisionState(rArgs) : err = FALSE : endcase
+
+		`math.dbx
+		`TODO: add arc, remove arc
+		case "Math3d_updateArcs": Math3d_updateArcs() : err = FALSE : endcase
+
+		`media.dbx
+		case "Media_updateBoundObjects": Media_updateBoundObjects() : err = FALSE : endcase
+
+		`system.dbx
+		case "System_updateIntervals": System_updateIntervals() : err = FALSE : endcase
+		case "System_updateMetrics": System_updateMetrics() : err = FALSE : endcase
+		case "System_cpuSleep": System_cpuSleep() : err = FALSE : endcase
+		case "System_getHardwareInput": System_getHardwareInput() : err = FALSE : endcase
+		case "System_getFileFromDialog": System_getFileFromDialog(rArgs) : err = FALSE : endcase
+
+		`user_interface.dba
+		case "UI_updatePageFlow": UI_updatePageFlow() : err = FALSE : endcase
+		case "UI_getInterfaceInput": UI_getInterfaceInput() : err = FALSE : endcase
+		case "UI_element_hide": UI_element_hide(rArgs) : err = FALSE : endcase
+
+		`UI controllers
+		case "UI_controller_common_doHoverByType": UI_controller_common_doHoverByType(rArgs) : err = FALSE : endcase
+		case "UI_controller_common_doUnHoverByType": UI_controller_common_doUnHoverByType(rArgs) : err = FALSE : endcase
+		case "UI_controller_common_doPressByType": UI_controller_common_doPressByType(rArgs) : err = FALSE : endcase
+		case "UI_controller_common_doReleaseByType": UI_controller_common_doReleaseByType(rArgs) : err = FALSE : endcase
+		case "UI_controller_titleMenu_resumeGame": UI_controller_titleMenu_resumeGame(rArgs) : err = FALSE : endcase
+		case "UI_controller_titleMenu_newGame": UI_controller_titleMenu_newGame(rArgs) : err = FALSE : endcase
+		case "UI_controller_titleMenu_newGameCreate": UI_controller_titleMenu_newGameCreate(rArgs) : err = FALSE : endcase
+		case "UI_controller_titleMenu_newGameCancel": UI_controller_titleMenu_newGameCancel(rArgs) : err = FALSE : endcase
+		case "UI_controller_titleMenu_loadGame": UI_controller_titleMenu_loadGame(rArgs) : err = FALSE : endcase
+		case "UI_controller_titleMenu_quitGame": UI_controller_titleMenu_quitGame(rArgs) : err = FALSE : endcase
+
+		`world.dbx
+		case "World_updateEnvironment": World_updateEnvironment() : err = FALSE : endcase
+		case "World_updateWeather": World_updateWeather(intval(rArgs)) : err = FALSE : endcase
+
+	endselect
+
+	if err = TRUE
+		System_log("main.dbx", 4, "error", "ERROR: Callback function not registered: " + rFunctionName)
+		App_closeGame(TRUE)
+	endif
+
+endfunction returnStr$

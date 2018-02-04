@@ -1,0 +1,382 @@
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+`--------------
+` Create Directional Light
+`--------------
+function DirLight_Create(iSpecular as boolean,iSubSurface as boolean,iShadow as integer,iSize as integer)
+   if AL_Enabled=1
+      if AL_DirLightInUse=0
+         global AL_DirLightInUse as boolean
+         global AL_DirLightVisible as boolean
+         global AL_DirLightEffect as integer
+         global AL_DirLightShadowQuality as integer
+         global AL_DirLightShadowSize as float
+         global AL_DirLightAngle as AL_Vec3Float
+         global AL_DirLightDirection as AL_Vec3Float
+         global AL_DirLightColor as AL_Vec3Float
+         global AL_DirLightRange as float
+         AL_DirLightInUse=1
+         AL_DirLightEffect=find free effect()
+         AL_DirLightLensFlare.x=-1
+         load effect AL_Directory+"Lighting/Directional/"+str$(iSpecular)+str$(iSubSurface)+".fx",AL_DirLightEffect,0,1
+         texture object AL_DirLightObject,0,AL_Image(1)
+         texture object AL_DirLightObject,1,AL_Image(2)
+         if AL_SSAOEnabled=0 then texture object AL_DirLightObject,6,AL_Image(7)
+         if AL_SSAOEnabled=1 then texture object AL_DirLightObject,6,AL_Image(6)
+         set object effect AL_DirLightObject,AL_DirLightEffect
+         set object mask AL_DirLightObject,2^AL_Camera(7)
+         set vector4 AL_Vector4(1),0.5/AL_ViewVec.x,0.5/AL_ViewVec.y,1,1
+         set effect constant vector AL_DirLightEffect,"ViewSize",AL_Vector4(1)
+         set vector4 AL_Vector4(1),AL_Ambient(1)/255,AL_Ambient(2)/255,AL_Ambient(3)/255,0
+         set effect constant vector AL_DirLightEffect,"AmbientColor",AL_Vector4(1)
+         if AL_Ambient(4)>0 then texture object AL_DirLightObject,2,AL_Ambient(4)
+         if AL_Ambient(4)=0 then set effect technique AL_DirLightEffect,"AmbientDirectional"
+         if AL_Ambient(4)>0 then set effect technique AL_DirLightEffect,"AmbientCubeDirectional"
+         set vector4 AL_Vector4(1),AL_Fog(1),AL_Fog(12),AL_Fog(2),AL_Fog(13)
+         set vector4 AL_Vector4(2),AL_Fog(3)/255,AL_Fog(4)/255,AL_Fog(5)/255,0
+         set vector4 AL_Vector4(3),AL_Fog(6)/255,AL_Fog(7)/255,AL_Fog(8)/255,0
+         set effect constant vector AL_DirLightEffect,"FogRange",AL_Vector4(1)
+         set effect constant vector AL_DirLightEffect,"FogColor1",AL_Vector4(2)
+         set effect constant vector AL_DirLightEffect,"FogColor2",AL_Vector4(3)
+         set vector4 AL_Vector4(1),AL_Fog(9),AL_Fog(10),AL_Fog(11),0
+         set vector4 AL_Vector4(2),AL_Fog(14)/255,AL_Fog(15)/255,AL_Fog(16)/255,AL_Fog(17)/255
+         set effect constant vector AL_DirLightEffect,"HeightFog",AL_Vector4(1)
+         set effect constant vector AL_DirLightEffect,"HeightFogColor",AL_Vector4(2)
+         DirLight_SetVisible(1)
+         DirLight_SetAngle(45,45,0)
+         DirLight_SetRange(5000)
+         DirLight_SetColor(255,255,255)
+         DirLight_SetSpecularPower(256)
+         DirLight_SetShadow(iShadow,iSize)
+      endif
+   endif
+endfunction
+
+`--------------
+` Delete Directional Light
+`--------------
+function DirLight_Delete()
+   if AL_Enabled=1
+      if AL_DirLightInUse=1
+         DirLight_SetVisible(0)
+         delete effect AL_DirLightEffect
+         hide object AL_DirLightObject
+         exclude object on AL_DirLightEffect
+         AL_DirLightInUse=0
+         AL_DirLightEffect=0
+         AL_DirLightObject=0
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Directional Light Visible
+`--------------
+function DirLight_SetVisible(iVisible as boolean)
+   if AL_Enabled=1 and AL_DirLightInUse=1
+      if AL_DirLightVisible=1 and iVisible<>1
+         AL_DirLightVisible=0
+         exclude object on AL_DirLightObject
+         hide object AL_DirLightObject
+         exclude object off AL_AmbientObject
+         show object AL_AmbientObject
+         if AL_DirLightLensFlare.x>-1 then LensFlare_SetVisible(AL_DirLightLensFlare.x,0)
+      endif
+      if AL_DirLightVisible=0 and iVisible<>0
+         AL_DirLightVisible=1
+         exclude object off AL_DirLightObject
+         show object AL_DirLightObject
+         exclude object on AL_AmbientObject
+         hide object AL_AmbientObject
+         if AL_DirLightLensFlare.x>-1 then LensFlare_SetVisible(AL_DirLightLensFlare.x,1)
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Directional Light Angle
+`--------------
+function DirLight_SetAngle(iAngleX as float,iAngleY as float,iAngleZ as float)
+   if AL_Enabled=1
+      if AL_DirLightInUse=1
+         AL_DirLightAngle.x=wrapvalue(iAngleX)
+         AL_DirLightAngle.y=wrapvalue(iAngleY)
+         AL_DirLightAngle.z=wrapvalue(iAngleZ)
+         rotate x matrix4 AL_Matrix(1),wrapvalue(iAngleX)/57.295
+         rotate y matrix4 AL_Matrix(2),wrapvalue(iAngleY)/57.295
+         rotate z matrix4 AL_Matrix(3),wrapvalue(iAngleZ)/57.295
+         multiply matrix4 AL_Matrix(4),AL_Matrix(1),AL_Matrix(2)
+         multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(3)
+         set vector3 AL_Vector3(1),0,0,1
+         transform normals vector3 AL_Vector3(1),AL_Vector3(1),AL_Matrix(4)
+         AL_DirLightDirection.x=x vector3(AL_Vector3(1))
+         AL_DirLightDirection.y=y vector3(AL_Vector3(1))
+         AL_DirLightDirection.z=z vector3(AL_Vector3(1))
+         set vector4 AL_Vector4(1),AL_DirLightDirection.x,AL_DirLightDirection.y,AL_DirLightDirection.z,0
+         set effect constant vector AL_DirLightEffect,"LightDirection",AL_Vector4(1)
+         for e=0 to AL_EffectCount:set effect constant vector AL_Effect(e).Number,"LightDirection",AL_Vector4(1):next e
+         for e=0 to AL_AlphaEffectLightingCount:set effect constant vector AL_AlphaEffect(AL_AlphaEffectLighting(e)-1).Number,"LightDirection",AL_Vector4(1):next e
+         if AL_ScatteringEnabled>0 then set effect constant vector AL_PostProcessingEffect(3),"LightDirection",AL_Vector4(1)
+         if AL_CloudsEnable=1
+            set effect constant vector AL_CloudsEffect(1),"LightDir2",AL_Vector4(1)
+            set vector4 AL_Vector4(1),AL_DirLightDirection.x*0.75,(AL_DirLightDirection.y*0.5)-0.5,AL_DirLightDirection.z*0.75,0
+            set effect constant vector AL_CloudsEffect(1),"LightDir1",AL_Vector4(1)
+         endif
+         if Water_Enabled=1
+            FogArea_SetCaustics(Water_AreaFog,0,AL_DirLightDirection.x,AL_DirLightDirection.y,AL_DirLightDirection.z,Water_TileSize*30)
+            set vector4 AL_Vector4(2),(AL_DirLightColor.x/400)*(1-abs(AL_DirLightDirection.y)),(AL_DirLightColor.y/400)*(1-abs(AL_DirLightDirection.y)),(AL_DirLightColor.z/400)*(1-abs(AL_DirLightDirection.y)),0
+            for e=0 to Water_Shaders:set effect constant vector Water_Effect(e),"SpecularColor",AL_Vector4(2):next e
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Directional Light Color
+`--------------
+function DirLight_SetColor(iRed as float,iGreen as float,iBlue as float)
+   if AL_Enabled=1
+      if AL_DirLightInUse=1
+         AL_DirLightColor.x=iRed
+         AL_DirLightColor.y=iGreen
+         AL_DirLightColor.z=iBlue
+         set vector4 AL_Vector4(1),(AL_DirLightColor.x/255)*AL_Ambient(5),(AL_DirLightColor.y/255)*AL_Ambient(6),(AL_DirLightColor.Z/255)*AL_Ambient(7),0
+         set effect constant vector AL_DirLightEffect,"LightColor",AL_Vector4(1)
+         set vector4 AL_Vector4(1),AL_DirLightColor.x/255,AL_DirLightColor.y/255,AL_DirLightColor.Z/255,0
+         for e=0 to AL_EffectCount:set effect constant vector AL_Effect(e).Number,"LightColor",AL_Vector4(1):next e
+         for e=0 to AL_AlphaEffectLightingCount:set effect constant vector AL_AlphaEffect(AL_AlphaEffectLighting(e)-1).Number,"LightColor",AL_Vector4(1):next e
+         if AL_DirLightLensFlare.x>-1 and AL_TimeOfDayEnabled=0 then LensFlare_SetColor(AL_DirLightLensFlare.x,AL_DirLightColor.x,AL_DirLightColor.y,AL_DirLightColor.z)
+         if Water_Enabled=1
+            set vector4 AL_Vector4(2),(AL_DirLightColor.x/400)*(1-abs(AL_DirLightDirection.y)),(AL_DirLightColor.y/400)*(1-abs(AL_DirLightDirection.y)),(AL_DirLightColor.z/400)*(1-abs(AL_DirLightDirection.y)),0
+            for e=0 to Water_Shaders:set effect constant vector Water_Effect(e),"SpecularColor",AL_Vector4(2):next e
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Directional Light Range
+`--------------
+function DirLight_SetRange(iRange as float)
+   if AL_Enabled=1
+      if AL_DirLightInUse=1
+         AL_DirLightRange=iRange
+         set vector4 AL_Vector4(1),(((AL_DirLightRange/2.5)/2.5)/2.5)/2.22,((AL_DirLightRange/2.5)/2.5)/2.22,(AL_DirLightRange/2.5)/2.22,AL_DirLightRange/2.22
+         set effect constant vector AL_DirLightEffect,"LightRange",AL_Vector4(1)
+         set vector4 AL_Vector4(1),((AL_DirLightRange/2.5)/2.5)/2.5,(AL_DirLightRange/2.5)/2.5,AL_DirLightRange/2.5,AL_DirLightRange
+         set effect constant vector AL_DirLightEffect,"ShadowRange",AL_Vector4(1)
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Directional Light Specular Power
+`--------------
+function DirLight_SetSpecularPower(iSpecular as float)
+   if AL_Enabled=1
+      if AL_DirLightInUse=1
+         set effect constant float AL_DirLightEffect,"SpecularPower",iSpecular
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Directional Light Shadow
+`--------------
+function DirLight_SetShadow(iShadow as integer,iSize as integer)
+   if AL_Enabled=1
+      if AL_DirLightInUse=1
+         AL_DirLightShadowQuality=iShadow
+         AL_DirLightShadowSize=iSize
+         set effect constant float AL_DirLightEffect,"ShadowSize",(0.5/AL_DirLightShadowSize)+0.5
+         if AL_DirLightShadowQuality=0
+            if AL_Ambient(4)=0 then set effect technique AL_DirLightEffect,"AmbientDirectional"
+            if AL_Ambient(4)>0 then set effect technique AL_DirLightEffect,"AmbientCubeDirectional"
+         else
+            if AL_Ambient(4)=0 then set effect technique AL_DirLightEffect,"AmbientDirectionalShadow"
+            if AL_Ambient(4)>0 then set effect technique AL_DirLightEffect,"AmbientCubeDirectionalShadow"
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Get Directional Light Visible
+`--------------
+function DirLight_GetVisible()
+   local tReturn as float
+   if AL_Enabled=1 and AL_DirLightInUse=1 then tReturn=AL_DirLightVisible
+endfunction tReturn
+
+`--------------
+` Get Directional Light Angle X
+`--------------
+function DirLight_GetAngleX()
+   local tReturn as float
+   if AL_Enabled=1 and AL_DirLightInUse=1 then tReturn=AL_DirLightAngle.x
+endfunction tReturn
+
+`--------------
+` Get Directional Light Angle Y
+`--------------
+function DirLight_GetAngleY()
+   local tReturn as float
+   if AL_Enabled=1 and AL_DirLightInUse=1 then tReturn=AL_DirLightAngle.y
+endfunction tReturn
+
+`--------------
+` Get Directional Light Angle Z
+`--------------
+function DirLight_GetAngleZ()
+   local tReturn as float
+   if AL_Enabled=1 and AL_DirLightInUse=1 then tReturn=AL_DirLightAngle.z
+endfunction tReturn
+
+`--------------
+` Get Directional Light Color Red
+`--------------
+function DirLight_GetColorRed()
+   local tReturn as float
+   if AL_Enabled=1 and AL_DirLightInUse=1 then tReturn=AL_DirLightColor.x
+endfunction tReturn
+
+`--------------
+` Get Directional Light Color Green
+`--------------
+function DirLight_GetColorGreen()
+   local tReturn as float
+   if AL_Enabled=1 and AL_DirLightInUse=1 then tReturn=AL_DirLightColor.y
+endfunction tReturn
+
+`--------------
+` Get Directional Light Color Blue
+`--------------
+function DirLight_GetColorBlue()
+   local tReturn as float
+   if AL_Enabled=1 and AL_DirLightInUse=1 then tReturn=AL_DirLightColor.z
+endfunction tReturn
+
+`--------------
+` Get Directional Light Range
+`--------------
+function DirLight_GetRange()
+   local tReturn as float
+   if AL_Enabled=1 and AL_DirLightInUse=1 then tReturn=AL_DirLightRange
+endfunction tReturn
+
+`--------------
+` Render Directional Light
+`--------------
+function DirLight_Render(iSplit as float,iRange as float)
+   local tCPosition as AL_Vec3Float
+   local tPosition as AL_Vec3Float
+   local tStrSplit as string
+   local tCamera as integer
+   tStrSplit=str$(iSplit)
+   tCamera=iSplit+5
+   if iSplit=4 then tCamera=8
+   if AL_CurrentShadowMapSize(6)<>AL_DirLightShadowSize
+      local tCameras as integer
+      tCameras=8
+      if AL_DirLightShadowQuality=2 then tCameras=11
+       for s=6 to tCameras
+         if AL_ShadowMapTexture(s)=0 then AL_ShadowMapTexture(s)=find free image()
+         delete camera AL_ShadowMapCamera(s)
+         if s=8 or s=11
+            AL_CreateCamera(AL_ShadowMapCamera(s),AL_ShadowMapTexture(s),AL_DirLightShadowSize,AL_DirLightShadowSize,36)
+         else
+            AL_CreateCamera(AL_ShadowMapCamera(s),AL_ShadowMapTexture(s),AL_DirLightShadowSize,AL_DirLightShadowSize,113)
+         endif
+         set camera aspect AL_ShadowMapCamera(s),1
+      next s
+      set camera range AL_ShadowMapCamera(9),1,2
+      set camera range AL_ShadowMapCamera(10),1,2
+      set camera range AL_ShadowMapCamera(11),1,2
+      if AL_DirLightShadowQuality=1
+         texture object AL_DirLightObject,3,AL_ShadowMapTexture(6)
+         texture object AL_DirLightObject,4,AL_ShadowMapTexture(7)
+         texture object AL_DirLightObject,5,AL_ShadowMapTexture(8)
+      else
+         texture object AL_ShadowMapObject(4),0,AL_ShadowMapTexture(6)
+         texture object AL_ShadowMapObject(5),0,AL_ShadowMapTexture(7)
+         texture object AL_ShadowMapObject(6),0,AL_ShadowMapTexture(8)
+         texture object AL_DirLightObject,3,AL_ShadowMapTexture(9)
+         texture object AL_DirLightObject,4,AL_ShadowMapTexture(10)
+         texture object AL_DirLightObject,5,AL_ShadowMapTexture(11)
+      endif
+      AL_CurrentShadowMapSize(6)=AL_DirLightShadowSize
+   endif
+   tCPosition.x=AL_CameraPos.x+(AL_CameraDir.x*(iRange/(2+tan(AL_CameraData(3))*0.2)))
+   tCPosition.y=AL_CameraPos.y+(AL_CameraDir.y*(iRange/(2+tan(AL_CameraData(3))*0.2)))
+   tCPosition.z=AL_CameraPos.z+(AL_CameraDir.z*(iRange/(2+tan(AL_CameraData(3))*0.2)))
+   set vector3 AL_Vector3(4),int(tCPosition.x/(iRange*0.05))*(iRange*0.05),int(tCPosition.y/(iRange*0.05))*(iRange*0.05),int(tCPosition.z/(iRange*0.05))*(iRange*0.05)
+   tPosition.x=x Vector3(AL_Vector3(4))-(AL_DirLightDirection.x*AL_CameraData(2))
+   tPosition.y=y Vector3(AL_Vector3(4))-(AL_DirLightDirection.y*AL_CameraData(2))
+   tPosition.z=z Vector3(AL_Vector3(4))-(AL_DirLightDirection.z*AL_CameraData(2))
+   set vector3 AL_Vector3(1),0,0,0
+   set vector3 AL_Vector3(2),AL_DirLightDirection.x,AL_DirLightDirection.y,AL_DirLightDirection.z
+   set vector3 AL_Vector3(3),0,1,0
+   build lookat lhmatrix4 AL_Matrix(1),AL_Vector3(1),AL_Vector3(2),AL_Vector3(3)
+   translate matrix4 AL_Matrix(2),-tPosition.x,-tPosition.y,-tPosition.z
+   multiply matrix4 AL_Matrix(2),AL_Matrix(2),AL_Matrix(1)
+   build ortho lhmatrix4 AL_Matrix(3),iRange,iRange,(AL_CameraData(2)+(AL_DirLightRange*2))*0.005,(AL_CameraData(2)+(AL_DirLightRange*2))
+   multiply matrix4 AL_Matrix(4),AL_Matrix(2),AL_Matrix(3)
+   position camera AL_ShadowMapCamera(tCamera),tPosition.x,tPosition.y,tPosition.z
+   rotate camera AL_ShadowMapCamera(tCamera),AL_DirLightAngle.x,AL_DirLightAngle.y,AL_DirLightAngle.z
+   set camera range AL_ShadowMapCamera(tCamera),(AL_CameraData(2)+(AL_DirLightRange*2))*0.005,(AL_CameraData(2)+(AL_DirLightRange*2))
+   set camera fov AL_ShadowMapCamera(tCamera),(iRange/AL_CameraData(2))*55.0
+   position object AL_ShadowMapObject(0),tCPosition.x,tCPosition.y,tCPosition.z
+   rotate object AL_ShadowMapObject(0),AL_DirLightAngle.x,AL_DirLightAngle.y,AL_DirLightAngle.z
+   set vector4 AL_Vector4(1),tCPosition.x,tCPosition.y,tCPosition.z,0
+   set vector4 AL_Vector4(2),x Vector3(AL_Vector3(4))-(AL_DirLightDirection.x*(iRange/2)),y Vector3(AL_Vector3(4))-(AL_DirLightDirection.y*(iRange/2)),z Vector3(AL_Vector3(4))-(AL_DirLightDirection.z*(iRange/2)),0
+   set vector4 AL_Vector4(3),AL_DirLightDirection.x,AL_DirLightDirection.y,AL_DirLightDirection.z,0
+   set vector4 AL_Vector4(4),AL_ShadowBias,-AL_ShadowBias,0,0
+   set effect constant vector AL_DirLightEffect,"LightPosition"+tStrSplit,AL_Vector4(1)
+   set effect constant vector AL_DirLightEffect,"ShadowPosition"+tStrSplit,AL_Vector4(2)
+   set effect constant matrix AL_DirLightEffect,"ShadowProjMatrix"+tStrSplit,AL_Matrix(4)
+   for e=0 to AL_EffectCount
+      set effect constant float AL_Effect(e).Number,"LightRange",iRange
+      set effect constant vector AL_Effect(e).Number,"ShadowPosition",AL_Vector4(2)
+      set effect constant vector AL_Effect(e).Number,"LightDirection",AL_Vector4(3)
+      set effect constant matrix AL_Effect(e).Number,"OrthoProj",AL_Matrix(4)
+      set effect constant vector AL_Effect(e).Number,"ShadowBias",AL_Vector4(4)
+      if iSplit=1 or iSplit=2 then set effect technique AL_Effect(e).Number,"DepthMapDirectionalEvsm"
+      if iSplit=3 then set effect technique AL_Effect(e).Number,"DepthMapDirectionalVsm"
+      if iSplit=4 then set effect technique AL_Effect(e).Number,"DepthMapDirectionalVsmBa"
+   next e
+   set vector4 AL_Vector4(1),(AL_ShadowOffset/AL_DirLightShadowSize),(AL_ShadowOffset/AL_DirLightShadowSize),0,0
+   set effect constant vector AL_ShadowMapEffect(4),"BlurOffset",AL_Vector4(1)
+   Terrain_LightDirCull(iRange*2)
+   if iSplit=1 or iSplit=2
+      set effect technique AL_ShadowMapEffect(0),"Evsm"
+      set effect technique AL_ShadowMapEffect(4),"Evsm"
+   endif
+   if iSplit=3
+      set effect technique AL_ShadowMapEffect(0),"Vsm"
+      set effect technique AL_ShadowMapEffect(4),"Vsm"
+   endif
+   if iSplit=4
+      set effect technique AL_ShadowMapEffect(0),"VsmBa"
+      set effect technique AL_ShadowMapEffect(4),"VsmBa"
+   endif
+   if AL_DirLightShadowQuality=1
+      sync mask 2^AL_ShadowMapCamera(tCamera)
+   else
+      sync mask (2^AL_ShadowMapCamera(tCamera))+(2^AL_ShadowMapCamera(tCamera+3))
+   endif
+   fastsync
+endfunction
+
+`--------------
+` Set Directional Light Power
+`--------------
+function DirLight_SetPower(iPower as float)
+   if AL_Enabled=1
+      if AL_DirLightInUse=1
+         set effect constant float AL_DirLightEffect,"LightPower",iPower
+      endif
+   endif
+endfunction

@@ -1,0 +1,32 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+SC_intersectObject
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    return float=SC_intersectObject ( obj, oldx, oldy, oldz, x, y, z )
+
+<BR><BR>
+
+        <u>-objNum</u>:      the object you want to check for collision use 0 for all objects<br>
+        <u>-oldx...z</u>:    the start and end points of the ray to check.<br>
+   						<br>
+        <u>returns</u>:      the distance to the closest collision point<br>
+   						<br>
+        Replaces dbp built in Intersect Object() command<br><br>
+
+        Will check if the ray starting at oldx#,oldy#,oldz# and ending at<br>
+        x#,y#,z# collides with the specified object (obj=0 for all).<br>
+        does not collide with backfaces, will return the distance to the<br>
+        closest collision point, 0 for no collision
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

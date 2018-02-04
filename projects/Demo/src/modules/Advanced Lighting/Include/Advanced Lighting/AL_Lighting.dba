@@ -1,0 +1,873 @@
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+type AL_LightData
+   InUse as boolean
+   CullMode as boolean
+   Visible as boolean
+   Distance as float
+   Object as integer
+   Effect as integer
+   ShadowMap as integer
+   ShadowSize as float
+   Texture as integer
+   Shadowed as boolean
+   ShadowQuality as integer
+   Position as AL_Vec3Float
+   Angle as AL_Vec3Float
+   Normal as AL_Vec3Float
+   Color as AL_Vec3Float
+   Roll as float
+   FOV as float
+   Range as float
+   Attenuation as float
+   ShadowRange as float
+   LensFlare as integer
+endtype
+
+`#include "modules/Advanced Lighting/Include/Advanced Lighting/AL_Spot.dba"
+`#include "modules/Advanced Lighting/Include/Advanced Lighting/AL_Point.dba"
+`#include "modules/Advanced Lighting/Include/Advanced Lighting/AL_Directional.dba"
+
+`--------------
+` Ambient
+`--------------
+function AdvLighting_SetAmbient(iRed as float,iGreen as float,iBlue as float)
+   if AL_Enabled=1
+      if AL_Ambient(1)<>iRed or AL_Ambient(2)<>iGreen or AL_Ambient(3)<>iBlue
+         AL_Ambient(1)=iRed
+         AL_Ambient(2)=iGreen
+         AL_Ambient(3)=iBlue
+         AL_Ambient(5)=1+(((255-AL_Ambient(1))/255)*AL_AmbientAdjust)
+         AL_Ambient(6)=1+(((255-AL_Ambient(2))/255)*AL_AmbientAdjust)
+         AL_Ambient(7)=1+(((255-AL_Ambient(3))/255)*AL_AmbientAdjust)
+         if AL_Ambient(5)>1 then AL_Ambient(5)=1
+         if AL_Ambient(6)>1 then AL_Ambient(6)=1
+         if AL_Ambient(7)>1 then AL_Ambient(7)=1
+         set vector4 AL_Vector4(1),AL_Ambient(1)/255,AL_Ambient(2)/255,AL_Ambient(3)/255,0
+         set effect constant vector AL_AmbientEffect,"AmbientColor",AL_Vector4(1)
+         if AL_DirLightInUse=1 then set effect constant vector AL_DirLightEffect,"AmbientColor",AL_Vector4(1)
+         for e=0 to AL_EffectCount:set effect constant vector AL_Effect(e).Number,"AmbientColor",AL_Vector4(1):next e
+         for e=0 to AL_AlphaEffectLightingCount:set effect constant vector AL_AlphaEffect(AL_AlphaEffectLighting(e)-1).Number,"AmbientColor",AL_Vector4(1):next e
+         if AL_DirLightInUse=1
+            set vector4 AL_Vector4(1),(AL_DirLightColor.X/255)*AL_Ambient(5),(AL_DirLightColor.Y/255)*AL_Ambient(6),(AL_DirLightColor.Z/255)*AL_Ambient(7),0
+            set effect constant vector AL_DirLightEffect,"LightColor",AL_Vector4(1)
+         endif
+         for l=0 to AL_PointLightCount
+            if AL_PointLight(l).InUse=1
+               set vector4 AL_Vector4(1),(AL_PointLight(l).Color.X/255)*AL_Ambient(5),(AL_PointLight(l).Color.Y/255)*AL_Ambient(6),(AL_PointLight(l).Color.Z/255)*AL_Ambient(7),0
+               set effect constant vector AL_PointLight(l).Effect,"LightColor",AL_Vector4(1)
+            endif
+         next l
+         for l=0 to AL_SpotLightCount
+            if AL_SpotLight(l).InUse=1
+               set vector4 AL_Vector4(1),(AL_SpotLight(l).Color.X/255)*AL_Ambient(5),(AL_SpotLight(l).Color.Y/255)*AL_Ambient(6),(AL_SpotLight(l).Color.Z/255)*AL_Ambient(7),0
+               set effect constant vector AL_SpotLight(l).Effect,"LightColor",AL_Vector4(1)
+            endif
+         next l
+      endif
+   endif
+endfunction
+
+`--------------
+` Ambient Texture
+`--------------
+function AdvLighting_SetAmbientTexture(iTexture as integer)
+   if AL_Enabled=1
+      if iTexture>0
+         if image exist(iTexture)=1
+            AL_Ambient(4)=iTexture
+            texture object AL_AmbientObject,2,iTexture
+            set effect technique AL_AmbientEffect,"AmbientCube"
+            if AL_DirLightInUse=1
+               texture object AL_DirLightObject,2,iTexture
+               if AL_DirLightshadowQuality=0 then set effect technique AL_DirLightEffect,"AmbientCubeDirectional"
+               if AL_DirLightshadowQuality>0 then set effect technique AL_DirLightEffect,"AmbientCubeDirectionalShadow"
+            endif
+         endif
+      else
+         AL_Ambient(4)=0
+         set effect technique AL_AmbientEffect,"Ambient"
+         if AL_DirLightInUse=1
+            if AL_DirLightshadowQuality=0 then set effect technique AL_DirLightEffect,"AmbientDirectional"
+            if AL_DirLightshadowQuality>0 then set effect technique AL_DirLightEffect,"AmbientDirectionalShadow"
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Fog
+`--------------
+function AdvLighting_SetFog(iRange as float,iPower as float,iRed1 as float,iGreen1 as float,iBlue1 as float,iRed2 as float,iGreen2 as float,iBlue2 as float)
+   if AL_Enabled=1
+      if AL_Fog(1)<>iRange or AL_Fog(2)<>iPower or AL_Fog(3)<>iRed1 or AL_Fog(4)<>iGreen1 or AL_Fog(5)<>iBlue1 or AL_Fog(6)<>iRed2 or AL_Fog(7)<>iGreen2 or AL_Fog(8)<>iBlue2
+         AL_Fog(1)=iRange
+         AL_Fog(2)=iPower
+         AL_Fog(3)=iRed1
+         AL_Fog(4)=iGreen1
+         AL_Fog(5)=iBlue1
+         AL_Fog(6)=iRed2
+         AL_Fog(7)=iGreen2
+         AL_Fog(8)=iBlue2
+         set vector4 AL_Vector4(1),AL_Fog(1),AL_Fog(12),AL_Fog(2),AL_Fog(13)
+         set vector4 AL_Vector4(2),AL_Fog(3)/255,AL_Fog(4)/255,AL_Fog(5)/255,0
+         set vector4 AL_Vector4(3),AL_Fog(6)/255,AL_Fog(7)/255,AL_Fog(8)/255,0
+         set effect constant vector AL_AmbientEffect,"FogRange",AL_Vector4(1)
+         set effect constant vector AL_AmbientEffect,"FogColor1",AL_Vector4(2)
+         set effect constant vector AL_AmbientEffect,"FogColor2",AL_Vector4(3)
+         if AL_DirLightInUse=1
+            set effect constant vector AL_DirLightEffect,"FogRange",AL_Vector4(1)
+            set effect constant vector AL_DirLightEffect,"FogColor1",AL_Vector4(2)
+            set effect constant vector AL_DirLightEffect,"FogColor2",AL_Vector4(3)
+         endif
+         for l=0 to AL_SpotLightCount
+            if AL_SpotLight(l).InUse=1 then set effect constant vector AL_SpotLight(l).Effect,"FogRange",AL_Vector4(1)
+         next l
+         for l=0 to AL_PointLightCount
+            if AL_PointLight(l).InUse=1 then set effect constant vector AL_PointLight(l).Effect,"FogRange",AL_Vector4(1)
+         next l
+         for e=0 to AL_EffectCount
+            set effect constant vector AL_Effect(e).Number,"FogRange",AL_Vector4(1)
+            set effect constant vector AL_Effect(e).Number,"FogColor1",AL_Vector4(2)
+            set effect constant vector AL_Effect(e).Number,"FogColor2",AL_Vector4(3)
+         next e
+         for e=0 to AL_AlphaEffectCount
+            set effect constant vector AL_AlphaEffect(e).Number,"FogRange",AL_Vector4(1)
+            set effect constant vector AL_AlphaEffect(e).Number,"FogColor1",AL_Vector4(2)
+            set effect constant vector AL_AlphaEffect(e).Number,"FogColor2",AL_Vector4(3)
+         next e
+         if AL_FogAreaEnabled=1
+            for f=0 to AL_FogAreaCount
+               set effect constant vector AL_FogArea(f).Effect,"FogRange",AL_Vector4(1)
+            next f
+         endif
+         if AL_SkyEnabled=1
+            set effect constant vector AL_SkyEffect(1),"FogRange",AL_Vector4(1)
+            set effect constant vector AL_SkyEffect(1),"FogColor1",AL_Vector4(2)
+            set effect constant vector AL_SkyEffect(1),"FogColor2",AL_Vector4(3)
+         endif
+         if AL_CloudsEnable=1 then set effect constant vector AL_CloudsEffect(2),"FogColor",AL_Vector4(2)
+      endif
+   endif
+endfunction
+
+`--------------
+` Height Fog
+`--------------
+function AdvLighting_SetHeightFog(iHeight as float,iFade as float,iExponential as float,iRange as float,iPower as float,iRed as float,iGreen as float,iBlue as float,iAlpha as float)
+   if AL_Enabled=1
+      if AL_Fog(9)<>iHeight or AL_Fog(10)<>iFade or AL_Fog(11)<>iExponential or AL_Fog(12)<>iRange or AL_Fog(13)<>iPower or AL_Fog(14)<>iRed or AL_Fog(15)<>iGreen or AL_Fog(16)<>iBlue or AL_Fog(17)<>iAlpha
+         AL_Fog(9)=iHeight
+         AL_Fog(10)=iFade
+         AL_Fog(11)=iExponential
+         AL_Fog(12)=iRange
+         AL_Fog(13)=iPower
+         AL_Fog(14)=iRed
+         AL_Fog(15)=iGreen
+         AL_Fog(16)=iBlue
+         AL_Fog(17)=iAlpha
+         set vector4 AL_Vector4(1),AL_Fog(1),AL_Fog(12),AL_Fog(2),AL_Fog(13)
+         set vector4 AL_Vector4(2),AL_Fog(9),AL_Fog(10),AL_Fog(11),0
+         set vector4 AL_Vector4(3),AL_Fog(14)/255,AL_Fog(15)/255,AL_Fog(16)/255,AL_Fog(17)/255
+         set effect constant vector AL_AmbientEffect,"FogRange",AL_Vector4(1)
+         set effect constant vector AL_AmbientEffect,"HeightFog",AL_Vector4(2)
+         set effect constant vector AL_AmbientEffect,"HeightFogColor",AL_Vector4(3)
+         if AL_DirLightInUse=1
+            set effect constant vector AL_DirLightEffect,"FogRange",AL_Vector4(1)
+            set effect constant vector AL_DirLightEffect,"HeightFog",AL_Vector4(2)
+            set effect constant vector AL_DirLightEffect,"HeightFogColor",AL_Vector4(3)
+         endif
+         for l=0 to AL_SpotLightCount
+            if AL_SpotLight(l).InUse=1
+               set effect constant vector AL_SpotLight(l).Effect,"FogRange",AL_Vector4(1)
+               set effect constant vector AL_SpotLight(l).Effect,"HeightFog",AL_Vector4(2)
+               set effect constant vector AL_SpotLight(l).Effect,"HeightFogColor",AL_Vector4(3)
+            endif
+         next l
+         for l=0 to AL_PointLightCount
+            if AL_PointLight(l).InUse=1
+               set effect constant vector AL_PointLight(l).Effect,"FogRange",AL_Vector4(1)
+               set effect constant vector AL_PointLight(l).Effect,"HeightFog",AL_Vector4(2)
+               set effect constant vector AL_PointLight(l).Effect,"HeightFogColor",AL_Vector4(3)
+            endif
+         next l
+         for e=0 to AL_EffectCount
+            set effect constant vector AL_Effect(e).Number,"FogRange",AL_Vector4(1)
+            set effect constant vector AL_Effect(e).Number,"HeightFog",AL_Vector4(2)
+            set effect constant vector AL_Effect(e).Number,"HeightFogColor",AL_Vector4(3)
+         next e
+         for e=0 to AL_AlphaEffectCount
+            set effect constant vector AL_AlphaEffect(e).Number,"FogRange",AL_Vector4(1)
+            set effect constant vector AL_AlphaEffect(e).Number,"HeightFog",AL_Vector4(2)
+            set effect constant vector AL_AlphaEffect(e).Number,"HeightFogColor",AL_Vector4(3)
+         next e
+      endif
+   endif
+endfunction
+
+type AL_LensFlareData
+   InUse as boolean
+   Visible as boolean
+   UpDate as boolean
+   SubFlareCount as integer
+   SubFlareStart as integer
+   Position as AL_Vec3Float
+   Color as AL_Vec3Float
+endtype
+
+type AL_SubFlareData
+   AlphaTosurface as float
+   Atlas as AL_Vec2Float
+   Offset as AL_Vec3Float
+   Falloff as AL_Vec3Float
+   Scale as AL_Vec3Float
+   Color as AL_Vec3Float
+endtype
+
+type AL_FlareObjectData
+   Object as integer
+   Effect as integer
+   Update as boolean
+   ObjectUpdate as boolean
+endtype
+
+`--------------
+` Make Lens Flare
+`--------------
+function LensFlare_Create(iSubFlareCount as integer)
+   local tLensFlare as integer
+   if AL_LensFlareEnabled=0
+      global AL_LensFlareEnabled as boolean
+      global AL_LensFlareUpdate as boolean
+      global AL_LensFlareCount as integer
+      global AL_LensFlareObjectUpdate as boolean
+      global AL_LensFlareImage as integer
+      global AL_LensFlareMesh as integer
+      global AL_SubFlareCount as integer
+      global AL_SubFlareArrayCount as integer
+      AL_LensFlareEnabled=1
+      AL_LensFlareCount=-1
+      AL_SubFlareCount=-1
+      AL_SubFlareArrayCount=-1
+      AL_FlareObjectCount(1)=-1
+      AL_FlareObjectCount(0)=100
+      AL_LensFlareMesh=find free mesh()
+      load mesh AL_Directory+"Resources/Flare.dbm",AL_LensFlareMesh
+      AL_LensFlareImage=find free image()
+      load Image AL_Directory+"Resources/Lens Flare.dds",AL_LensFlareImage
+   endif
+   tLensFlare=-1
+   for f=0 to AL_LensFlareCount
+      if AL_LensFlare(f).InUse=0 then tLensFlare=f
+   next f
+   if tLensFlare=-1
+      array insert at bottom AL_LensFlare()
+      inc AL_LensFlareCount
+      tLensFlare=AL_LensFlareCount
+      inc AL_FlareObjectCount(0)
+      if AL_FlareObjectCount(0)>99
+         AL_FlareObjectCount(0)=0
+         array insert at bottom AL_FlareObject()
+         inc AL_FlareObjectCount(1)
+         AL_FlareObject(AL_FlareObjectCount(1)).Effect=find free effect()
+         load effect AL_Directory+"Alpha/Particles/Lens Flare.fx",AL_FlareObject(AL_FlareObjectCount(1)).Effect,0,1
+         AlphaEffect_Add(AL_FlareObject(AL_FlareObjectCount(1)).Effect)
+         AL_FlareObject(AL_FlareObjectCount(1)).Object=find free object()
+         make object AL_FlareObject(AL_FlareObjectCount(1)).Object,AL_LensFlareMesh,0
+         set object effect AL_FlareObject(AL_FlareObjectCount(1)).Object,AL_FlareObject(AL_FlareObjectCount(1)).Effect
+      endif
+   endif
+   AL_LensFlare(tLensFlare).InUse=1
+   AL_LensFlare(tLensFlare).Visible=1
+   AL_LensFlare(tLensFlare).UpDate=1
+   AL_LensFlare(tLensFlare).Position.x=0
+   AL_LensFlare(tLensFlare).Position.y=0
+   AL_LensFlare(tLensFlare).Position.z=0
+   AL_LensFlare(tLensFlare).Color.x=255
+   AL_LensFlare(tLensFlare).Color.y=255
+   AL_LensFlare(tLensFlare).Color.z=255
+   AL_LensFlare(tLensFlare).SubFlareCount=iSubFlareCount
+   AL_LensFlare(tLensFlare).SubFlareStart=AL_SubFlareCount+1
+   for f=0 to iSubFlareCount
+      inc AL_SubFlareCount
+      if AL_SubFlareCount>AL_SubFlareArrayCount
+         array insert at bottom AL_SubFlare()
+         inc AL_SubFlareArrayCount
+      endif
+      AL_SubFlare(AL_SubFlareCount).AlphaTosurface=0
+      AL_SubFlare(AL_SubFlareCount).Atlas.x=0
+      AL_SubFlare(AL_SubFlareCount).Atlas.y=0
+      AL_SubFlare(AL_SubFlareCount).Offset.x=0
+      AL_SubFlare(AL_SubFlareCount).Offset.y=1000
+      AL_SubFlare(AL_SubFlareCount).Offset.z=0.5
+      AL_SubFlare(AL_SubFlareCount).Falloff.x=0
+      AL_SubFlare(AL_SubFlareCount).Falloff.y=0
+      AL_SubFlare(AL_SubFlareCount).Falloff.z=0
+      AL_SubFlare(AL_SubFlareCount).Scale.x=0.2
+      AL_SubFlare(AL_SubFlareCount).Scale.y=0.2
+      AL_SubFlare(AL_SubFlareCount).Scale.z=0.5
+      AL_SubFlare(AL_SubFlareCount).Color.x=1
+      AL_SubFlare(AL_SubFlareCount).Color.y=1
+      AL_SubFlare(AL_SubFlareCount).Color.z=1
+   next f
+   AL_LensFlareUpdate=1
+   AL_LensFlareObjectUpdate=1
+   AL_FlareObject(tLensFlare/100).Update=1
+   AL_FlareObject(tLensFlare/100).ObjectUpdate=1
+endfunction tLensFlare
+
+`--------------
+` Lens Flare Update
+`--------------
+function LensFlare_Update()
+   if AL_LensFlareEnabled=1
+      tVertex as integer
+      tSubFlare as integer
+      tMesh as boolean
+      tEndVal as integer
+      if AL_LensFlareObjectUpdate=1
+         for o=0 to AL_FlareObjectCount(1)
+            if AL_FlareObject(o).ObjectUpdate=1
+               tVertex=0
+               tMesh=0
+               delete object AL_FlareObject(o).Object
+               make object AL_FlareObject(o).Object,AL_LensFlareMesh,0
+               lock vertexdata for limb AL_FlareObject(o).Object,0,2
+               tEndVal=(o*100)+99
+               if o=AL_FlareObjectCount(1) then tEndVal=AL_LensFlareCount
+               for f=o*100 to tEndVal
+                  if AL_LensFlare(f).InUse=1
+                     tSubFlare=AL_LensFlare(f).SubFlareStart
+                     for s=0 to AL_LensFlare(f).SubFlareCount
+                        if tMesh=1 then add mesh to vertexdata AL_LensFlareMesh
+                        tMesh=1
+                        for v=0 to 3
+                           set vertexdata position tVertex,AL_SubFlare(tSubFlare).Scale.x,AL_SubFlare(tSubFlare).Scale.y,AL_SubFlare(tSubFlare).Scale.z
+                           set vertexdata normals tVertex,AL_SubFlare(tSubFlare).Color.x,AL_SubFlare(tSubFlare).Color.y,AL_SubFlare(tSubFlare).Color.z
+                           set vertexdata uv tVertex,1,f-(o*100),AL_SubFlare(tSubFlare).Offset.z
+                           set vertexdata uv tVertex,2,AL_SubFlare(tSubFlare).Offset.x,AL_SubFlare(tSubFlare).Offset.y
+                           set vertexdata uv tVertex,3,AL_SubFlare(tSubFlare).Falloff.x,AL_SubFlare(tSubFlare).AlphaTosurface
+                           set vertexdata uv tVertex,4,AL_SubFlare(tSubFlare).Falloff.y,AL_SubFlare(tSubFlare).Falloff.z
+                           set vertexdata uv tVertex,5,AL_SubFlare(tSubFlare).Atlas.x,AL_SubFlare(tSubFlare).Atlas.y
+                           inc tVertex
+                        next v
+                        inc tSubFlare
+                     next s
+                  endif
+               next f
+               unlock vertexdata
+               set object effect AL_FlareObject(o).Object,AL_FlareObject(o).Effect
+               texture object AL_FlareObject(o).Object,0,AL_Image(2)
+               texture object AL_FlareObject(o).Object,1,AL_Image(5)
+               texture object AL_FlareObject(o).Object,2,AL_LensFlareImage
+               set object mask AL_FlareObject(o).Object,(2^AL_Camera(5))+(2^AL_Camera(9))
+               AL_FlareObject(o).ObjectUpdate=0
+            endif
+         next o
+         AL_LensFlareObjectUpdate=0
+      endif
+      if AL_LensFlareUpdate=1
+         for o=0 to AL_FlareObjectCount(1)
+            if AL_FlareObject(o).Update=1
+               null=get object effect(AL_FlareObject(o).Object,0)
+               tEndVal=(o*100)+99
+               if o=AL_FlareObjectCount(1) then tEndVal=AL_LensFlareCount
+               for f=o*100 to tEndVal
+                  if AL_LensFlare(f).UpDate=1
+                     if AL_LensFlare(f).Visible=1
+                        set vector4 AL_Vector4(1),AL_LensFlare(f).Position.x,AL_LensFlare(f).Position.y,AL_LensFlare(f).Position.z,0
+                        set effect constant vector element "LensFlarePosition",f-(o*100),AL_Vector4(1)
+                        set vector4 AL_Vector4(1),AL_LensFlare(f).Color.x/255,AL_LensFlare(f).Color.y/255,AL_LensFlare(f).Color.z/255,0
+                        set effect constant vector element "LensFlareColor",f-(o*100),AL_Vector4(1)
+                     else
+                        set vector4 AL_Vector4(1),0,-9999999999,0,0
+                        set effect constant vector element "LensFlarePosition",f-(o*100),AL_Vector4(1)
+                     endif
+                     AL_LensFlare(f).UpDate=0
+                  endif
+               next f
+               release effect pointer
+               AL_FlareObject(o).Update=0
+            endif
+         next o
+         AL_LensFlareUpdate=0
+      endif
+      for o=0 to AL_FlareObjectCount(1)
+         position object AL_FlareObject(o).Object,AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+         rotate object AL_FlareObject(o).Object,AL_CameraAng.x,AL_CameraAng.y,AL_CameraAng.z
+      next o
+   endif
+endfunction
+
+`--------------
+` Delete Lens Flare
+`--------------
+function LensFlare_Delete(iLensFlare as integer)
+   if AL_LensFlareEnabled=1
+      if AL_LensFlare(iLensFlare).InUse=1
+         AL_LensFlare(iLensFlare).InUse=0
+         for f=AL_LensFlare(iLensFlare).SubFlareStart to AL_SubFlareCount-AL_LensFlare(iLensFlare).SubFlareCount
+            AL_SubFlare(f)=AL_SubFlare(f+AL_LensFlare(iLensFlare).SubFlareCount)
+         next f
+         for f=0 to AL_LensFlareCount
+            if AL_LensFlare(f).InUse=1
+               if AL_LensFlare(f).SubFlareStart>AL_LensFlare(iLensFlare).SubFlareStart
+                  AL_LensFlare(f).SubFlareStart=AL_LensFlare(f).SubFlareStart-AL_LensFlare(iLensFlare).SubFlareCount
+               endif
+            endif
+         next f
+         dec AL_SubFlareCount,AL_LensFlare(iLensFlare).SubFlareCount
+         AL_LensFlareObjectUpdate=1
+         AL_FlareObject(iLensFlare/100).ObjectUpdate=1
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Lens Flare Visible
+`--------------
+function LensFlare_SetVisible(iLensFlare as integer,iVisible as integer)
+   if AL_LensFlareEnabled=1
+      if AL_LensFlare(iLensFlare).InUse=1
+         if AL_LensFlare(iLensFlare).Visible<>iVisible
+            AL_LensFlare(iLensFlare).Visible=iVisible
+            AL_LensFlare(iLensFlare).UpDate=1
+            AL_FlareObject(iLensFlare/100).Update=1
+            AL_LensFlareUpdate=1
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Lens Flare Position
+`--------------
+function LensFlare_SetPosition(iLensFlare as integer,iPosX as float,iPosY as float,iPosZ as float)
+   if AL_LensFlareEnabled=1
+      if AL_LensFlare(iLensFlare).InUse=1
+         AL_LensFlare(iLensFlare).Position.x=iPosX
+         AL_LensFlare(iLensFlare).Position.y=iPosY
+         AL_LensFlare(iLensFlare).Position.z=iPosZ
+         AL_LensFlare(iLensFlare).UpDate=1
+         AL_FlareObject(iLensFlare/100).Update=1
+         AL_LensFlareUpdate=1
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Lens Flare Color
+`--------------
+function LensFlare_SetColor(iLensFlare as integer,iRed as float,iGreen as float,iBlue as float)
+   if AL_LensFlareEnabled=1
+      if AL_LensFlare(iLensFlare).InUse=1
+         AL_LensFlare(iLensFlare).Color.x=iRed
+         AL_LensFlare(iLensFlare).Color.y=iGreen
+         AL_LensFlare(iLensFlare).Color.z=iBlue
+         AL_LensFlare(iLensFlare).UpDate=1
+         AL_FlareObject(iLensFlare/100).Update=1
+         AL_LensFlareUpdate=1
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Lens Flare To Directional Light
+`--------------
+function LensFlare_SetToDirLight(iLensFlare as integer)
+   if AL_LensFlareEnabled=1
+      if AL_DirLightInUse=1
+         if iLensFlare>-1
+            if AL_LensFlare(iLensFlare).InUse=1
+               AL_DirLightLensFlare.x=iLensFlare
+               AL_DirLightLensFlare.y=int(iLensFlare/100)
+               AL_DirLightLensFlare.z=iLensFlare-(AL_DirLightLensFlare.y*100)
+               LensFlare_SetColor(iLensFlare,AL_DirLightColor.x,AL_DirLightColor.y,AL_DirLightColor.z)
+            endif
+         else
+            AL_DirLightLensFlare.x=-1
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Lens Flare To Spot Light
+`--------------
+function LensFlare_SetToSpotLight(iLensFlare as integer,iLight as integer)
+   if AL_LensFlareEnabled=1
+      if AL_SpotLight(iLight).InUse=1
+         if iLensFlare>-1
+            if AL_LensFlare(iLensFlare).InUse=1
+               AL_SpotLight(iLight).LensFlare=iLensFlare
+               LensFlare_SetPosition(iLensFlare,AL_SpotLight(iLight).Position.x,AL_SpotLight(iLight).Position.y,AL_SpotLight(iLight).Position.z)
+               LensFlare_SetColor(iLensFlare,AL_SpotLight(iLight).Color.x,AL_SpotLight(iLight).Color.y,AL_SpotLight(iLight).Color.z)
+            endif
+         else
+            AL_SpotLight(iLight).LensFlare=-1
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Lens Flare To Point Light
+`--------------
+function LensFlare_SetToPointLight(iLensFlare as integer,iLight as integer)
+   if AL_LensFlareEnabled=1
+      if AL_PointLight(iLight).InUse=1
+         if iLensFlare>-1
+            if AL_LensFlare(iLensFlare).InUse=1
+               AL_PointLight(iLight).LensFlare=iLensFlare
+               LensFlare_SetPosition(iLensFlare,AL_PointLight(iLight).Position.x,AL_PointLight(iLight).Position.y,AL_PointLight(iLight).Position.z)
+               LensFlare_SetColor(iLensFlare,AL_PointLight(iLight).Color.x,AL_PointLight(iLight).Color.y,AL_PointLight(iLight).Color.z)
+            endif
+         else
+            AL_PointLight(iLight).LensFlare=-1
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Sub Flare Atlas
+`--------------
+function LensFlare_SetSubFlareAtlas(iLensFlare as integer,iSubFlare as integer,iAtlas as float)
+   if AL_LensFlareEnabled=1
+      if AL_LensFlare(iLensFlare).InUse=1
+         if iSubFlare<AL_LensFlare(iLensFlare).SubFlareCount+1
+            tSubFlare as integer
+            tAtlasX as float
+            tAtlasy as float
+            iAtlas=iAtlas-1
+            tAtlasX=iAtlas-(int(iAtlas/4)*4)
+            tAtlasy=int(iAtlas/4)
+            tSubFlare=AL_LensFlare(iLensFlare).SubFlareStart+iSubFlare
+            AL_SubFlare(tSubFlare).Atlas.x=tAtlasX/4
+            AL_SubFlare(tSubFlare).Atlas.y=tAtlasY/4
+            AL_LensFlareObjectUpdate=1
+            AL_FlareObject(iLensFlare/100).ObjectUpdate=1
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Sub Flare Scale
+`--------------
+function LensFlare_SetSubFlareScale(iLensFlare as integer,iSubFlare as integer,iScaleX as float,iScaleY as float,iViewScale as float)
+   if AL_LensFlareEnabled=1
+      if AL_LensFlare(iLensFlare).InUse=1
+         if iSubFlare<AL_LensFlare(iLensFlare).SubFlareCount+1
+            tSubFlare as integer
+            tSubFlare=AL_LensFlare(iLensFlare).SubFlareStart+iSubFlare
+            AL_SubFlare(tSubFlare).Scale.x=iScaleX
+            AL_SubFlare(tSubFlare).Scale.y=iScaleY
+            AL_SubFlare(tSubFlare).Scale.z=iViewScale
+            AL_LensFlareObjectUpdate=1
+            AL_FlareObject(iLensFlare/100).ObjectUpdate=1
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Sub Flare Offset
+`--------------
+function LensFlare_SetSubFlareOffset(iLensFlare as integer,iSubFlare as integer,iOffset as float,iZshift as float,iRoll as float)
+   if AL_LensFlareEnabled=1
+      if AL_LensFlare(iLensFlare).InUse=1
+         if iSubFlare<AL_LensFlare(iLensFlare).SubFlareCount+1
+            tSubFlare as integer
+            tSubFlare=AL_LensFlare(iLensFlare).SubFlareStart+iSubFlare
+            AL_SubFlare(tSubFlare).Offset.x=iOffset
+            if iSubFlare=0 then AL_SubFlare(tSubFlare).Offset.x=0
+            AL_SubFlare(tSubFlare).Offset.y=iZshift
+            AL_SubFlare(tSubFlare).Offset.z=iRoll
+            AL_LensFlareObjectUpdate=1
+            AL_FlareObject(iLensFlare/100).ObjectUpdate=1
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Sub Flare Color
+`--------------
+function LensFlare_SetSubFlareColor(iLensFlare as integer,iSubFlare as integer,iRed as float,iGreen as float,iBlue as float,iAlphaTosurface as float)
+   if AL_LensFlareEnabled=1
+      if AL_LensFlare(iLensFlare).InUse=1
+         if iSubFlare<AL_LensFlare(iLensFlare).SubFlareCount+1
+            tSubFlare as integer
+            tSubFlare=AL_LensFlare(iLensFlare).SubFlareStart+iSubFlare
+            AL_SubFlare(tSubFlare).Color.x=iRed/255
+            AL_SubFlare(tSubFlare).Color.y=iGreen/255
+            AL_SubFlare(tSubFlare).Color.z=iBlue/255
+            AL_SubFlare(tSubFlare).AlphaTosurface=iAlphaTosurface
+            AL_LensFlareObjectUpdate=1
+            AL_FlareObject(iLensFlare/100).ObjectUpdate=1
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Sub Flare Falloff
+`--------------
+function LensFlare_SetSubFlareFalloff(iLensFlare as integer,iSubFlare as integer,iFalloff as float,iInnerFade as float,iEdgeFade as float)
+   if AL_LensFlareEnabled=1
+      if AL_LensFlare(iLensFlare).InUse=1
+         if iSubFlare<AL_LensFlare(iLensFlare).SubFlareCount+1
+            tSubFlare as integer
+            tSubFlare=AL_LensFlare(iLensFlare).SubFlareStart+iSubFlare
+            AL_SubFlare(tSubFlare).Falloff.x=iFalloff
+            AL_SubFlare(tSubFlare).Falloff.y=iInnerFade
+            AL_SubFlare(tSubFlare).Falloff.z=iEdgeFade
+            AL_LensFlareObjectUpdate=1
+            AL_FlareObject(iLensFlare/100).ObjectUpdate=1
+         endif
+      endif
+   endif
+endfunction
+
+type AL_FogAreaData
+   InUse as boolean
+   Visible as boolean
+   InVolume as boolean
+   Object as integer
+   Effect as integer
+   Color as AL_Vec3Float
+   Alpha as float
+   Range as AL_Vec3Float
+   Position as AL_Vec3Float
+   Direction as AL_Vec3Float
+   Angle as AL_Vec3Float
+   Scale as AL_Vec3Float
+endtype
+
+`--------------
+` Make Fog Area
+`--------------
+function FogArea_Create(iType as integer)
+   local tFogArea as integer
+   if AL_FogAreaEnabled=0
+      global AL_FogAreaEnabled as boolean
+      global dim AL_FogArea() as AL_FogAreaData
+      AL_FogAreaEnabled=1
+   endif
+   tFogArea=-1
+   for f=0 to AL_FogAreaCount
+      if AL_FogArea(f).InUse=0 then tFogArea=f
+   next f
+   if tFogArea=-1
+      array insert at bottom AL_FogArea()
+      inc AL_FogAreaCount
+      tFogArea=AL_FogAreaCount
+   endif
+   AL_FogArea(tFogArea).InUse=1
+   AL_FogArea(tFogArea).Object=find free object()
+   make object box AL_FogArea(tFogArea).Object,-100,-100,-100
+   AL_FogArea(tFogArea).Effect=find free effect()
+   if iType=0 then load effect AL_Directory+"Alpha/Fog/Fog.fx",AL_FogArea(tFogArea).Effect,0,1
+   if iType=1 then load effect AL_Directory+"Alpha/Fog/Water Fog.fx",AL_FogArea(tFogArea).Effect,0,1
+   convert object fvf AL_FogArea(tFogArea).Object,0x002
+   offset limb AL_FogArea(tFogArea).Object,0,0,0,50
+   set object effect AL_FogArea(tFogArea).Object,AL_FogArea(FogA).Effect
+   texture object AL_FogArea(tFogArea).Object,0,AL_Image(2)
+   texture object AL_FogArea(tFogArea).Object,1,AL_Image(7)
+   set object transparency AL_FogArea(tFogArea).Object,2
+   set object mask AL_FogArea(tFogArea).Object,2^AL_Camera(7)
+   set vector4 AL_Vector4(1),0.5/AL_ViewVec.x,0.5/AL_ViewVec.y,1,1
+   set effect constant vector AL_FogArea(tFogArea).Effect,"ViewSize",AL_Vector4(1)
+   set vector4 AL_Vector4(1),AL_Fog(1),AL_Fog(12),AL_Fog(2),AL_Fog(13)
+   set effect constant vector AL_FogArea(tFogArea).Effect,"FogRange",AL_Vector4(1)
+   FogArea_SetOrientation(tFogArea,0,0,0,0,0,0,100,100,100)
+   FogArea_SetColor(tFogArea,64,64,64,1)
+   FogArea_SetColor2(tFogArea,64,64,64)
+   FogArea_SetRange(tFogArea,100,100,0)
+   FogArea_Visible(tFogArea,1)
+endfunction tFogArea
+
+`--------------
+` Delete Fog Area
+`--------------
+function FogArea_Delete(iFogArea as integer)
+   if AL_FogAreaEnabled=1 and iFogArea>-1 and iFogArea<AL_FogAreaCount+1
+      if AL_FogArea(iFogArea).InUse=1
+         delete object AL_FogArea(iFogArea).Object
+         delete effect AL_FogArea(iFogArea).Effect
+         AL_FogArea(iFogArea).InUse=0
+         AL_FogArea(iFogArea).Visible=0
+      endif
+   endif
+endfunction
+
+`--------------
+` Update Fog Area
+`--------------
+function FogArea_Update()
+   if AL_FogAreaEnabled=1
+      local tDist as float
+      local tIntencity as float
+      for f=0 to AL_FogAreaCount
+         if AL_FogArea(f).InUse=1 and AL_FogArea(f).Visible=1
+            rotate x matrix4 AL_Matrix(1),AL_FogArea(f).Angle.x/57.295
+            rotate y matrix4 AL_Matrix(2),AL_FogArea(f).Angle.y/57.295
+            rotate z matrix4 AL_Matrix(3),AL_FogArea(f).Angle.z/57.295
+            multiply matrix4 AL_Matrix(1),AL_Matrix(1),AL_Matrix(2)
+            multiply matrix4 AL_Matrix(1),AL_Matrix(1),AL_Matrix(3)
+            set vector3 AL_Vector3(1),AL_FogArea(f).Position.x-AL_CameraPos.x,AL_FogArea(f).Position.y-AL_CameraPos.y,AL_FogArea(f).Position.z-AL_CameraPos.z
+            transform coords vector3 AL_Vector3(1),AL_Vector3(1),AL_Matrix(1)
+            if AL_DistortionEnabled=1 or AL_ScatteringEnabled=1
+               if x vector3(AL_Vector3(1))<AL_FogArea(f).Scale.x/2 and x vector3(AL_Vector3(1))>-AL_FogArea(f).Scale.x/2 and y vector3(AL_Vector3(1))<AL_FogArea(f).Scale.y/2 and y vector3(AL_Vector3(1))>-AL_FogArea(f).Scale.y/2 and z vector3(AL_Vector3(1))>0 and z vector3(AL_Vector3(1))<AL_FogArea(f).Scale.z
+                  if AL_FogArea(f).InVolume=0
+                     AL_FogArea(f).InVolume=1
+                     set object mask AL_FogArea(f).Object,(2^AL_Camera(7))+(2^AL_Camera(5))
+                  endif
+               else
+                  if AL_FogArea(f).InVolume=1
+                     AL_FogArea(f).InVolume=0
+                     set object mask AL_FogArea(f).Object,2^AL_Camera(7)
+                  endif
+               endif
+            endif
+            tDist=z vector3(AL_Vector3(1))-(AL_FogArea(f).Scale.z+(AL_FogArea(f).Range.z/4))
+            tIntencity=AL_FogArea(f).Range.y
+            if tDist<0
+               tIntencity=AL_FogArea(f).Range.y+(tDist*4)
+               if tIntencity<0 then tIntencity=0
+            endif
+            set effect constant float AL_FogArea(f).Effect,"AreaFogIntencity",1-(tIntencity/AL_FogArea(f).Range.y)
+            set vector4 AL_Vector4(1),AL_FogArea(iFogArea).Range.x,AL_FogArea(iFogArea).Range.y*(tIntencity/AL_FogArea(f).Range.y),AL_FogArea(f).Range.y*5,AL_FogArea(f).InVolume
+            set effect constant vector AL_FogArea(iFogArea).Effect,"AreaFogRange",AL_Vector4(1)
+         endif
+      next f
+   endif
+endfunction
+
+`--------------
+` Set Area Fog Visible
+`--------------
+function FogArea_Visible(iFogArea as integer,iVisible as integer)
+   if AL_FogAreaEnabled=1 and iFogArea>-1 and iFogArea<AL_FogAreaCount+1
+      if AL_FogArea(iFogArea).InUse=1
+         if AL_FogArea(iFogArea).Visible=0 and iVisible=1
+            AL_FogArea(iFogArea).Visible=1
+            show object AL_FogArea(iFogArea).Object
+            exclude object off AL_FogArea(iFogArea).Object
+         endif
+         if AL_FogArea(iFogArea).Visible=1 and iVisible<>1
+            AL_FogArea(iFogArea).Visible=0
+            hide object AL_FogArea(iFogArea).Object
+            exclude object on AL_FogArea(iFogArea).Object
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Area Fog Orientation
+`--------------
+function FogArea_SetOrientation(iFogArea as integer,iPosX as float,iPosY as float,iPosZ as float,iAngX as float,iAngY as float,iAngZ as float,iScaleX as float,iScaleY as float,iScaleZ as float)
+   if AL_FogAreaEnabled=1 and iFogArea>-1 and iFogArea<AL_FogAreaCount+1
+      if AL_FogArea(iFogArea).InUse=1
+         AL_FogArea(iFogArea).Position.x=iPosX
+         AL_FogArea(iFogArea).Position.y=iPosY
+         AL_FogArea(iFogArea).Position.z=iPosZ
+         AL_FogArea(iFogArea).Scale.x=iScaleX
+         AL_FogArea(iFogArea).Scale.y=iScaleY
+         AL_FogArea(iFogArea).Scale.z=iScaleZ
+         AL_FogArea(iFogArea).Angle.x=wrapvalue(iAngX)
+         AL_FogArea(iFogArea).Angle.y=wrapvalue(iAngY)
+         AL_FogArea(iFogArea).Angle.z=wrapvalue(iAngZ)
+         rotate x matrix4 AL_Matrix(1),AL_FogArea(iFogArea).Angle.x/57.295
+         rotate y matrix4 AL_Matrix(2),AL_FogArea(iFogArea).Angle.y/57.295
+         rotate z matrix4 AL_Matrix(3),AL_FogArea(iFogArea).Angle.z/57.295
+         multiply matrix4 AL_Matrix(1),AL_Matrix(1),AL_Matrix(2)
+         multiply matrix4 AL_Matrix(1),AL_Matrix(1),AL_Matrix(3)
+         set vector3 AL_Vector3(1),0,0,1
+         transform normals vector3 AL_Vector3(1),AL_Vector3(1),AL_Matrix(1)
+         AL_FogArea(iFogArea).Direction.x=x vector3(AL_Vector3(1))
+         AL_FogArea(iFogArea).Direction.y=y vector3(AL_Vector3(1))
+         AL_FogArea(iFogArea).Direction.z=z vector3(AL_Vector3(1))
+         set vector4 AL_Vector4(1),-AL_FogArea(iFogArea).Direction.x,-AL_FogArea(iFogArea).Direction.y,-AL_FogArea(iFogArea).Direction.z,0
+         set effect constant vector AL_FogArea(iFogArea).Effect,"AreaFogDirection",AL_Vector4(1)
+         set vector4 AL_Vector4(1),AL_FogArea(iFogArea).Position.x+(AL_FogArea(iFogArea).Direction.x*(AL_FogArea(iFogArea).Scale.z)),AL_FogArea(iFogArea).Position.y+(AL_FogArea(iFogArea).Direction.y*(AL_FogArea(iFogArea).Scale.z)),AL_FogArea(iFogArea).Position.z+(AL_FogArea(iFogArea).Direction.z*(AL_FogArea(iFogArea).Scale.z)),0
+         set effect constant vector AL_FogArea(iFogArea).Effect,"AreaFogPosition",AL_Vector4(1)
+         set effect constant float AL_FogArea(iFogArea).Effect,"AreaFogZScale",AL_FogArea(iFogArea).Scale.z
+         build ortho lhmatrix4 AL_Matrix(1),AL_FogArea(iFogArea).Scale.x+(AL_FogArea(iFogArea).Scale.x/500),AL_FogArea(iFogArea).Scale.y+(AL_FogArea(iFogArea).Scale.y/500),0,0
+         set vector3 AL_Vector3(1),0,0,0
+         set vector3 AL_Vector3(2),AL_FogArea(iFogArea).Direction.x,AL_FogArea(iFogArea).Direction.y,AL_FogArea(iFogArea).Direction.z
+         set vector3 AL_Vector3(3),0,1,0
+         build lookat lhmatrix4 AL_Matrix(2),AL_Vector3(1),AL_Vector3(2),AL_Vector3(3)
+         multiply matrix4 AL_Matrix(1),AL_Matrix(2),AL_Matrix(1)
+         set effect constant matrix AL_FogArea(iFogArea).Effect,"AreaFogProjMatrix",AL_Matrix(1)
+         position object AL_FogArea(iFogArea).Object,iPosX,iPosY,iPosZ
+         rotate object AL_FogArea(iFogArea).Object,iAngX,iAngY,iAngZ
+         scale object AL_FogArea(iFogArea).Object,iScaleX,iScaleY,iScaleZ
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Area Fog Color
+`--------------
+function FogArea_SetColor(iFogArea as integer,iRed as float,iGreen as float,iBlue as float,iAlpha as float)
+   if AL_FogAreaEnabled=1 and iFogArea>-1 and iFogArea<AL_FogAreaCount+1
+      if AL_FogArea(iFogArea).InUse=1
+         AL_FogArea(iFogArea).Color.x=iRed
+         AL_FogArea(iFogArea).Color.y=iGreen
+         AL_FogArea(iFogArea).Color.z=iBlue
+         AL_FogArea(iFogArea).Alpha=iAlpha
+         set vector4 AL_Vector4(1),AL_FogArea(iFogArea).Color.x/255,AL_FogArea(iFogArea).Color.y/255,AL_FogArea(iFogArea).Color.z/255,AL_FogArea(iFogArea).Alpha/255
+         set effect constant vector AL_FogArea(iFogArea).Effect,"AreaFogColor",AL_Vector4(1)
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Area Fog Color 2
+`--------------
+function FogArea_SetColor2(iFogArea as integer,iRed as float,iGreen as float,iBlue as float)
+   if AL_FogAreaEnabled=1 and iFogArea>-1 and iFogArea<AL_FogAreaCount+1
+      if AL_FogArea(iFogArea).InUse=1
+         set vector4 AL_Vector4(1),iRed/255,iGreen/255,iBlue/255,0
+         set effect constant vector AL_FogArea(iFogArea).Effect,"AreaFogColor2",AL_Vector4(1)
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Area Fog Range
+`--------------
+function FogArea_SetRange(iFogArea as integer,iRange as float,iZRange as float,iZFall as float)
+   if AL_FogAreaEnabled=1 and iFogArea>-1 and iFogArea<AL_FogAreaCount+1
+      if AL_FogArea(iFogArea).InUse=1
+         AL_FogArea(iFogArea).Range.x=iRange
+         AL_FogArea(iFogArea).Range.y=iZRange
+         AL_FogArea(iFogArea).Range.z=iZFall
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Area Fog Caustics
+`--------------
+function FogArea_SetCaustics(iFogArea as integer,iTexture as integer,iDirX as float,iDirY as float,iDirZ as float,iScale as float)
+   if AL_FogAreaEnabled=1 and iFogArea>-1 and iFogArea<AL_FogAreaCount+1
+      if AL_FogArea(iFogArea).InUse=1
+         if iTexture>0 then texture object AL_FogArea(tFogArea).Object,2,iTexture
+         set vector3 AL_Vector3(1),0,0,0
+         set vector3 AL_Vector3(2),iDirX,iDirY,iDirZ
+         set vector3 AL_Vector3(3),0,1,0
+         build lookat lhmatrix4 AL_Matrix(1),AL_Vector3(1),AL_Vector3(2),AL_Vector3(3)
+         build ortho lhmatrix4 AL_Matrix(2),iScale,iScale,0,1
+         multiply matrix4 AL_Matrix(1),AL_Matrix(1),AL_Matrix(2)
+         set effect constant matrix AL_FogArea(iFogArea).Effect,"CausticProjMatrix",AL_Matrix(1)
+      endif
+   endif
+endfunction
+

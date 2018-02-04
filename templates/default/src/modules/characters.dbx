@@ -1,0 +1,872 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	Character Controller
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides management and update handling of character entities.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+		SC_Collision.dll (Sparky)
+
+	*******************************************
+	Classes:
+
+		Requires system.dbx
+		Requires media.dbx
+		Requires math.dbx
+		Requires anim3d.dbx
+		Requires controls.dbx
+
+		=========================================
+		Defines STATIC CLASS: Characters
+
+			------------------------
+			public functions:
+
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+				_Characters_init()
+					-
+
+			------------------------
+			private data:
+
+
+
+		=========================================
+		Defines CLASS: CharacterEntity
+
+			------------------------
+			public functions:
+
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+
+					-
+
+			------------------------
+			private data:
+
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+characters_module_init:
+
+	if CHARACTERS_MODULE_LOADED = FALSE
+
+		<?System_log("characters.dbx", 2, "main", "Begin module load: characters.")?>
+		App_updateSplashScreen("- Characters")
+
+		`Declare Characters -----------------------------------------------------------
+
+		type Characters_type_configData
+			crouchMaxSpeed as float
+			crouchAcceleration as float
+			footMaxSpeed as float
+			footTurnSpeed as float
+			footAcceleration as float
+			footDeceleration as float
+			runMaxSpeed as float
+			sprintMaxSpeed as float
+			sprintAcceleration as float
+			collisionBufferDistance as float
+		endtype
+
+		type Characters_type_statusData
+			updateMark as integer
+			slopeMark as integer
+		endtype
+
+		type Characters_type_stateIdData
+			passive as byte
+			sneaking as byte
+			idle as byte
+			moving as byte
+			jumping as byte
+			falling as byte
+			stationary as byte
+			walking as byte
+			running as byte
+			sprinting as byte
+			forced as byte
+			standard as byte
+			strafeRight as byte
+			strafeLeft as byte
+			backstep as byte
+		endtype
+
+		type STATIC_CLASS_Characters
+			config as Characters_type_configData
+			status as Characters_type_statusData
+			stateId as Characters_type_stateIdData
+			myCharIndex as integer
+		endtype
+
+		`Declare CharacterEntity -----------------------------------------------------------
+
+		type CharacterEntity_type_baseData
+			posX as float
+			posY as float
+			posZ as float
+			facing as float
+			heading as float
+			speed as float
+			slopeMod as float
+			height as float
+			mass as float
+			objID as string //guid of character object
+			colObjNum as integer //collision object
+			fileBase as string //TODO: deprecate ??? doesnt really seem to be used anymore. we mostly create this on the fly as needed from other data.
+		endtype
+
+		type CharacterEntity_type_statusData
+			stance as byte
+			action as byte
+			locomotion as byte
+			direction as byte
+			strafeLock as boolean
+			runLock as boolean
+			slopeLock as boolean
+			isLiving as boolean
+			isExhausted as boolean
+			locoMark as integer
+		endtype
+
+		type CharacterEntity_type_vitalsData
+			current as integer
+			max as integer
+			regenMark as integer
+			regenInterval as integer
+			regenAmount as float
+		endtype
+
+		type CharacterEntity_type_physicalStatData
+			health as CharacterEntity_type_vitalsData
+			stamina as CharacterEntity_type_vitalsData
+			energy as CharacterEntity_type_vitalsData
+		endtype
+
+		type CharacterEntity_type_bioData
+			name as string
+			gender as string //m | f
+			faction as string
+			characterClass as string
+			isUnique as boolean
+		endtype
+
+		//NOTE: most of the AI stuff is game specific and has been removed from the public template.
+		//      it is worth keeping the aiClass though I think to differentiate between the player and NPCs.
+		//      this has been moved here for simplicity. It will typically be placed in characters-ai.dbx sub-module file.
+		type CharacterEntity_AI_type_aiData
+			aiClass as string //player, party, npc, mob
+		endtype
+
+		type CLASS_CharacterEntity
+			baseData as CharacterEntity_type_baseData
+			status as CharacterEntity_type_statusData
+			oldStatus as CharacterEntity_type_statusData
+			phyStats as CharacterEntity_type_physicalStatData
+			bio as CharacterEntity_type_bioData
+			//the following will be defined in sub-modules, but must be declared in the class definition
+			ai as CharacterEntity_AI_type_aiData
+		endtype
+
+
+		`private data -------------------------------------------------------------
+
+
+
+		`public data --------------------------------------------------------------
+
+		dim _Characters_entities[] as CLASS_CharacterEntity
+
+		#CONSTANT THIS_CHARACTER _Characters_entities[this]
+		#CONSTANT MY_CHARACTER _Characters_entities[Characters.myCharIndex]
+
+		`Init ---------------------------------------------------------------------
+
+		`==================================
+
+		GLOBAL Characters as STATIC_CLASS_Characters
+
+		$construct CLASS_CharacterEntity{
+			baseData.mass = 0.5
+			baseData.slopeMod = 1.0
+			status.stance = Characters.stateId.passive
+			status.action = Characters.stateId.idle
+			status.locomotion = Characters.stateId.stationary
+			status.direction = Characters.stateId.standard
+			status.isLiving = TRUE
+			status.locoMark = timer()
+			phyStats.health.current = 100
+			phyStats.health.max = 100
+			phyStats.health.regenInterval = 5000
+			phyStats.health.regenAmount = 1.0
+			phyStats.health.regenMark = timer()
+			phyStats.stamina.current = 100
+			phyStats.stamina.max = 100
+			phyStats.stamina.regenInterval = 250
+			phyStats.stamina.regenAmount = 1.0
+			phyStats.stamina.regenMark = timer()
+			phyStats.energy.current = 0
+			phyStats.energy.max = 0
+			phyStats.energy.regenMark = timer()
+		}
+
+		`==================================
+
+		_Characters_init()
+
+		CHARACTER_MODULE_LOADED = TRUE
+
+		<?System_log("characters.dbx", 2, "main", "End module load: characters.")?>
+
+	endif
+return
+
+
+function _Characters_init()
+
+	Characters.config.crouchMaxSpeed = 45.0
+	Characters.config.footMaxSpeed = 85.0 //60.0 //45.0 //55.0
+	Characters.config.runMaxSpeed = 280.0 //200.0
+	Characters.config.sprintMaxSpeed = 500.0 //350.0
+
+	Characters.config.footTurnSpeed = 0.133 // ~60.0 * 0.133 = system.timing.loopsPerSec * 0.133
+
+	Characters.config.crouchAcceleration = 0.066 // ~60.0 * 0.066 == system.timing.loopsPerSec * 0.066
+	Characters.config.footAcceleration = 0.133 * 2.0 // ~60.0 * 0.133 * 2.0 == system.timing.loopsPerSec * 0.133 * 2.0
+	Characters.config.sprintAcceleration = 0.4 // ~60.0 * 0.4 == system.timing.loopsPerSec * 0.4
+
+	Characters.config.footDeceleration = 0.266 * 2.0 //320.0 // ~ 60.0 * 0.133 * 2.0 == system.timing.loopsPerSec * 0.266 * 2.0
+
+	Characters.config.collisionBufferDistance = 25.0 // World_convertDistance("ft2u", 1.25)
+
+	//stance states
+	Characters.stateId.passive = 0
+	Characters.stateId.sneaking = 1
+
+	//action states
+	Characters.stateId.idle = 0
+	Characters.stateId.moving = 1
+	Characters.stateId.jumping = 2
+	Characters.stateId.falling = 3
+
+	//locomotion states
+	Characters.stateId.stationary = 0
+	Characters.stateId.walking = 1
+	Characters.stateId.running = 2
+	Characters.stateId.sprinting = 3
+	Characters.stateId.forced = 4
+
+	//direction states
+	Characters.stateId.standard = 0
+	Characters.stateId.strafeRight = 1
+	Characters.stateId.strafeLeft = 2
+	Characters.stateId.backstep = 3
+
+	//init timing marks
+	Characters.status.updateMark = timer()
+	Characters.status.slopeMark = timer()
+
+	`register updates
+	App_addUpdate("Characters_updateCharacterStates", "Controls_getGameplayInput,Math3d_updateArcs", FALSE)
+
+	//inject new dependancies
+	App_addRequiredToUpdate("Anim3d_updateActiveAnimations", "Characters_updateCharacterStates")
+	App_addRequiredToUpdate("Camera_updatePhysicalState", "Characters_updateCharacterStates")
+
+endfunction
+
+
+function Characters_unloadAllCharacters()
+	empty array _Characters_entities[]
+endfunction
+
+
+function Characters_addCharacterEntity(rChar as CLASS_CharacterEntity)
+	array insert at bottom _Characters_entities[]
+	tID = array count(_Characters_entities[])
+	_Characters_entities[] = rChar
+endfunction tID
+
+
+function Characters_updateCharacterStates()
+
+	<?System_log("characters.dbx", 2, "main", "Begin Update: Characters_updateCharacterStates")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	oldFacing as float
+	oldPosX as float
+	oldPosY as float
+	oldPosZ as float
+
+	tTimer as integer
+	elapsed as float
+	tTimer = timer()
+	elapsed = abs(tTimer - Characters.status.updateMark) * 0.001
+	dec elapsed, System.timing.pauseElapsed * 0.001
+
+	//if elapsed > 200.0 then elapsed = 200.0
+	<?System_log("characters.dbx", 1, "characters", ">> elapsed " + str$(elapsed, 2))?>
+
+	for this = 0 to array count(_Characters_entities[])
+
+		//NOTE using constant THIS_CHARACTER = _Characters_entities[this]
+
+		<?System_log("characters.dbx", 1, "characters", " > Begin update for character: " + str$(this) + " :: " + THIS_CHARACTER.baseData.fileBase)?>
+
+		Media_getObjectRefByID(THIS_CHARACTER.baseData.objID)
+		tCharObjectNum = Media.objectResult.number
+
+		oldFacing = object angle y(tCharObjectNum)
+		oldPosX = THIS_CHARACTER.baseData.posX
+		oldPosY = THIS_CHARACTER.baseData.posY
+		oldPosZ = THIS_CHARACTER.baseData.posZ
+
+		if THIS_CHARACTER.status.isLiving
+
+			//handle regen --------------------------------------------------------------------------------------------------
+
+			if THIS_CHARACTER.phyStats.health.max > 0
+				if abs(tTimer - THIS_CHARACTER.phyStats.health.regenMark) > THIS_CHARACTER.phyStats.health.regenInterval
+					inc THIS_CHARACTER.phyStats.health.current, THIS_CHARACTER.phyStats.health.regenAmount
+					if THIS_CHARACTER.phyStats.health.current > THIS_CHARACTER.phyStats.health.max
+						THIS_CHARACTER.phyStats.health.current = THIS_CHARACTER.phyStats.health.max
+					endif
+					THIS_CHARACTER.phyStats.health.regenMark = tTimer
+				endif
+			endif
+
+			if THIS_CHARACTER.phyStats.stamina.max > 0
+				if abs(tTimer - THIS_CHARACTER.phyStats.stamina.regenMark) > THIS_CHARACTER.phyStats.stamina.regenInterval
+					//stamina is affected by locomotion type and exhaustion state
+					if THIS_CHARACTER.status.locomotion = Characters.stateId.sprinting
+						//sprint cost stamina
+						dec THIS_CHARACTER.phyStats.stamina.current, 2
+					else
+						//no stamina regen while running
+						if THIS_CHARACTER.status.locomotion <> Characters.stateId.running
+							inc THIS_CHARACTER.phyStats.stamina.current, THIS_CHARACTER.phyStats.stamina.regenAmount
+							if THIS_CHARACTER.phyStats.stamina.current > THIS_CHARACTER.phyStats.stamina.max
+								THIS_CHARACTER.phyStats.stamina.current = THIS_CHARACTER.phyStats.stamina.max
+							endif
+						endif
+					endif
+
+					//if no stamina, apply exhaustion
+					if THIS_CHARACTER.phyStats.stamina.current <= 0
+						THIS_CHARACTER.phyStats.stamina.current = 0
+						THIS_CHARACTER.status.isExhausted = TRUE
+						if THIS_CHARACTER.status.action = Characters.stateId.moving
+							if THIS_CHARACTER.status.locomotion = Characters.stateId.sprinting
+								if THIS_CHARACTER.status.runLock
+									THIS_CHARACTER.status.locomotion = Characters.stateId.running
+								else
+									THIS_CHARACTER.status.locomotion = Characters.stateId.walking
+								endif
+							endif
+						endif
+					endif
+
+					//if more than 1/5 stamina, remove exhaustion
+					if THIS_CHARACTER.phyStats.stamina.current >= THIS_CHARACTER.phyStats.stamina.max * 0.2
+						THIS_CHARACTER.status.isExhausted = FALSE
+					endif
+
+					THIS_CHARACTER.phyStats.stamina.regenMark = tTimer
+				endif
+			endif
+
+			if THIS_CHARACTER.phyStats.energy.max > 0
+				if abs(tTimer - THIS_CHARACTER.phyStats.energy.regenMark) > THIS_CHARACTER.phyStats.energy.regenInterval
+					inc THIS_CHARACTER.phyStats.energy.current, THIS_CHARACTER.phyStats.energy.regenAmount
+					if THIS_CHARACTER.phyStats.energy.current > THIS_CHARACTER.phyStats.energy.max
+						THIS_CHARACTER.phyStats.energy.current = THIS_CHARACTER.phyStats.energy.max
+					endif
+					THIS_CHARACTER.phyStats.energy.regenMark = tTimer
+				endif
+			endif
+
+			//handle state -------------------------------------------------------------------------------------------------------------------
+
+			//get active animation data
+
+			//5000i - balancedStance-idle-stationary-standard
+			tAnimState as string //5440 etc
+			tAnimStage as string //i | o | l etc
+			tAnimSet as integer
+
+			tAnimSet = Anim3d_getAnimSetNumber("resource/media/characters/" + THIS_CHARACTER.bio.characterClass + ".anim")
+			Anim3d_getActiveAnimationByObjectNumber(tCharObjectNum)
+
+			if Anim3d.animResult.index > -1
+				<?System_log("characters.dbx", 1, "characters", "  Active animation: " + Anim3d.animResult.keyName)?>
+				tAnimState = fast left$(Anim3d.animResult.keyName, 4)
+				tAnimStage = mid$(Anim3d.animResult.keyName, 5, 1)
+			endif
+
+			<?System_log("characters.dbx", 1, "characters", "  tAnimStage = " + tAnimStage)?>
+
+			//get active arc data
+			Math3d.arcResult.vw = -1.0
+			if THIS_CHARACTER.status.action = Characters.stateId.jumping or THIS_CHARACTER.status.action = Characters.stateId.falling
+				Math3d_getArcPositionByObjectNumber(tCharObjectNum)
+				if Math3d.arcResult.vw > -1
+					THIS_CHARACTER.baseData.speed = 0.0
+					THIS_CHARACTER.baseData.posX = Math3d.arcResult.vx
+					THIS_CHARACTER.baseData.posY = Math3d.arcResult.vy
+					THIS_CHARACTER.baseData.posZ = Math3d.arcResult.vz
+					<?System_log("characters.dbx", 1, "characters", "  Character is controlled by active arc. Position: " + str$(Math3d.arcResult.vx, 2) + ", " + str$(Math3d.arcResult.vy, 2) + ", " + str$(Math3d.arcResult.vz, 2))?>
+				endif
+			endif
+
+			//get new position
+
+			mustCalcPosition = TRUE
+
+			<?System_log("characters.dbx", 1, "characters", "  Character status action: " + str$(THIS_CHARACTER.status.action))?>
+			<?System_log("characters.dbx", 1, "characters", "  Character status locomotion: " + str$(THIS_CHARACTER.status.locomotion) + " runLock: " + str$(THIS_CHARACTER.status.runLock))?>
+
+			select THIS_CHARACTER.status.action
+
+				case 0: //idle
+
+					if THIS_CHARACTER.status.locomotion = Characters.stateId.walking
+						//walking stop immediately
+						THIS_CHARACTER.baseData.speed = 0.0
+					endif
+
+					//enforce momentum degradation if running or sprinting
+					if THIS_CHARACTER.baseData.speed > 0.0
+						//transition from sprint to run to walk
+						//immediately drop from sprint to run, if run, stay as run.
+						if THIS_CHARACTER.baseData.speed > Characters.config.footMaxSpeed
+							THIS_CHARACTER.baseData.speed = curvevalue(10.0, THIS_CHARACTER.baseData.speed, System.timing.loopsPerSec * Characters.config.footDeceleration * 0.5)
+							THIS_CHARACTER.status.locomotion = Characters.stateId.running
+							THIS_CHARACTER.status.action = Characters.stateId.moving
+						else
+							if THIS_CHARACTER.oldStatus.locomotion = Characters.stateId.running
+								THIS_CHARACTER.baseData.speed = curvevalue(10.0, THIS_CHARACTER.baseData.speed, System.timing.loopsPerSec * Characters.config.footDeceleration)
+								THIS_CHARACTER.status.locomotion = Characters.stateId.walking
+								THIS_CHARACTER.status.action = Characters.stateId.moving
+							else
+								THIS_CHARACTER.baseData.speed = 0.0
+							endif
+						endif
+					endif
+
+					if THIS_CHARACTER.baseData.speed < 25.0
+						THIS_CHARACTER.baseData.speed = 0.0
+						THIS_CHARACTER.status.locomotion = Characters.stateId.stationary
+						THIS_CHARACTER.status.action = Characters.stateId.idle
+					endif
+
+				endcase
+
+				case 1: //moving
+
+					select THIS_CHARACTER.status.locomotion
+
+						case 0: : endcase //stationary :: invalid while action = moving
+
+						case 1: //walking
+							if THIS_CHARACTER.status.stance = Characters.stateId.sneaking
+								//apply crouched speed
+								THIS_CHARACTER.baseData.speed = curvevalue(Characters.config.crouchMaxSpeed * THIS_CHARACTER.baseData.slopeMod, THIS_CHARACTER.baseData.speed, System.timing.loopsPerSec * Characters.config.crouchAcceleration)
+							else
+								//apply standard speed
+								THIS_CHARACTER.baseData.speed = curvevalue(Characters.config.footMaxSpeed * THIS_CHARACTER.baseData.slopeMod, THIS_CHARACTER.baseData.speed, System.timing.loopsPerSec * Characters.config.footAcceleration)
+							endif
+							<?System_log("characters.dbx", 1, "characters", "  Char will walk at speed: " + str$(THIS_CHARACTER.baseData.speed))?>
+						endcase
+
+						case 2: //running
+							//apply standard speed
+							THIS_CHARACTER.baseData.speed = curvevalue(Characters.config.runMaxSpeed * THIS_CHARACTER.baseData.slopeMod, THIS_CHARACTER.baseData.speed, System.timing.loopsPerSec * Characters.config.footAcceleration)
+							<?System_log("characters.dbx", 1, "characters", "  Char will run at speed: " + str$(THIS_CHARACTER.baseData.speed))?>
+						endcase
+
+						case 3: //sprinting
+							THIS_CHARACTER.baseData.speed = curvevalue(Characters.config.sprintMaxSpeed * THIS_CHARACTER.baseData.slopeMod, THIS_CHARACTER.baseData.speed, System.timing.loopsPerSec * Characters.config.sprintAcceleration)
+						endcase
+
+						case 4: //forced :: invalid while action = moving
+
+						endcase
+
+					endselect
+
+					if THIS_CHARACTER.status.locomotion <> Characters.stateId.forced
+						if THIS_CHARACTER.baseData.speed <= (Characters.config.runMaxSpeed * 0.5) and (THIS_CHARACTER.status.locomotion = Characters.stateId.running or THIS_CHARACTER.status.locomotion = Characters.stateId.sprinting)
+							THIS_CHARACTER.status.locomotion = Characters.stateId.walking
+						endif
+						if THIS_CHARACTER.baseData.speed < 65.0 and THIS_CHARACTER.baseData.slopeMod < 1.0
+							THIS_CHARACTER.baseData.speed = 0.0
+							THIS_CHARACTER.status.locomotion = Characters.stateId.stationary
+							THIS_CHARACTER.status.action = Characters.stateId.idle
+							THIS_CHARACTER.status.slopeLock = TRUE
+						endif
+						if THIS_CHARACTER.baseData.slopeMod > 1.00
+							THIS_CHARACTER.status.slopeLock = FALSE
+						endif
+					endif
+				endcase
+
+				case 2: //jumping
+
+					<?System_log("characters.dbx", 1, "characters", "  status.action = 2 (jumping), oldStatus.action = " + str$(THIS_CHARACTER.oldStatus.action))?>
+
+					if THIS_CHARACTER.oldStatus.action = Characters.stateId.jumping
+						if tAnimStage = "i"
+							<?System_log("characters.dbx", 1, "characters", "  Jump is 'i' prepping, slow to a stop. arc not begun")?>
+							//jump is prepping, slow to a stop
+							THIS_CHARACTER.baseData.speed = curvevalue(10.0, THIS_CHARACTER.baseData.speed, System.timing.loopsPerSec * Characters.config.footDeceleration)
+							if THIS_CHARACTER.baseData.speed < 25.0
+								THIS_CHARACTER.baseData.speed = 0.0
+							endif
+						else
+							<?System_log("characters.dbx", 1, "characters", "  Jump is in flight, will use position from arc handler.")?>
+							//jump is in flight, apply position from arc handler
+							mustCalcPosition = FALSE
+							//check for apex
+							if THIS_CHARACTER.baseData.posY < oldPosY
+								<?System_log("characters.dbx", 1, "characters", "  > Jump apex reached, status.action set to falling.")?>
+								THIS_CHARACTER.status.action = Characters.stateId.falling
+							endif
+						endif
+					else
+						<?System_log("characters.dbx", 1, "characters", "  Jump state requested, 'i' has not yet begun. arc has not yet begun.")?>
+						//jump is just begining, we cant check for In state as it hasnt been started yet, just pass through, no processing needs to be done at this time.
+					endif
+				endcase
+
+				case 3: //falling, apply position from arc handler
+					mustCalcPosition = FALSE
+				endcase
+
+			endselect
+
+			//update position
+
+			if mustCalcPosition
+				THIS_CHARACTER.baseData.posX = THIS_CHARACTER.baseData.posX + sin(THIS_CHARACTER.baseData.heading) * THIS_CHARACTER.baseData.speed * elapsed
+				THIS_CHARACTER.baseData.posZ = THIS_CHARACTER.baseData.posZ + cos(THIS_CHARACTER.baseData.heading) * THIS_CHARACTER.baseData.speed * elapsed
+			endif
+
+			//check for collisions
+
+			//TODO: World_getCollision(x1, y1, z1, x2, y2, z2, buffer) -> runs horizontal slide, vertical stop, AL terrain checks returns World.collisionResult [.endX, .endY, .endZ, .state]
+			//		do we re-use this collision elsewhere? used to be used in arcs, but not now...
+			//		if not used anywhere else, just leave it here.
+			//    >> we'll probably need it for projectiles and the like
+
+			//ground out previous collision data (ai, los, etc) to discard wonky getSlide values
+			null = sc_intersectObject(0, THIS_CHARACTER.baseData.posX, THIS_CHARACTER.baseData.posY + THIS_CHARACTER.baseData.height, THIS_CHARACTER.baseData.posZ, THIS_CHARACTER.baseData.posX, THIS_CHARACTER.baseData.posY - 1000.0, THIS_CHARACTER.baseData.posZ)
+
+			collisionState = 0 //1 = horizontal collision, 2 = ground/down collision
+
+			//lateral slide
+			if THIS_CHARACTER.status.action > Characters.stateId.idle
+				if sc_sphereCast(0, oldPosX, oldPosY + (THIS_CHARACTER.baseData.height * 0.5), oldPosZ, THIS_CHARACTER.baseData.posX, THIS_CHARACTER.baseData.posY + (THIS_CHARACTER.baseData.height * 0.5), THIS_CHARACTER.baseData.posZ, Characters.config.collisionBufferDistance, 0) > 0
+					THIS_CHARACTER.baseData.posX = sc_getCollisionSlideX()
+					THIS_CHARACTER.baseData.posZ = sc_getCollisionSlideZ()
+					collisionState = 1
+				endif
+			endif
+
+			//vertical down
+			tHeight as float
+			tHeight = Terrain_GetHeight(THIS_CHARACTER.baseData.posX, THIS_CHARACTER.baseData.posZ)
+			if sc_intersectObject(0, THIS_CHARACTER.baseData.posX, THIS_CHARACTER.baseData.posY + THIS_CHARACTER.baseData.height, THIS_CHARACTER.baseData.posZ, THIS_CHARACTER.baseData.posX, THIS_CHARACTER.baseData.posY - 1000.0, THIS_CHARACTER.baseData.posZ) > 0
+				if tHeight < sc_getStaticCollisionY()
+					tHeight = sc_getStaticCollisionY()
+				endif
+			endif
+			if THIS_CHARACTER.baseData.posY < tHeight
+				THIS_CHARACTER.baseData.posY = tHeight
+				collisionState = 2
+			endif
+
+			if Math3d.arcResult.vw > -1
+				//handle arcs
+				//jumping
+				if collisionState = 1 //hit a wall, change to falling
+					Math3d_removeArc(tCharObjectNum)
+					Math3d_addArc(tCharObjectNum, 400.0, 270.0, THIS_CHARACTER.baseData.heading, THIS_CHARACTER.baseData.mass)
+					THIS_CHARACTER.status.action = Characters.stateId.falling
+					<?System_log("characters.dbx", 1, "jump", "  > hit a wall during active jump. cleared jump arc, added fall arc.")?>
+				endif
+			//falling
+				if collisionState = 2 //hit the ground, end the arc
+					Math3d_removeArc(tCharObjectNum)
+					THIS_CHARACTER.status.action = Characters.stateId.idle
+					THIS_CHARACTER.status.locomotion = Characters.stateId.stationary
+					<?System_log("characters.dbx", 1, "jump", "  > hit a floor during active fall. cleared arc.")?>
+				endif
+			else
+				//no arc, just force to ground height
+				THIS_CHARACTER.baseData.posY = tHeight
+
+				//check for new falloffs
+				<?System_log("characters.dbx", 1, "characters", "  > no arc handling, just force to ground.")?>
+				<?System_log("characters.dbx", 1, "characters", "  oldPosY - THIS_CHARACTER.baseData.posY > THIS_CHARACTER.baseData.height * 0.5")?>
+				<?System_log("characters.dbx", 1, "characters", "  " + str$(oldPosY) +" - "+ str$(THIS_CHARACTER.baseData.posY) +" > "+ str$(THIS_CHARACTER.baseData.height) + " * 0.5")?>
+				<?System_log("characters.dbx", 1, "characters", "  " + str$(oldPosY - THIS_CHARACTER.baseData.posY) + " > " + str$(THIS_CHARACTER.baseData.height * 0.5))?>
+				tDiff# = oldPosY - THIS_CHARACTER.baseData.posY
+				if tDiff# < 0.0 and THIS_CHARACTER.status.slopeLock
+					if tTimer - Characters.status.slopeMark > 200
+						THIS_CHARACTER.baseData.slopeMod = 0.0
+					endif
+					THIS_CHARACTER.baseData.speed = 0.0
+					THIS_CHARACTER.status.action = Characters.stateId.idle
+					THIS_CHARACTER.status.locomotion = Characters.stateId.stationary
+					THIS_CHARACTER.baseData.posX = oldPosX
+					THIS_CHARACTER.baseData.posY = oldPosY
+					THIS_CHARACTER.baseData.posZ = oldPosZ
+				else
+					if tDiff# > THIS_CHARACTER.baseData.height * 0.5
+						THIS_CHARACTER.baseData.posY = oldPosY
+						Math3d_addArc(tCharObjectNum, 100.0 + THIS_CHARACTER.baseData.speed, 30.0, THIS_CHARACTER.baseData.heading, THIS_CHARACTER.baseData.mass)
+						THIS_CHARACTER.status.action = Characters.stateId.falling
+						THIS_CHARACTER.status.stance = Characters.stateId.passive //TODO: maintain current stance?
+						THIS_CHARACTER.status.locomotion = Characters.stateId.forced
+						<?System_log("characters.dbx", 1, "characters", "  > new falloff, add fall arc.")?>
+					else
+						//NOTE: negative tDiff# indicates character moved uphill, larger the negative, the steeper the hill.
+						//NOTE: slopeMod is a speed increase 1.3 = speed * 1.3, 0.0 = stop.
+						//TODO: use a fixed length sample, currently rate of movement and framerate can affect the slope result.
+						if tTimer - Characters.status.slopeMark > 200
+							slopeThreshold# = -0.4
+							if tDiff# > 0.0 or tDiff# < slopeThreshold#
+								THIS_CHARACTER.baseData.slopeMod = 1.0 + tDiff#
+								if THIS_CHARACTER.baseData.slopeMod < 0.0 then THIS_CHARACTER.baseData.slopeMod = 0.0
+								if THIS_CHARACTER.baseData.slopeMod > 1.3 then THIS_CHARACTER.baseData.slopeMod = 1.3
+							else
+								THIS_CHARACTER.baseData.slopeMod = 1.0
+							endif
+						endif
+					endif
+				endif
+			endif
+
+			//update the object
+			yrotate object tCharObjectNum, curveangle(THIS_CHARACTER.baseData.facing, oldFacing, System.timing.loopsPerSec * Characters.config.footTurnSpeed)
+			position object tCharObjectNum, THIS_CHARACTER.baseData.posX, THIS_CHARACTER.baseData.posY, THIS_CHARACTER.baseData.posZ
+
+			tActiveDirection = THIS_CHARACTER.status.direction
+
+			//build state keys
+			<?System_log("characters.dbx", 1, "characters", " > Begin build new animation state key")?>
+
+			tState as string
+			tState = str$(THIS_CHARACTER.status.stance) + str$(THIS_CHARACTER.status.action) + str$(THIS_CHARACTER.status.locomotion) + str$(tActiveDirection)
+
+			tOldState as string
+			tOldState = str$(THIS_CHARACTER.oldStatus.stance) + str$(THIS_CHARACTER.oldStatus.action) + str$(THIS_CHARACTER.oldStatus.locomotion) + str$(THIS_CHARACTER.oldStatus.direction)
+
+			//get base stances
+			tBaseState as string
+			tBaseStance as string
+			oldBaseStance as string
+
+			tBaseStance = str$(THIS_CHARACTER.status.stance)
+			tBaseState = tBaseStance + "000"
+
+			oldBaseStance = str$(THIS_CHARACTER.oldStatus.stance)
+
+			//set the animation
+
+			tAnim = $new CLASS_AppliedAnimation3d
+
+			tAnim.objectNum = tCharObjectNum
+			tAnim.animSetNum = tAnimSet
+
+			keyBaseIdleStationaryStandard as string
+			keyBaseIdleStationaryStandard = str$(Characters.stateId.idle) + str$(Characters.stateId.stationary) + str$(Characters.stateId.standard)
+
+			<?System_log("characters.dbx", 1, "characters", "  Not using an ability")?>
+			<?System_log("characters.dbx", 1, "characters", "  tState <> tAnimState and tAnimState + 'o' <> Anim3d.animResult.keyName")?>
+			<?System_log("characters.dbx", 1, "characters", "  " + tState + " <> " + tAnimState + " and " + tAnimState + "o <> " + Anim3d.animResult.keyName)?>
+
+			if tState <> tAnimState and tAnimState + "o" <> Anim3d.animResult.keyName //NOTE: original
+
+				<?System_log("characters.dbx", 1, "characters", "  state changed, clear applied animations and set new queue.")?>
+
+				Anim3d_clearAppliedAnimations(tCharObjectNum)
+
+				if tState = tBaseState and tBaseStance = oldBaseStance
+
+					<?System_log("characters.dbx", 1, "characters", "  Must transition old state out, then new state in.")?>
+
+					//transition old state out
+					tAnim.keyName = tAnimState + "o"
+					tAnim.enableLoop = FALSE
+					tAnim.callback = ""
+					tAnim.callbackArgs = ""
+					Anim3d_addAppliedAnimation(tAnim)
+
+					//transition new state in
+					if THIS_CHARACTER.status.stance <> THIS_CHARACTER.oldStatus.stance
+						tAnim.keyName = tState + "i"
+						tAnim.enableLoop = FALSE
+						tAnim.callback = ""
+						tAnim.callbackArgs = ""
+						Anim3d_addAppliedAnimation(tAnim)
+					endif
+
+				else
+
+					<?System_log("characters.dbx", 1, "characters", "  Transition only new state in.")?>
+
+					//transition new state in
+					<?System_log("characters.dbx", 1, "characters", "  > Transition new animation state in. action = " + str$(THIS_CHARACTER.status.action))?>
+					if THIS_CHARACTER.status.action = Characters.stateId.jumping
+						<?System_log("characters.dbx", 1, "characters", "    action state is jumping. register addJump callback")?>
+						//jump stage i needs a callback to start the arc
+						tJumpArgs as string
+						tJumpAngle as string
+						tJumpSpeed as float
+						tJumpSpeed = 400.0
+						if THIS_CHARACTER.baseData.speed > 0.0
+							tJumpAngle = "30.0"
+						else
+							tJumpAngle = "90.0"
+						endif
+						tJumpArgs = str$(tCharObjectNum) + "," + str$(tJumpSpeed + THIS_CHARACTER.baseData.speed) + "," + tJumpAngle + "," + str$(THIS_CHARACTER.baseData.heading) + "," + str$(THIS_CHARACTER.baseData.mass)
+
+						tAnim.keyName = tState + "i"
+						tAnim.enableLoop = FALSE
+						tAnim.callback = "CharacterEntity_addJump"
+						tAnim.callbackArgs = tJumpArgs
+						Anim3d_addAppliedAnimation(tAnim)
+					else
+						if THIS_CHARACTER.status.stance <> THIS_CHARACTER.oldStatus.stance
+							tAnim.keyName = tState + "i"
+							tAnim.enableLoop = FALSE
+							tAnim.callback = ""
+							tAnim.callbackArgs = ""
+							Anim3d_addAppliedAnimation(tAnim)
+						endif
+					endif
+				endif
+
+				//always proceed into new state loop -> character should never not have an animation playing!
+				<?System_log("characters.dbx", 1, "characters", "  Add loop")?>
+				tAnim.keyName = tState + "l"
+				tAnim.enableLoop = TRUE
+				tAnim.callback = ""
+				tAnim.callbackArgs = ""
+				if tState = "0110" then tAnim.speedFactor = 1.15
+				Anim3d_addAppliedAnimation(tAnim)
+			endif
+
+		endif //isLiving
+	next this
+
+	Characters.status.updateMark = timer()
+
+	if tTimer - Characters.status.slopeMark > 200
+		Characters.status.slopeMark = tTimer
+	endif
+
+	<?
+	System.timing.charUpdate.last = hitimer() - updateMark
+	inc System.timing.charUpdate.total, SYSTEM.timing.charUpdate.last
+	?>
+
+	<?System_log("characters.dbx", 2, "main", "End Update: Characters_updateCharacterStates," + str$(hitimer(1000000) - updateMark) + "us")?>
+endfunction
+
+
+function Characters_getEntityRefByID(rID as string)
+	tEntityIndex = -1
+	for this = 0 to array count(_Characters_entities[])
+		if THIS_CHARACTER.baseData.objID = rID
+			tEntityIndex = this
+			exitfunction tEntityIndex
+		endif
+	next this
+endfunction tEntityIndex
+
+
+//CharacterEntity ---------------------------------------------------------------------------------
+
+
+
+function CharacterEntity_addJump(rArgs as string)
+	split string rArgs, ","
+	tObj = intval(get split word$(1))
+	tSpeed# = val(get split word$(2))
+	tAngle# = val(get split word$(3))
+	tHeading# = val(get split word$(4))
+	tMass# = val(get split word$(5))
+	Math3d_addArc(tObj, tSpeed#, tAngle#, tHeading#, tMass#)
+endfunction
+
+
+function CharacterEntity_resetLocomotion(this as integer)
+	THIS_CHARACTER.status.locomotion = Characters.stateId.stationary
+	<?System_log("characters.dbx", 1, "characters", "    reset locomotion to stationary after stance transition complete.")?>
+endfunction
+
+
+function CharacterEntity_setToDead(this as integer)
+	THIS_CHARACTER.status.isLiving = FALSE
+	THIS_CHARACTER.status.action = 0
+	THIS_CHARACTER.status.locomotion = 0
+	THIS_CHARACTER.status.direction = 0
+	THIS_CHARACTER.status.stance = 0
+	THIS_CHARACTER.phyStats.health.current = 0
+	THIS_CHARACTER.phyStats.stamina.current = 0
+	THIS_CHARACTER.phyStats.energy.current = 0
+endfunction

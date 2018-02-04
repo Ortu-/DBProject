@@ -1,0 +1,19 @@
+Upgrade 6.4
+===========
+
+General
+-------
+
+ * Fixed certificate viewer to handle more then 12 icons when the window expands
+ * Reverted DBPro DLLs to DirectX October 2006 - for better backwards compatibility
+
+Basic3D
+-------
+
+ * LOAD EFFECT - if 'resourcename' is blank, those textures are treated as dynamic
+ * Fixed TEXTURE OBJECT so that the stage value is written into the texture stage data itself
+
+Camera
+------
+
+ * SET CAMERA TO IMAGE - when alpha-surface mode 2 is used, backdrop clear now works

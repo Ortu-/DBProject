@@ -1,0 +1,96 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem Memblock Functionality
+
+rem Standard Setup Code for all examples
+sync on : sync rate 0 : backdrop off
+set text font "arial" : set text size 16
+set text to bold : set text transparent
+
+rem Set values
+SoundNumber=1+rnd(3)
+ImageNumber=1+rnd(3)
+BitmapNumber=1+rnd(3)
+MeshNumber=1+rnd(3)
+
+rem Load media
+load sound "gun.wav",SoundNumber
+load image "face.bmp",ImageNumber
+load bitmap "face.bmp",BitmapNumber
+load mesh "mesh.x",MeshNumber
+
+rem Main loop
+do
+
+rem Produce random values
+MemblockNumber=1+rnd(254)
+MemblockTo=1+rnd(254)
+FromPos=rnd(100)
+ToPos=FromPos+1+rnd(50)
+SizeInBytes=202+rnd(10240)
+TenBytes=10
+ByteValue=rnd(255)
+WordValue=rnd(65535)
+DWORDValue=rnd(22000000)
+FloatValue=rnd(10000)/100.0
+
+rem Try each command at random
+r=rnd(4)
+if MEMBLOCK EXIST(MemblockNumber)=0
+ if r=0 then MAKE MEMBLOCK MemblockNumber, SizeInBytes
+ if r=1 then MAKE MEMBLOCK FROM SOUND MemblockNumber, SoundNumber
+ if r=2 then MAKE MEMBLOCK FROM IMAGE MemblockNumber, ImageNumber
+ if r=3 then MAKE MEMBLOCK FROM BITMAP MemblockNumber, BitmapNumber
+ if r=4 then MAKE MEMBLOCK FROM MESH MemblockNumber, MeshNumber
+endif
+if MEMBLOCK EXIST(MemblockNumber)=1
+ if r=1 then DELETE SOUND SoundNumber
+ if r=2 then DELETE IMAGE ImageNumber
+ if r=3 then DELETE BITMAP BitmapNumber
+ if r=4 then DELETE MESH MeshNumber
+endif
+if MEMBLOCK EXIST(MemblockNumber)=1
+ if r=0 then WRITE MEMBLOCK BYTE MemblockNumber, ToPos, ByteValue
+ if r=0 then WRITE MEMBLOCK WORD MemblockNumber, ToPos, WordValue
+ if r=0 then WRITE MEMBLOCK DWORD MemblockNumber, ToPos, DWORDValue
+ if r=0 then WRITE MEMBLOCK FLOAT MemblockNumber, ToPos, FloatValue
+ if r=1 then MAKE SOUND FROM MEMBLOCK SoundNumber, MemblockNumber
+ if r=2 then MAKE IMAGE FROM MEMBLOCK ImageNumber, MemblockNumber
+ if r=3 then MAKE BITMAP FROM MEMBLOCK BitmapNumber, MemblockNumber
+ if r=4 then MAKE MESH FROM MEMBLOCK MeshNumber, MemblockNumber
+ if r=4 then CHANGE MESH FROM MEMBLOCK MeshNumber, MemblockNumber
+endif
+if MEMBLOCK EXIST(MemblockNumber)=1 and MEMBLOCK EXIST(MemblockTo)=1
+ if rnd(5)=1 then COPY MEMBLOCK MemblockNumber, MemblockTo, FromPos, ToPos, TenBytes
+endif
+
+rem Display data
+cls
+print "MEMBLOCK EXPRESSION DATA"
+print
+print "memblock:";MemblockNumber
+print "exist:";MEMBLOCK EXIST(MemblockNumber)
+if MEMBLOCK EXIST(MemblockNumber)=1
+ print "ptr:";GET MEMBLOCK PTR(MemblockNumber)
+ print "size:";GET MEMBLOCK SIZE(MemblockNumber)
+ print "byte:";MEMBLOCK BYTE(MemblockNumber, FromPos)
+ print "word:";MEMBLOCK WORD(MemblockNumber, FromPos)
+ print "dword:";MEMBLOCK DWORD(MemblockNumber, FromPos)
+ print "float:";MEMBLOCK FLOAT(MemblockNumber, FromPos)
+endif
+
+rem Show/play media
+if MEMBLOCK EXIST(MemblockNumber)=1
+ if r=1 then PLAY SOUND SoundNumber : SLEEP 100
+ if r=2 then PASTE IMAGE ImageNumber,0,0 : SLEEP 100
+ if r=3 then COPY BITMAP BitmapNumber,0 : SLEEP 100
+ if r=4 then MAKE OBJECT 1,MeshNumber,0 : SYNC : DELETE OBJECT 1 : SLEEP 100
+endif
+
+rem Delete memblocks
+if MEMBLOCK EXIST(MemblockNumber)=1 then DELETE MEMBLOCK MemblockNumber
+if MEMBLOCK EXIST(MemblockTo)=1 then DELETE MEMBLOCK MemblockTo
+
+rem Update screen
+sync
+
+rem End loop
+loop</pre></FONT></BODY>

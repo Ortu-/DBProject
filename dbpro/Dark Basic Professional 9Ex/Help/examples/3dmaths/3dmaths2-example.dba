@@ -1,0 +1,209 @@
+rem 3DMaths Functionality
+
+rem Indexes for vectors
+Vector2Number=1
+Vector3Number=2
+Vector4Number=3
+Vector3Eye=4
+Vector3At=5
+Vector3Up=6
+
+rem Indexes for matrices
+Matrix4Number=7
+Matrix4Projection=8
+Matrix4View=9
+Matrix4World=10
+
+rem Standard values
+Width as float=0.0+rnd(100)
+Height as float=0.0+rnd(100)
+Near as float=rnd(100)/100.0
+Far as float=rnd(100)/100.0
+FOV as float=0.0+rnd(90)
+Aspect as float=rnd(100)/100.0
+PlaneA as float=rnd(100)/100.0
+PlaneB as float=rnd(100)/100.0
+PlaneC as float=rnd(100)/100.0
+PlaneD as float=rnd(100)/100.0
+Angle as float=0.0+rnd(359)
+Value as float=0.0+rnd(100)
+FValue as float=0.0+rnd(100)
+GValue as float=0.0+rnd(100)
+SValue as float=0.0+rnd(100)
+X as float=rnd(200)-100.0
+Y as float=rnd(200)-100.0
+Z as float=rnd(200)-100.0
+W as float=rnd(100)/100.0
+Yaw as float=0.0+rnd(359)
+Pitch as float=0.0+rnd(359)
+Roll as float=0.0+rnd(359)
+
+rem Create math vectors
+ReturnFlag = make vector2(Vector2Number)
+ReturnFlag = make vector3(Vector3Number)
+ReturnFlag = make vector4(Vector4Number)
+ReturnFlag = make vector3(Vector3Eye)
+ReturnFlag = make vector3(Vector3At)
+ReturnFlag = make vector3(Vector3Up)
+
+rem Create math matrix
+ReturnFlag = make matrix4(Matrix4Number)
+
+rem Create projection, view and world matrices
+ReturnFlag = make matrix4(Matrix4Projection)
+PROJECTION MATRIX4 Matrix4Projection
+ReturnFlag = make matrix4(Matrix4View)
+VIEW MATRIX4 Matrix4View
+ReturnFlag = make matrix4(Matrix4World)
+WORLD MATRIX4 Matrix4World
+
+rem All maths for Vector2
+Vector=Vector2Number
+VectorA=Vector2Number
+VectorB=Vector2Number
+VectorC=Vector2Number
+VectorD=Vector2Number
+VectorResult=Vector2Number
+VectorSource=Vector2Number
+Matrix4Source=Matrix4Number
+
+ADD VECTOR2 VectorResult, VectorA, VectorB
+CATMULLROM VECTOR2 VectorResult, VectorA, VectorB, VectorC, VectorD, Value
+COPY VECTOR2 VectorResult, VectorSource
+DIVIDE VECTOR2 VectorResult, Value
+ReturnFloat = DOT PRODUCT VECTOR2(VectorA, VectorB)
+BCC VECTOR2 VectorResult, VectorA, VectorB, VectorC, FValue, GValue
+ReturnFloat = CCW VECTOR2(VectorA, VectorB)
+ReturnFloat = SQUARED LENGTH VECTOR2(Vector)
+ReturnFloat = LENGTH VECTOR2(Vector)
+ReturnFloat = X VECTOR2(Vector)
+ReturnFloat = Y VECTOR2(Vector)
+HERMITE VECTOR2 VectorResult, VectorA, VectorB, VectorC, VectorD, SValue
+ReturnFlag = IS EQUAL VECTOR2(VectorA, VectorB)
+LINEAR INTERPOLATE VECTOR2 VectorResult, VectorA, VectorB, SValue
+MAXIMIZE VECTOR2 VectorResult, VectorA, VectorB
+MINIMIZE VECTOR2 VectorResult, VectorA, VectorB
+MULTIPLY VECTOR2 VectorResult, Value
+NORMALIZE VECTOR2 VectorResult, VectorSource
+SCALE VECTOR2 VectorResult, VectorSource, Value
+SET VECTOR2 VectorResult, X, Y
+SUBTRACT VECTOR2 VectorResult, VectorA, VectorB
+TRANSFORM COORDS VECTOR2 VectorResult, VectorSource, Matrix4Source
+
+rem All maths for Vector3
+Vector=Vector3Number
+VectorA=Vector3Number
+VectorB=Vector3Number
+VectorC=Vector3Number
+VectorD=Vector3Number
+VectorResult=Vector3Number
+VectorSource=Vector3Number
+
+ADD VECTOR3 VectorResult, VectorA, VectorB
+CATMULLROM VECTOR3 VectorResult, VectorA, VectorB, VectorC, VectorD, Value
+COPY VECTOR3 VectorResult, VectorSource
+CROSS PRODUCT VECTOR3 VectorResult, VectorA, VectorB
+DIVIDE VECTOR3 VectorResult, Value
+ReturnFloat = DOT PRODUCT VECTOR3(VectorA, VectorB)
+BCC VECTOR3 VectorResult, VectorA, VectorB, VectorC, FValue, GValue
+ReturnFloat = SQUARED LENGTH VECTOR3(Vector)
+ReturnFloat = LENGTH VECTOR3(Vector)
+ReturnFloat = X VECTOR3(Vector)
+ReturnFloat = Y VECTOR3(Vector)
+ReturnFloat = Z VECTOR3(Vector)
+HERMITE VECTOR3 VectorResult, VectorA, VectorB, VectorC, VectorD, SValue
+ReturnFlag = IS EQUAL VECTOR3(VectorA, VectorB)
+LINEAR INTERPOLATE VECTOR3 VectorResult, VectorA, VectorB, SValue
+MAXIMIZE VECTOR3 VectorResult, VectorA, VectorB
+MINIMIZE VECTOR3 VectorResult, VectorA, VectorB
+MULTIPLY VECTOR3 VectorResult, Value
+NORMALIZE VECTOR3 VectorResult, VectorSource
+PROJECT VECTOR3 VectorResult, VectorSource, Matrix4Projection, Matrix4View, Matrix4World
+SCALE VECTOR3 VectorResult, VectorSource, Value
+SET VECTOR3 VectorResult, X, Y, Z
+SUBTRACT VECTOR3 VectorResult, VectorA, VectorB
+TRANSFORM COORDS VECTOR3 VectorResult, VectorSource, Matrix4Source
+TRANSFORM NORMALS VECTOR3 VectorResult, VectorSource, Matrix4Source
+
+rem All maths for Vector4
+Vector=Vector4Number
+VectorA=Vector4Number
+VectorB=Vector4Number
+VectorC=Vector4Number
+VectorD=Vector4Number
+VectorResult=Vector4Number
+VectorSource=Vector4Number
+
+ADD VECTOR4 VectorResult, VectorA, VectorB
+CATMULLROM VECTOR4 VectorResult, VectorA, VectorB, VectorC, VectorD, Value
+COPY VECTOR4 VectorResult, VectorSource
+DIVIDE VECTOR4 VectorResult, Value
+BCC VECTOR4 VectorResult, VectorA, VectorB, VectorC, FValue, GValue
+ReturnFloat = SQUARED LENGTH VECTOR4(Vector)
+ReturnFloat = LENGTH VECTOR4(Vector)
+ReturnFloat = X VECTOR4(Vector)
+ReturnFloat = Y VECTOR4(Vector)
+ReturnFloat = Z VECTOR4(Vector)
+ReturnFloat = W VECTOR4(Vector)
+HERMITE VECTOR4 VectorResult, VectorA, VectorB, VectorC, VectorD, SValue
+ReturnFlag = IS EQUAL VECTOR4(VectorA, VectorB)
+LINEAR INTERPOLATE VECTOR4 VectorResult, VectorA, VectorB, SValue
+MAXIMIZE VECTOR4 VectorResult, VectorA, VectorB
+MINIMIZE VECTOR4 VectorResult, VectorA, VectorB
+MULTIPLY VECTOR4 VectorResult, Value
+NORMALIZE VECTOR4 VectorResult, VectorSource
+SCALE VECTOR4 VectorResult, VectorSource, Value
+SET VECTOR4 VectorResult, X, Y, Z, W
+SUBTRACT VECTOR4 VectorResult, VectorA, VectorB
+TRANSFORM VECTOR4 VectorResult, VectorSource, Matrix4Source
+TRANSFORM NORMALS VECTOR3 VectorResult, VectorSource, Matrix4Source
+
+rem All maths for Matrix4
+Matrix4Result=Matrix4Number
+Matrix4A=Matrix4Number
+Matrix4B=Matrix4Number
+Matrix4=Matrix4Number
+Vector3Axis=Vector3Number
+
+ADD MATRIX4 Matrix4Result, Matrix4A, Matrix4B
+BUILD LOOKAT LHMATRIX4 Matrix4Result, Vector3Eye, Vector3At, Vector3Up
+BUILD LOOKAT RHMATRIX4 Matrix4Result, Vector3Eye, Vector3At, Vector3Up
+BUILD ORTHO LHMATRIX4 Matrix4Result, Width, Height, Near, Far
+BUILD ORTHO RHMATRIX4 Matrix4Result, Width, Height, Near, Far
+BUILD FOV LHMATRIX4 Matrix4Result, FOV, Aspect, Near, Far
+BUILD FOV RHMATRIX4 Matrix4Result, FOV, Aspect, Near, Far
+BUILD PERSPECTIVE LHMATRIX4 Matrix4Result, Width, Height, Near, Far
+BUILD PERSPECTIVE RHMATRIX4 Matrix4Result, Width, Height, Near, Far
+BUILD REFLECTION MATRIX4 Matrix4Result, PlaneA, PlaneB, PlaneC, PlaneD
+BUILD ROTATION AXIS MATRIX4 Matrix4Result, Vector3Axis, Angle
+COPY MATRIX4 Matrix4Result, Matrix4Source
+DIVIDE MATRIX4 Matrix4Result, Value
+ReturnFloat = INVERSE MATRIX4(Matrix4Result, Matrix4Source)
+ReturnFlag = IS EQUAL MATRIX4(Matrix4A, Matrix4B)
+ReturnFlag = IS IDENTITY MATRIX4(Matrix4Result)
+MULTIPLY MATRIX4 Matrix4Result, Matrix4A, Matrix4B
+MULTIPLY MATRIX4 Matrix4Result, Value
+ROTATE X MATRIX4 Matrix4Result, Angle
+ROTATE Y MATRIX4 Matrix4Result, Angle
+ROTATE YPR MATRIX4 Matrix4Result, Yaw, Pitch, Roll
+ROTATE Z MATRIX4 Matrix4Result, Angle
+SCALE MATRIX4 Matrix4Result, X, Y, Z
+SET IDENTITY MATRIX4 Matrix4Result
+SUBTRACT MATRIX4 Matrix4Result, Matrix4A, Matrix4B
+TRANSLATE MATRIX4 Matrix4Result, X, Y, Z
+TRANSPOSE MATRIX4 Matrix4Result, Matrix4Source
+
+rem Delete vectors and matrix
+ReturnFlag = delete vector2(Vector2Number)
+ReturnFlag = delete vector3(Vector3Number)
+ReturnFlag = delete vector4(Vector4Number)
+ReturnFlag = delete vector3(Vector3Eye)
+ReturnFlag = delete vector3(Vector3At)
+ReturnFlag = delete vector3(Vector3Up)
+ReturnFlag = delete matrix4(Matrix4Number)
+ReturnFlag = delete matrix4(Matrix4Projection)
+ReturnFlag = delete matrix4(Matrix4View)
+ReturnFlag = delete matrix4(Matrix4World)
+
+rem End program
+end

@@ -1,0 +1,60 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem Music Functionality
+
+rem Load and play CD music
+MusicNumber=1
+TrackMax = get number of cd tracks()
+if TrackMax>0
+
+ rem CD present, play a track
+ load cdmusic TrackMax, MusicNumber
+ loop music MusicNumber
+
+ rem User prompt to continue
+ center text screen width()/2,screen height()/2,"HIT ANY KEY"
+ wait key
+
+ rem Stop and delete CD music
+ stop music MusicNumber
+ delete music MusicNumber
+
+endif
+
+rem Random values
+MusicNumber=1+rnd(5)
+Volume=50+rnd(50)
+Speed=50+rnd(50)
+
+rem Load music
+load music "music\fun.mp3",MusicNumber
+loop music MusicNumber
+
+rem Main loop
+while mouseclick()=0
+
+rem Control music
+if rnd(500)=1 then play music MusicNumber
+if rnd(500)=1 then stop music MusicNumber
+if rnd(500)=1 then pause music MusicNumber
+if rnd(500)=1 then resume music MusicNumber
+if rnd(500)=1 then loop music MusicNumber
+if rnd(500)=1 then set music volume MusicNumber,Volume
+if rnd(500)=1 then set music speed MusicNumber,Speed
+
+rem Music Data
+cls
+print "Music Data (screen fps ";screen fps();")"
+print
+print "exist:";music exist(MusicNumber)
+if music exist(MusicNumber)=1
+ print "playing:";music playing(MusicNumber)
+ print "looping:";music looping(MusicNumber)
+ print "paused:";music paused(MusicNumber)
+ print "volume:";music volume(MusicNumber)
+ print "speed:";music speed(MusicNumber)
+endif
+
+rem End loop
+endwhile
+
+rem Delete music
+delete music MusicNumber</pre></FONT></BODY>

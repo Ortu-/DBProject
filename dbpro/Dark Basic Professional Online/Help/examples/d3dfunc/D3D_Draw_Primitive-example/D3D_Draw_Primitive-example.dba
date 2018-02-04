@@ -1,0 +1,132 @@
+Rem Project: D3D_Draw_Primitive_example
+Rem Created: 13/04/2008 23:10:51
+
+Rem ***** Main Source File *****
+
+Rem Declare FVF Constants
+
+#Constant D3DFVF_XYZ                2
+#Constant D3DFVF_XYZRHW             4
+#Constant D3DFVF_NORMAL             16
+#Constant D3DFVF_PSIZE              32
+#Constant D3DFVF_DIFFUSE            64
+#Constant D3DFVF_SPECULAR           128
+#Constant D3DFVF_TEX1               256
+
+Rem Declare Primitive Types
+#Constant D3DPT_POINTLIST           1
+#Constant D3DPT_LINELIST            2
+#Constant D3DPT_LINESTRIP           3
+#Constant D3DPT_TRIANGLELIST        4
+#Constant D3DPT_TRIANGLESTRIP       5
+#Constant D3DPT_TRIANGLEFAN         6
+
+Rem 3D Vertex Type with Diffuse Colour
+Rem D3DFVF_XYZ or D3DFVF_DIFFUSE
+
+type typVertex
+    X#              as float
+    Y#              as float
+    Z#              as float
+    Colour          as DWORD
+endtype
+
+dim My3DVertex(4) as typVertex
+
+Rem 2D Transformed Vertex Type with Diffuse Colour
+Rem D3DFVF_DIFFUSE or D3DFVF_XYZRHW
+
+type Transformed
+    X#              as float
+    Y#              as float
+    Z#              as float
+    W#              as float
+    colour          as DWORD
+endtype
+
+dim My2DVertex(3) as Transformed
+
+My2DVertex(0).X#=50.0
+My2DVertex(0).Y#=50.0
+My2DVertex(0).Z#=1.0
+My2DVertex(0).W#=1.0
+My2DVertex(0).Colour=RGB(255,0,0)
+
+My2DVertex(1).X#=200.0
+My2DVertex(1).Y#=50.0
+My2DVertex(1).Z#=1.0
+My2DVertex(1).W#=1.0
+My2DVertex(1).Colour=RGB(255,255,0)
+
+My2DVertex(2).X#=50.0
+My2DVertex(2).Y#=200.0
+My2DVertex(2).Z#=1.0
+My2DVertex(2).W#=1.0
+My2DVertex(2).Colour=RGB(255,255,0)
+
+My2DVertex(3).X#=200.0
+My2DVertex(3).Y#=200.0
+My2DVertex(3).Z#=1.0
+My2DVertex(3).W#=1.0
+My2DVertex(3).Colour=RGB(255,0,0)
+
+Rem Define 3d Rectangle
+
+My3DVertex(0).X#=0.0
+My3DVertex(0).Y#=0.0
+My3DVertex(0).Z#=0.0
+My3DVertex(0).Colour=RGB(255,0,0)
+
+My3DVertex(1).X#=-1.0
+My3DVertex(1).Y#=0.0
+My3DVertex(1).Z#=0.0
+My3DVertex(1).Colour=RGB(255,255,0)
+
+My3DVertex(2).X#=-1.0
+My3DVertex(2).Y#=1.0
+My3DVertex(2).Z#=0.0
+My3DVertex(2).Colour=RGB(255,0,0)
+
+My3DVertex(3).X#=0.0
+My3DVertex(3).Y#=1.0
+My3DVertex(3).Z#=0.0
+My3DVertex(3).Colour=RGB(255,255,0)
+
+My3DVertex(4).X#=0.0
+My3DVertex(4).Y#=0.0
+My3DVertex(4).Z#=0.0
+My3DVertex(4).Colour=RGB(255,0,0)
+
+backdrop on:color backdrop 0
+
+Rem Setup Fonts
+
+d3d_font 1,"Arial",20,0,0,1
+d3d_font 2,"Arial",10,0,0,1
+
+Rem setup camera angle
+ca#=0
+
+do
+
+Rem move camera in circle around the origin
+
+Position camera sin(ca#)*10,5,cos(ca#)*10
+point camera 0,0,0
+ca#=wrapvalue(ca#+.01)
+
+Rem Draw a 2D Transformed Rectangle
+D3D_Draw_Primitive D3DFVF_DIFFUSE or D3DFVF_XYZRHW,D3DPT_TRIANGLESTRIP,My2DVertex(0)
+
+Rem Draw a 3d Rectangle
+D3D_Draw_Primitive 0,0,0,D3DFVF_XYZ or D3DFVF_DIFFUSE,D3DPT_LINESTRIP,My3DVertex(0)
+
+d3d_starttext
+   d3d_text 1,Screen width()/2,0,1,"D3D_Draw_Primitive Example"
+   d3d_text 2,Screen width()/2,30,1,"Jason Clogg - 2008"
+   d3d_text 2,125,210,1,"D3DPT_TRIANGLESTRIP"
+   d3d_text 2,Screen width()/2,screen height()/2+10,1,"D3DPT_LINESTRIP"
+d3d_endtext
+
+loop
+

@@ -1,0 +1,36 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+SC_rayCastGroup
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    return integer=SC_rayCastGroup ( groupNum, oldx, oldy, oldz, x, y, z, excludeObj )
+
+<BR><BR>
+
+        <u>-groupNum</u>:     the group you want to check for collision use 0 for all groups<br>
+        <u>-oldx...z</u>:     the start and end points of the ray to check.<br>
+        <u>-excludeObj</u>:	a single object to exclude from the collision check<br><br>
+
+        <u>returns</u>:       the object number collided with first is returned<br>
+                              returns 0 if no collision occured.<br>
+   						<br>
+        Similar to SC_rayCast except it checks against groups of objects.<br><br>
+
+        will check if the ray starting at oldx#,oldy#,oldz# and ending at<br>
+        x#,y#,z# collides with the specified group (group=0 for all).<br>
+        does not collide with backfaces, will return the number of the object<br>
+        hit first, or 0 for no collision. Objects assigned group 0 during setup<br>
+        have no group and are ignored during group collision checks<br>
+
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

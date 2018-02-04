@@ -1,0 +1,65 @@
+<BODY COLOR=black BACKGROUND=gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><CENTER><FONT SIZE=3><B>Collision</B></FONT></CENTER><BR>
+<BR>
+<PRE><FONT FACE=Verdana SIZE=2>
+
+<a href="Collision/sc_setupObject.htm">SC_setupObject</a> : SC_setupObject   Object_Num , Group_Num , Collision_Type
+<a href="Collision/sc_setupComplexObject.htm">SC_setupComplexObject</a> : SC_setupComplexObject   Object_Num , Group_Num , Faces_Per_Node
+<a href="Collision/sc_setupTerrainCollision.htm">SC_setupTerrainCollision</a> : SC_setupTerraincollision   Terrain_Num , Group_Num , Free Object
+<a href="Collision/sc_updateObject.htm">SC_updateObject</a> : SC_updateObject   Object_Num
+<a href="Collision/sc_removeObject.htm">SC_removeObject</a> : SC_removeObject   Object_Num
+
+<a href="Collision/sc_setObjectCollisionOff.htm">SC_setObjectCollisionOff</a> : SC_setObjectCollisionOff   Object_Num
+<a href="Collision/sc_setObjectCollisionOn.htm">SC_setObjectCollisionOn</a> : SC_setObjectCollisionOn   Object_Num
+<a href="Collision/sc_collisionStatus.htm">SC_collisionStatus</a> : Return Integer=SC_collisionStatus   ( Object_Num )
+<a href="Collision/sc_allowObjectScaling.htm">SC_allowObjectScaling</a> : SC_allowObjectScaling   Object_Num
+
+<a href="Collision/sc_setMaxCollisions.htm">SC_setMaxCollisions</a> : SC_setMaxCollisions   maximum
+
+<a href="Collision/sc_rayCast.htm">SC_rayCast</a> : Return Integer=SC_rayCast   ( Object, Oldx, Oldy, Oldz, X, Y, Z, Exclude_Obj )
+<a href="Collision/sc_rayCastGroup.htm">SC_rayCastGroup</a> : Return Integer=SC_rayCastGroup   ( Group, Oldx, Oldy, Oldz, X, Y, Z, Exclude_Obj )
+<a href="Collision/sc_multipleRayCast.htm">SC_multipleRayCast</a> : Return Integer=SC_multipleRayCast   ( Object, Oldx, Oldy, Oldz, X, Y, Z, Exclude_Obj )
+<a href="Collision/sc_multipleRayCastGroup.htm">SC_multipleRayCastGroup</a> : Return Integer=SC_multipleRayCastGroup   ( Group, Oldx, Oldy, Oldz, X, Y, Z, Exclude_Obj )
+
+<a href="Collision/sc_sphereCast.htm">SC_sphereCast</a> : Return Integer=SC_sphereCast   ( Object, Oldx, Oldy, Oldz, X, Y, Z, Radius, Exclude_Obj )
+<a href="Collision/sc_sphereCastGroup.htm">SC_sphereCastGroup</a> : Return Integer=SC_sphereCastGroup   ( Group, Oldx, Oldy, Oldz, X, Y, Z, Radius, Exclude_Obj )
+<a href="Collision/sc_sphereSlide.htm">SC_sphereSlide</a> : Return Integer=SC_sphereSlide   ( Object, Oldx, Oldy, Oldz, X, Y, Z, Radius, Exclude_Obj )
+<a href="Collision/sc_sphereSlideGroup.htm">SC_sphereSlideGroup</a> : Return Integer=SC_sphereSlideGroup   ( Object, Oldx, Oldy, Oldz, X, Y, Z, Radius, Exclude_Obj )
+
+<a href="Collision/sc_objectCollision.htm">SC_objectCollision</a> : Return Integer=SC_objectCollision   ( Object1, Object2 )
+<a href="Collision/sc_groupCollision.htm">SC_groupCollision</a> : Return Integer=SC_groupCollision   ( Object, Group )
+
+<a href="Collision/sc_getStaticCollisionX.htm">SC_getStaticCollisionX</a> : Return Float=SC_getStaticCollisionX   ( *No Parameters* )
+<a href="Collision/sc_getStaticCollisionY.htm">SC_getStaticCollisionY</a> : Return Float=SC_getStaticCollisionY   ( *No Parameters* )
+<a href="Collision/sc_getStaticCollisionZ.htm">SC_getStaticCollisionZ</a> : Return Float=SC_getStaticCollisionZ   ( *No Parameters* )
+
+<a href="Collision/sc_getCollisionNormalX.htm">SC_getCollisionNormalX</a> : Return Float=SC_getCollisionNormalX   ( *No Parameters* )
+<a href="Collision/sc_getCollisionNormalY.htm">SC_getCollisionNormalY</a> : Return Float=SC_getCollisionNormalY   ( *No Parameters* )
+<a href="Collision/sc_getCollisionNormalZ.htm">SC_getCollisionNormalZ</a> : Return Float=SC_getCollisionNormalZ   ( *No Parameters* )
+
+<a href="Collision/sc_getCollisionBounceX.htm">SC_getCollisionBounceX</a> : Return Float=SC_getCollisionBounceX   ( *No Parameters* )
+<a href="Collision/sc_getCollisionBounceY.htm">SC_getCollisionBounceY</a> : Return Float=SC_getCollisionBounceY   ( *No Parameters* )
+<a href="Collision/sc_getCollisionBounceZ.htm">SC_getCollisionBounceZ</a> : Return Float=SC_getCollisionBounceZ   ( *No Parameters* )
+
+<a href="Collision/sc_getCollisionSlideX.htm">SC_getCollisionSlideX</a> : Return Float=SC_getCollisionSlideX   ( *No Parameters* )
+<a href="Collision/sc_getCollisionSlideY.htm">SC_getCollisionSlideY</a> : Return Float=SC_getCollisionSlideY   ( *No Parameters* )
+<a href="Collision/sc_getCollisionSlideZ.htm">SC_getCollisionSlideZ</a> : Return Float=SC_getCollisionSlideZ   ( *No Parameters* )
+
+<a href="Collision/sc_getCollisionDistance.htm">SC_getCollisionDistance</a> : Return Float=SC_getCollisionDistance   ( *No Parameters* )
+<a href="Collision/sc_getObjectHit.htm">SC_getObjectHit</a> : Return int=SC_getObjectHit   ( *No Parameters* )
+<a href="Collision/sc_getGroupHit.htm">SC_getGroupHit</a> : Return int=SC_getGroupHit   ( *No Parameters* )
+<a href="Collision/sc_getFaceHit.htm">SC_getFaceHit</a> : Return int=SC_getFaceHit   ( *No Parameters* )
+
+<a href="Collision/sc_getNumCollisions.htm">SC_getNumCollisions</a> : Return int=SC_getNumCollisions   ( *No Parameters* )
+<a href="Collision/sc_getRayCount.htm">SC_getRayCount</a> : Return int=SC_getRayCount   ( *No Parameters* )
+<a href="Collision/sc_getObjectCount.htm">SC_getObjectCount</a> : Return int=SC_getObjectCount   ( *No Parameters* )
+
+<a href="Collision/sc_drawObjectBounds.htm">SC_drawObjectBounds</a> : Return int=SC_drawObjectBounds   ObjectNum
+<a href="Collision/sc_removeVisualBounds.htm">SC_removeVisualBounds</a> : Return int=SC_removeVisualBounds   ObjectNum
+
+<a href="Collision/sc_intersectObject.htm">SC_intersectObject</a> : Return Float=SC_intersectObject   ( Object, Oldx, Oldy, Oldz, X, Y, Z)
+
+
+</PRE><BR>
+CLICK <A HREF=../main.htm>HERE</A> TO RETURN TO THE MAIN MENU<BR>
+<BR>
+</FONT></BODY>

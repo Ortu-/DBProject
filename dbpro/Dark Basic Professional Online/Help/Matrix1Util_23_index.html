@@ -1,0 +1,76 @@
+<html><head><title>Matrix1Util_23 - Index</title><!-- <style type="text/css">a { margin-left: 40px } p { margin-left: 40px }</style> --></head><body color=black background="gfx/dbpro_bg.jpg" bgproperties=fixed><font face="Verdana, Arial, Helvetica, sans-serif" size=2><table width='100%' border='0' cellpadding='0' cellspacing='0'><tr><td align='center'><img src='gfx/dbph_head_1.jpg'></td></tr><tr><td align='center'><b><font size="4">Matrix1 Utility Plug-ins</font></b></td></tr></table><br><h1>Matrix1Util_23</h1><table width='90%' align='center' border='0' cellpadding='0' cellspacing='0'><tr><td<font face="Verdana, Arial, Helvetica, sans-serif" size=2> This plug-in provides extra functions for dealing with RGB colours in both 32 and 16 bit colour depths.<br>
+<br>
+ It also provides functions for converting HSV, HSL, CMY and CMYK colour ranges to their equivalent RGB colours, and the packing &amp; unpacking of those colours into a single DWORD value.<br>
+<br>
+ Differences between HSL and HSV include:<br>
+ - In HSL, saturation ranges from full colour to grey based upon the luminance, while in HSV it goes from full colour to white.<br>
+ - In HSL, the Luminance ranges from pure Black to pure White, while in HSV the Value goes from pure Black to full colour.<br>
+<br>
+ CMY and CMYK are subtractive colour spaces, rather than the additive spaces represented by RGB, HSL and HSV. In term of RGB colour:<br>
+ - More Cyan means less Red<br>
+ - More Magenta means less Green<br>
+ - More Yellow means less Blue</font></td></tr></table>
+<br>
+<table width='100%' cellpadding='2'>
+  <tr>
+    <td bgcolor='#0d4283'><font color='#ffffff' size='4'><b id="1">Extra RGB colour functions</b></font></td>
+  </tr>
+</table>
+<br>
+<table width='90%' align='center' border='0' cellpadding='0' cellspacing='0'>  <p>A few extra functions missing from the native set of colour commands</p> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb.html">RGB</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - RGB with Alpha</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgba.html">RGBA</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Alpha value from RGB</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/set_alpha.html">SET ALPHA</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Change Alpha in RGB</font></td></tr></table>
+<br>
+<table width='100%' cellpadding='2'>
+  <tr>
+    <td bgcolor='#0d4283'><font color='#ffffff' size='4'><b id="2">16 bit RGB colours</b></font></td>
+  </tr>
+</table>
+<br>
+<table width='90%' align='center' border='0' cellpadding='0' cellspacing='0'>  <p>16 bit versions of the RGB colour commands</p> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb16.html">RGB16</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - RGB in 16 bits</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb16_a.html">RGB16 A</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Alpha from 16 bit RGB</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb16_b.html">RGB16 B</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Blue from 16 bit RGB</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb16_g.html">RGB16 G</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Green from 16 bit RGB</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb16_r.html">RGB16 R</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Red from 16 bit RGB</font></td></tr></table>
+<br>
+<table width='100%' cellpadding='2'>
+  <tr>
+    <td bgcolor='#0d4283'><font color='#ffffff' size='4'><b id="3">HSL colours</b></font></td>
+  </tr>
+</table>
+<br>
+<table width='90%' align='center' border='0' cellpadding='0' cellspacing='0'> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsl_a.html">HSL A</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Alpha from HSL</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsl_h.html">HSL H</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Hue from HSL</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsl_l.html">HSL L</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Luminance from HSL</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsl_s.html">HSL S</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Saturation from HSL</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsl_to_rgb.html">HSL TO RGB</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Generate RGB from HSL</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/pack_hsl.html">PACK HSL</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Build a single-value HSL</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb_to_hsl.html">RGB TO HSL</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Generate HSL from RGB</font></td></tr></table>
+<br>
+<table width='100%' cellpadding='2'>
+  <tr>
+    <td bgcolor='#0d4283'><font color='#ffffff' size='4'><b id="4">HSV colours</b></font></td>
+  </tr>
+</table>
+<br>
+<table width='90%' align='center' border='0' cellpadding='0' cellspacing='0'> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsv_a.html">HSV A</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Alpha from HSV</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsv_h.html">HSV H</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Hue from HSV</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsv_s.html">HSV S</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Saturation from HSV</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsv_to_rgb.html">HSV TO RGB</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Generate RGB from HSV</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/hsv_v.html">HSV V</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Value from HSV</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/pack_hsv.html">PACK HSV</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Build a single-value HSV</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb_to_hsv.html">RGB TO HSV</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Generate HSV from RGB</font></td></tr></table>
+<br>
+<table width='100%' cellpadding='2'>
+  <tr>
+    <td bgcolor='#0d4283'><font color='#ffffff' size='4'><b id="5">CMYK colours</b></font></td>
+  </tr>
+</table>
+<br>
+<table width='90%' align='center' border='0' cellpadding='0' cellspacing='0'> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmyk_c.html">CMYK C</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Cyan from CMYK</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmyk_k.html">CMYK K</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Black from CMYK</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmyk_m.html">CMYK M</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Magenta from CMYK</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmyk_to_rgb.html">CMYK TO RGB</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Generate RGB from CMYK</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmyk_y.html">CMYK Y</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Yellow from CMYK</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/pack_cmyk.html">PACK CMYK</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Build a single-value CMYK</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb_to_cmyk.html">RGB TO CMYK</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Generate CMYK from RGB</font></td></tr></table>
+<br>
+<table width='100%' cellpadding='2'>
+  <tr>
+    <td bgcolor='#0d4283'><font color='#ffffff' size='4'><b id="6">CMY colours</b></font></td>
+  </tr>
+</table>
+<br>
+<table width='90%' align='center' border='0' cellpadding='0' cellspacing='0'> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmy_a.html">CMY A</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Alpha from CMY</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmy_c.html">CMY C</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Cyan from CMY</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmy_m.html">CMY M</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Magenta from CMY</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmy_to_rgb.html">CMY TO RGB</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Generate RGB from CMY</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/cmy_y.html">CMY Y</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Extract Yellow from CMY</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/pack_cmy.html">PACK CMY</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Build a single-value CMY</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/rgb_to_cmy.html">RGB TO CMY</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - Generate CMY from RGB</font></td></tr></table>
+<br>
+<table width='100%' cellpadding='2'>
+  <tr>
+    <td bgcolor='#0d4283'><font color='#ffffff' size='4'><b id="7">Simplified colours</b></font></td>
+  </tr>
+</table>
+<br>
+<table width='90%' align='center' border='0' cellpadding='0' cellspacing='0'> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/ansi_colour.html">ANSI COLOUR</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - 16 colours used in terminal emulators</font></td></tr> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/old_ansi_colour.html">OLD ANSI COLOUR</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> - 8 colours used in terminal emulators</font></td></tr></table>
+<br>
+<table width='100%' cellpadding='2'>
+  <tr>
+    <td bgcolor='#0d4283'><font color='#ffffff' size='4'><b id="8">CSS3 standard colours</b></font></td>
+  </tr>
+</table>
+<br>
+<table width='90%' align='center' border='0' cellpadding='0' cellspacing='0'> <tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1Util_23/css3_colour.html">CSS3 COLOUR</a>&nbsp;</font></td><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2></font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Go back to ...</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='0'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1_Index.html">Matrix1 Utils Main Index</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Matrix1_Commands.html">Matrix1 Utils Command List</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="Commands.htm">Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="main.htm">Main Menu</A></font></td></table><p align="center"><font size="1">Copyright &copy; Ian Mold - Matrix1 Software 2006 - 2011</font></p><table width='100%' border='0' Cellpadding='0' Cellspacing='0'><tr><td align='center'><img src='gfx/dbph_head_1.jpg'></td></tr></table></font></body></html>

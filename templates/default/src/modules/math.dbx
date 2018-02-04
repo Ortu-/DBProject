@@ -1,0 +1,459 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	Math Utility
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides various math functions and processess
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_07.dll (IanM) - general
+
+	*******************************************
+	Classes:
+
+		Requires System
+
+		=========================================
+		Defines STATIC CLASS: Math3d
+
+			------------------------
+			public functions:
+
+				Math3d_addArc(rObjectNumber as integer, rVel as float, rTilt as float, rPan as float, rMass as float))
+					-
+
+				Math3d_removeArc(rObjectNumber as integer)
+					-
+
+				Math3d_getArcIndexByObjectNumber(rObjectNumber as integer)
+					-
+
+				Math3d_updateArcs()
+					-
+
+				Math3d_getDistanceBetweenObjects
+					-
+
+				Math3d_getDistanceBetweenPoints
+					-
+
+				Math3d_isObjectInBox
+					-
+
+				Math3d_isPointInBox
+					-
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+
+
+			------------------------
+			private data:
+
+
+
+		=========================================
+		Defines STATIC CLASS: Math2d
+
+			------------------------
+			public functions:
+
+				Math2d_getDisanceBetweenPoints
+					-
+
+				Math2d_isPointInBox
+					-
+
+				Math2d_getCompassHeading
+					-
+
+			------------------------
+			public data
+				-
+
+
+
+			------------------------
+			private functions
+				-
+
+
+
+			------------------------
+			private data:
+				-
+
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+math_module_init:
+
+	<?System_log("math.dbx", 2, "main", "Begin module load: math.")?>
+
+	App_updateSplashScreen("- Maths")
+
+	`Declare Math3d -----------------------------------------------------------
+
+	type Math3d_type_vector3Data
+		vx as float
+		vy as float
+		vz as float
+	endtype
+
+	type Math3d_type_vector4Data
+		vx as float
+		vy as float
+		vz as float
+		vw as float
+	endtype
+
+	type Math3d_type_matrix3Data
+		m00 as float
+		m01 as float
+		m02 as float
+		m10 as float
+		m11 as float
+		m12 as float
+		m20 as float
+		m21 as float
+		m22 as float
+	endtype
+
+	type Math3d_type_physicsData
+		gravity as float
+		arcMassRate as float
+		arcAcceleration as float
+	endtype
+
+	type Math3d_type_arcData
+		objectNumber as integer
+		velocity as float
+		tilt as float
+		pan as float
+		ix as float
+		iy as float
+		iz as float
+		x as float
+		y as float
+		z as float
+		relMass as float
+		startTime as integer
+	endtype
+
+	type STATIC_CLASS_Math3d
+		vectorLength as integer
+		physics as Math3d_type_physicsData
+		arcResult as Math3d_type_vector4Data
+	endtype
+
+	`private data -------------------------------------------------------------
+
+	dim _Math3d_arcs[] as Math3d_type_arcData
+		#CONSTANT THIS_ARC3D _Math3d_arcs[this]
+
+	`public data --------------------------------------------------------------
+
+
+
+	`==========================================================================================================================
+	`Declare Math2d -----------------------------------------------------------
+
+	/*
+	type STATIC_CLASS_Math2d
+
+	endtype
+	*/
+
+	`private data -------------------------------------------------------------
+
+
+
+	`public data --------------------------------------------------------------
+
+
+
+	`Init ---------------------------------------------------------------------
+
+	`==================================
+
+	GLOBAL Math3d as STATIC_CLASS_Math3d
+	//GLOBAL Math2d as STATIC_CLASS_Math2d
+
+	`==================================
+
+	Math3d.vectorLength = find free vector()
+	null = make vector3(Math3d.vectorLength)
+
+	Math3d.physics.gravity = 3.0
+	Math3d.physics.arcMassRate = 0.005
+	Math3d.physics.arcAcceleration = 600.0
+
+	Math3d.arcResult.vw = -1.0
+
+	App_addUpdate("Math3d_updateArcs", "", FALSE)
+
+	`Finish ---------------------------------------------------------------------
+
+	<?System_log("math.dbx", 2, "main", "End module load: math.")?>
+
+return
+
+
+function Math3d_addArc(rObjectNumber as integer, rVel as float, rTilt as float, rPan as float, rMass as float)
+	array insert at top _Math3d_arcs[]
+	//TODO: .id = generate guid$ ???
+	_Math3d_arcs[].objectNumber = rObjectNumber
+	_Math3d_arcs[].velocity = rVel
+	_Math3d_arcs[].tilt = rTilt
+	_Math3d_arcs[].pan = rPan
+	_Math3d_arcs[].ix = object position x(rObjectNumber)
+	_Math3d_arcs[].iy = object position y(rObjectNumber)
+	_Math3d_arcs[].iz = object position z(rObjectNumber)
+	_Math3d_arcs[].x = _Math3d_arcs[].ix
+	_Math3d_arcs[].y = _Math3d_arcs[].iy
+	_Math3d_arcs[].z = _Math3d_arcs[].iz
+	_Math3d_arcs[].relMass = rMass //default 0.5 for human ~130-160 lbs given physics defaults above
+	_Math3d_arcs[].startTime = timer()
+	<?System_log("math.dbx", 2, "main", "> Created new arc: " + str$(rObjectNumber) + ", " + str$(rVel) + ", " + str$(rTilt) + ", " + str$(rPan) + ", "+ str$(rMass))?>
+endfunction //TODO: return .id ???
+
+
+function Math3d_removeArc(rObjectNumber as integer)
+	for this = 0 to array count(_Math3d_arcs[])
+		if THIS_ARC3D.objectNumber = rObjectNumber
+			//TODO: defer to GC and continue looking for more instances of object ???
+			array delete element _Math3d_arcs[], this
+			exitfunction
+		endif
+	next this
+endfunction
+
+
+function Math3d_removeAllArcs()
+	empty array _Math3d_arcs[]
+endfunction
+
+
+function Math3d_getArcPositionByObjectNumber(rObjectNumber as integer)
+	Math3d.arcResult.vx = 0.0
+	Math3d.arcResult.vy = 0.0
+	Math3d.arcResult.vz = 0.0
+	Math3d.arcResult.vw = -1
+	for this = 0 to array count(_Math3d_arcs[])
+		if THIS_ARC3D.objectNumber = rObjectNumber
+			Math3d.arcResult.vx = THIS_ARC3D.x
+			Math3d.arcResult.vy = THIS_ARC3D.y
+			Math3d.arcResult.vz = THIS_ARC3D.z
+			Math3d.arcResult.vw = this
+			exitfunction
+		endif
+	next this
+	<?System_log("math.dbx", 3, "error", "WARN: Arc not found for requested object in Math3d_getArcPositionByObjectNumber("+str$(rObjectNumber)+")")?>
+endfunction
+
+
+function Math3d_updateArcs()
+
+	<?System_log("math.dbx", 2, "main", "Begin Update: Math3d_updateArcs")?>
+
+	updateMark as dword
+	updateMark = hitimer()
+
+	GCcount = 0
+	GCindex = -1
+
+	tArrCount = array count (_Math3d_arcs[])
+	<?System_log("math.dbx", 1, "main", "handling " + str$(tArrCount + 1) + " arcs")?>
+	if tArrCount > -1
+		for this = 0 to tArrCount
+			if THIS_ARC3D.objectNumber > 0
+				`get vectored velocity
+				d# = THIS_ARC3D.velocity * cos(THIS_ARC3D.tilt)
+				vy# = THIS_ARC3D.velocity * sin(THIS_ARC3D.tilt)
+				vx# = d# * sin(THIS_ARC3D.pan)
+				vz# = d# * cos(THIS_ARC3D.pan)
+
+				`get elapsed time in seconds, adjust for pause
+				inc THIS_ARC3D.startTime, System.timing.pauseElapsed
+				elapsed# = abs(timer() - THIS_ARC3D.startTime) / 1000.0
+
+				`get current position
+				// relMass = restMass / sqrt(1 - (velocity^2 / speedOfLight^2))
+				// relMass = restMass * (1 / sqrt(1 - (velocity^2 / speedOfLight^2)))
+				THIS_ARC3D.relMass = THIS_ARC3D.relMass + (Math3d.physics.arcMassRate * elapsed#)
+				THIS_ARC3D.x = THIS_ARC3D.ix + vx# * elapsed# * THIS_ARC3D.relMass
+				<?System_log("math.dbx", 1, "jump", "  THIS_ARC3D.x = THIS_ARC3D.ix + vx# * elapsed# * THIS_ARC3D.relMass")?>
+				<?System_log("math.dbx", 1, "jump", "  " + str$(THIS_ARC3D.x) + " = " + str$(THIS_ARC3D.ix) + " + " + str$(vx#) + " * " + str$(elapsed#) + " * " + str$(THIS_ARC3D.relMass))?>
+				THIS_ARC3D.y = THIS_ARC3D.iy + (vy# * elapsed#) - (0.5 * Math3d.physics.arcAcceleration * elapsed# * elapsed#) * Math3d.physics.gravity * THIS_ARC3D.relMass
+				THIS_ARC3D.z = THIS_ARC3D.iz + vz# * elapsed# * THIS_ARC3D.relMass
+				<?System_log("math.dbx", 1, "jump", "  new arc pos: " + str$(THIS_ARC3D.x, 2) +","+str$(THIS_ARC3D.y, 2)+","+str$(THIS_ARC3D.z, 2))?>
+			else
+				inc GCcount
+				GCindex = this
+			endif
+		next this
+
+		`garbage collect
+		if GCcount > 0
+			if GCcount > 1
+				for c = 1 to GCcount
+					for this = 0 to array count(_Math3d_arcs[])
+						if THIS_ARC3D.objectNumber < 1
+							array delete element _Math3d_arcs[], this
+							exit
+						endif
+					next this
+				next c
+			else
+				array delete element _Math3d_arcs[], GCindex
+			endif
+		endif
+	endif
+
+	<?System_log("math.dbx", 2, "main", "End Update: Math3d_updateArcs," + str$(hitimer() - updateMark))?>
+
+endfunction
+
+
+function Math3d_getDistanceBetweenObjects(rObjectNum1 as integer, rObjectNum2 as integer)
+	a# = abs(object position x(rObjectNum1) - object position x(rObjectNum2))
+	b# = abs(object position y(rObjectNum1) - object position y(rObjectNum2))
+	c# = abs(object position z(rObjectNum1) - object position z(rObjectNum2))
+	tdist# = sqrt((a# * a#) + (b# * b#) + (c# * c#))
+endfunction tdist#
+
+
+function Math3d_getDistanceBetweenPoints(x1 as float, y1 as float, z1 as float, x2 as float, y2 as float, z2 as float)
+	a# = abs(x1-x2)
+	b# = abs(y1-y2)
+	c# = abs(z1-z2)
+	tdist# = sqrt((a#*a#)+(b#*b#)+(c#*c#))
+endfunction tdist#
+
+
+//NOTE: this is faster than getDistanceBetweenPoints
+function Math3d_getVectorLength(x1 as float, y1 as float, z1 as float, x2 as float, y2 as float, z2 as float)
+	set vector3 Math3d.vectorLength, x1 - x2, y1 - y2, z1 - z2
+	tDist# = length vector3(Math3d.vectorLength)
+endfunction tDist#
+
+
+
+function Math3d_isObjectInBox(rObjectNum as integer, x1 as float, y1 as float, z1 as float, x2 as float, y2 as float, z2 as float)
+	ox# = object position x(rObjectNum)
+	oy# = object position y(rObjectNum)
+	oz# = object position z(rObjectNum)
+	if ox# >= x1
+		if ox# <= x2
+			if oy# >= y1
+				if oy# <= y2
+					if oz# >= z1
+						if oz# <= z2
+							exitfunction TRUE
+						endif
+					endif
+				endif
+			endif
+		endif
+	endif
+endfunction FALSE
+
+
+
+function Math3d_isPointInBox(ox as float, oy as float, oz as float, x1 as float, y1 as float, z1 as float, x2 as float, y2 as float, z2 as float)
+	//point 1 = left-bottom-front corner, point 2 = right-top-back corner
+	if ox >= x1
+		if ox <= x2
+			if oy >= y1
+				if oy <= y2
+					if oz >= z1
+						if oz <= z2
+							exitfunction TRUE
+						endif
+					endif
+				endif
+			endif
+		endif
+	endif
+endfunction FALSE
+
+
+`====================================================================================================================================================
+
+function Math2d_getDistanceBetweenPoints(x1 as integer, y1 as integer, x2 as integer, y2 as integer)
+	a# = abs(x1 - x2)
+	b# = abs(y1 - y2)
+	tdist# = sqrt((a# * a#) + (b# * b#))
+endfunction tdist#
+
+
+function Math2d_isPointInBox(px as integer, py as integer, x1 as integer, y1 as integer, x2 as integer, y2 as integer)
+	if px >= x1
+		if px <= x2
+			if py >= y1
+				if py <= y2
+					exitfunction TRUE
+				endif
+			endif
+		endif
+	endif
+endfunction FALSE
+
+
+function Math2d_getCompassHeading(facing as float)
+	if facing >= 337.5 or facing < 22.5 then exitfunction "N"
+	if facing >= 22.5 or facing < 67.5 then exitfunction "NE"
+	if facing >= 67.5 or facing < 112.5 then exitfunction "E"
+	if facing >= 112.5 or facing < 157.5 then exitfunction "SE"
+	if facing >= 157.5 or facing < 202.5 then exitfunction "S"
+	if facing >= 202.5 or facing < 247.5 then exitfunction "SW"
+	if facing >= 247.5 or facing < 292.5 then exitfunction "W"
+	if facing >= 292.5 or facing < 337.5 then exitfunction "NW"
+endfunction "ERR"
+
+
+
+`====================================================================================================================================================
+
+
+function Math_getByte(rByte as integer, rData as integer)
+    byteVal = (rData >> (rByte * 8)) && 0xff
+endfunction byteVal
+
+function Math_setByte(rByte as integer, rData as integer, rVal as integer)
+    rData = rData || (rVal << (rByte * 8))
+endfunction rData

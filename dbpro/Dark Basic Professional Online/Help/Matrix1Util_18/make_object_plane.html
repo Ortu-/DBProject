@@ -1,0 +1,47 @@
+<html><head><title>Matrix1Util_18 - Making Objects - MAKE OBJECT PLANE</title><!-- <style type="text/css">a { margin-left: 40px } p { margin-left: 40px }</style> --></head><body color=black background="../gfx/dbpro_bg.jpg" bgproperties=fixed><font face="Verdana, Arial, Helvetica, sans-serif" size=2><table width='100%' border='0' cellpadding='0' cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr><tr><td align='center'><b><font size="4">Matrix1 Utility Plug-ins</font></b></td></tr></table><br><h1>MAKE OBJECT PLANE</h1><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Syntax</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> MAKE OBJECT PLANE Object number, Width, Depth, Columns, Rows<br>
+ MAKE OBJECT PLANE Object number, Width, Depth, Columns, Rows, FVF<br>
+ MAKE OBJECT PLANE Object number, Width, Depth, Columns, Rows, LimbsX, LimbsZ<br>
+ MAKE OBJECT PLANE Object number, Width, Depth, Columns, Rows, LimbsX, LimbsZ, FVF</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Description</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> These commands can be used to create a multi-vertex plain. The original DBPro command creates a plain out of 2 triangles. These command will create a plain out of many triangles.<br>
+<br>
+ Any plain created can only have up to 65536 vertices or the command will fail. The number of vertices is calculated as (Columns+1)*(Rows+1).<br>
+<br>
+ The first command will create a plain with an FVF setting of 274, while the second command will use the value you have specified.<br>
+<br>
+ The object will be populated with the following data:<br>
+ - Position<br>
+ - Normal (set to 0, 1, 0)<br>
+ - Diffuse (set to all white, full alpha)<br>
+ - texture coordinates for texture layer 1 (evenly spread across the object)<br>
+ All other values will be set to zero.<br>
+<br>
+ The 'origin' of the plain will be set to the centre of the plain.<br>
+<br>
+ By default, the first vertex is in the far left corner of the plain (when looking along the objects z axis). The next vertex position is to its right, and so on until the end of the row. At that point, the vertex position is reset back to the left side, and moved one row nearer the negative side of the z axis.<br>
+<br>
+ If the Width is specified as a negative number, then the vertices are reordered to start on the right and to advance to the left.<br>
+<br>
+ If the Depth is specified as a negative number, then the vertices are reordered to start at the nearest point on the z axis and to advance towards the positive size of the z axis.<br>
+<br>
+ Both Width and Depth can be any combination of negative/positive value and the object will be created correctly. In any combination, the object produced will be visible from above, but culled when looked at from below, unless you have changed the objects cull setting.<br>
+<br>
+ Constants for all allowable FVF settings:<br>
+ #constant FVF_XYZ = 0x002<br>
+ #constant FVF_XYZRHW = 0x004<br>
+ #constant FVF_XYZB1 = 0x006<br>
+ #constant FVF_XYZB2 = 0x008<br>
+ #constant FVF_XYZB3 = 0x00a<br>
+ #constant FVF_XYZB4 = 0x00c<br>
+ #constant FVF_XYZB5 = 0x00e<br>
+ #constant FVF_NORMAL = 0x010<br>
+ #constant FVF_PSIZE = 0x020<br>
+ #constant FVF_DIFFUSE = 0x040<br>
+ #constant FVF_SPECULAR = 0x080<br>
+ #constant FVF_TEX0 = 0x000<br>
+ #constant FVF_TEX1 = 0x100<br>
+ #constant FVF_TEX2 = 0x200<br>
+ #constant FVF_TEX3 = 0x300<br>
+ #constant FVF_TEX4 = 0x400<br>
+ #constant FVF_TEX5 = 0x500<br>
+ #constant FVF_TEX6 = 0x600<br>
+ #constant FVF_TEX7 = 0x700<br>
+ #constant FVF_TEX8 = 0x800</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Go back to ...</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='0'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1Util_18_index.html">Matrix1Util_18 Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Index.html">Matrix1 Utils Main Index</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Commands.html">Matrix1 Utils Command List</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Commands.htm">Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../main.htm">Main Menu</A></font></td></table><p align="center"><font size="1">Copyright &copy; Ian Mold - Matrix1 Software 2006 - 2011</font></p><table width='100%' border='0' Cellpadding='0' Cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr></table></font></body></html>

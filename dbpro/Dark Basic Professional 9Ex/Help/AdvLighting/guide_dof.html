@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Advanced Lighting - Usage Guides</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    </head>
+    <body background="..\gfx\dbpro_bg.jpg">
+        <!--Title banner-->
+        <div>
+            <center><img src="..\gfx\dbph_head_1.jpg"></td></tr>
+            <center><h3>Advanced Lighting</h3></center>
+        </div><br>
+        
+		<!--Title heading-->		
+		<h1>Using Depth of Focus</h1><br/>
+		
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Setup</b></font></td></tr>
+        </table>
+
+			<p>Depth of Focus (DOF) is enabled/disabled through a call to:
+
+			<p><a href="postProcess_setup.html">PostProcessing_SetUp</a>(b EnableRefract, b EnableDistort, b EnableSSAO, b EnableScatter, b EnableAA, b EnableBloom, <font color="red">b EnableDOF</font>)
+
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Resources</b></font></td></tr>
+        </table>
+
+			<p>It uses 'Shaders/Post Processing/Blur.fx'
+
+			<p>This feature uses a post filter render target, referenced by the global variable: AL_Blur
+
+			<p>A reference to the DBpro effect number can be retrieved with a call to:
+
+			<p><a href="postFilter_getRenderTargetEffect.html">PostFilter_GetRenderTargetEffect</a>(AL_Blur)
+
+		<table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Configuration</b></font></td></tr>
+        </table>
+		
+			<p>The effect can be controlled through the shader's effect constants: 
+
+			<ul>
+				<li>float DOFNearFocus [default = 20000.0]</li>
+				<li>float DOFFarFocus [default = 10.0]</li>
+			</ul>
+
+		<table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Usage</b></font></td></tr>
+        </table>
+
+			<p>set effect constant float <a href="postFilter_getRenderTargetEffect.html">PostFilter_GetRenderTargetEffect</a>(AL_Blur), "DOFNearFocus", NewValueNear#<br/>
+			set effect constant float <a href="postFilter_getRenderTargetEffect.html">PostFilter_GetRenderTargetEffect</a>(AL_Blur), "DOFFarFocus", NewValueFar#<br/>
+			
+			<p>When the window between near and far is relatively small and combined with a method of obtaining a distance value or focal point such as a collision raycast or a selected target, the focus can be dynamically shifted in real time.
+		<br/><br/>
+		
+        <!--Navigation block heading-->
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Menu</b></font></td></tr>
+        </table><br>
+        
+        <!--Navigation block contents-->
+        <ul>
+			<li><a href="index.html">AdvLighting Index</a></li>
+            <li><a href="../main.htm">DBPro Main Menu</a></li>
+        </ul>
+        
+        <p align="center">Advanced Lighting - Copyright &copy; <a href="http://www.evolved-software.com">Evolved Software</a></p>
+        <p align="center">The documentation project is a public community effort. <a href="http://www.github.com/ortu-/ALdocs">Get involved on Github.</a></p>
+        <center><img src="../gfx/dbph_head_1.jpg" /></center>
+    </body>
+</html>			

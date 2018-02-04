@@ -1,0 +1,6 @@
+Upgrade 5.2
+===========
+
+GENERAL
+-------
+* Updated Basic3D DLL to allow for the correct loading of more bone based animating model types (caligari issue)

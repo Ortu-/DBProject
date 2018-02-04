@@ -1,0 +1,2687 @@
+`====================================================
+` Particle Functions
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+type EP_Vec2Float
+   X as float
+   Y as float
+endtype
+
+type EP_Vec3Float
+   X as float
+   Y as float
+   Z as float
+endtype
+
+type EP_EmittersData
+   InUse as boolean
+   EmitterStart as integer
+   EmitterEnd as integer
+   EmitterCount as float
+endtype
+
+type EP_EmitterData
+   InUse as boolean
+   Emitters as integer
+   Visible as boolean
+   Distance as float
+   Object as integer
+   Effect as integer
+   EmitterType as integer
+   UpdateDist as integer
+   UpdateTimer as float
+   Updated as boolean
+   DistUpdate as integer
+   LastUpdate as integer
+   AutoDelete as boolean
+   EmitterDelete as boolean
+   BoundsSize as float
+   FrustumCull as boolean
+   OldFrustumCull as boolean
+   AdditiveBlending as boolean
+   zSort as float
+   Zshift as float
+   Attach as integer
+   AttachMode as boolean
+   AttachParticle as integer
+   Frames as EP_Vec2Float
+   Life as float
+   FadeIn as float
+   FadeOut as float
+   ColorIntensity as EP_Vec2Float
+   AlphaIntensity as EP_Vec2Float
+   AlphaToSurface as EP_Vec2Float
+   Position as EP_Vec3Float
+   Angle as EP_Vec3Float
+   Emission as float
+   EmissionID as integer
+   StopEmitter as boolean
+   StopLife as float
+   StopPlay as integer
+   RollRnd as float
+   RollSpeed as float
+   RotationalMode as integer
+   Length as float
+   CollisionMode as integer
+   CollisionMass as float
+   CollisionHeightEnabled as boolean
+   CollisionPlaneEnabled as boolean
+   CollisionStep as integer
+   CollisionStepNext as integer
+   SinW as EP_Vec3Float
+   CosW as EP_Vec3Float
+   SinCosRnd as float
+   SinCosSpeed as float
+   OrientationStep as integer
+   OrientationStepNext as integer
+   SubEmitterStart as integer
+   SubEmitterEnd as integer
+   SubEmitterCount as float
+   EmitParticle as boolean
+   ParticleStart as integer
+   ParticleCount as float
+   ParticleLife as float
+   ParticleEmit as integer
+   ParticleFadeIn as float
+   ParticleFadeOut as float
+   ParticleRotationalMode as integer
+   ParticleLength as float
+   ParticleLineSize as float
+   ParticleCollisionMode as integer
+   ParticleCollisionMass as float
+   EdgeSoftness as float
+   Lighting as integer
+   MaskAlpha as boolean
+   MaskRefract as boolean
+   MaskDistort as boolean
+endtype
+
+type EP_SubEmitterData
+   Emitter as integer
+   Effect as integer
+   EffectIndex as integer
+   ParticleStart as integer
+   ParticleEnd as integer
+   ParticleCount as float
+endtype
+
+type EP_ParticleData
+   SubEmitter as integer
+   UpDate as integer
+   LifeCurrent as float
+   Life as float
+   LifeEnd as float
+   StartLife as float
+   LifeAdjust as float
+   EmitParticle as boolean
+   GravityCurrent as float
+   Gravity as float
+   WindCurrent as float
+   Wind as float
+   Position as EP_Vec3Float
+   PositionOld as EP_Vec3Float
+   PositionRnd as EP_Vec3Float
+   Move as float
+   Angle as EP_Vec3Float
+   AngleEnd as EP_Vec3Float
+   VelocityCurrent as float
+   Velocity as float
+   VelocityEnd as float
+   VelocityStart as float
+   VelocityCurve as float
+   SizeCurrent as float
+   Size as float
+   SizeEnd as float
+   SizeStart as float
+   SizeCurve as float
+   StrobeCurrent as float
+   StrobeRate as float
+   StrobeRnd as float
+   StrobeStart as float
+   StrobeSize as EP_Vec2Float
+   Direction as EP_Vec3Float
+   DirectionEnd as EP_Vec3Float
+   DirectionStart as float
+   DirectionCurve as float
+   ColorCurrent as EP_Vec3Float
+   Color as EP_Vec3Float
+   ColorEnd as EP_Vec3Float
+   ColorStart as float
+   ColorCurve as float
+   Collision as integer
+   CollisionID as integer
+   CollisionHeight as float
+   CollisionPosition as EP_Vec3Float
+   CollisionNormal as EP_Vec3Float
+   CollisionOldPos1 as EP_Vec3Float
+   CollisionOldPos2 as EP_Vec3Float
+endtype
+
+type EP_EmissionEventData
+   Emitter as integer
+   Particle as integer
+   EmissionID as integer
+   Position as EP_Vec3Float
+   Direction as EP_Vec3Float
+endtype
+
+type EP_CollisionEventData
+   Emitter as integer
+   Particle as integer
+   CollisionID as integer
+   Position as EP_Vec3Float
+   Normal as EP_Vec3Float
+endtype
+
+type EP_ImageData
+   File as string
+   Image as integer
+endtype
+
+type EP_ShaderData
+   Inuse as boolean
+   Effect as integer
+   AlphaEffectIndex as integer
+endtype
+
+type EP_ShaderTypeData
+   Count as integer
+   Limit as integer
+   Distance as float
+   Current as float
+   Emitter as integer
+endtype
+
+`--------------
+` Emitter Setup
+`--------------
+function Emitter_SetUp()
+   global EP_EmitterEnabled as boolean
+   global EP_ParticleMesh as integer
+   global EP_Gravity as float
+   global EP_Wind as EP_Vec3Float
+   global EP_EmittersCount as integer
+   global EP_SubEmittersCount as integer
+   global EP_SubEmittersArrayCount as integer
+   global EP_EmitterCount as integer
+   global EP_SubEmitterCount as integer
+   global EP_SubEmitterArrayCount as integer
+   global EP_ParticleCount as integer
+   global EP_ParticleArrayCount as integer
+   global EP_ImageArrayCount as integer
+   global EP_EmitterVisibleCount as integer
+   global EP_EmissionEventCount as integer
+   global EP_EmissionEventArrayCount as integer
+   global EP_GetEmissionEvent as integer
+   global EP_CollisionEventCount as integer
+   global EP_CollisionEventArrayCount as integer
+   global EP_GetCollisionEvent as integer
+   global EP_MaxParticles as integer
+   global EP_MaxParticleUpdate as integer
+   global EP_EmitterUpdateCount as integer
+   global EP_ParticleUpdateCount as integer
+   global EP_EmitterUpdate as integer
+   global EP_CurrentLastUpdate as integer
+   global EP_UpdateDist as float
+   global dim EP_ReadString(12,3) as String
+   global dim EP_ReadFloat(12,141) as Float
+   global dim EP_Emitters() as EP_EmittersData
+   global dim EP_SubEmitters() as integer
+   global dim EP_Emitter() as EP_EmitterData
+   global dim EP_SubEmitter() as EP_SubEmitterData
+   global dim EP_Particle() as EP_ParticleData
+   global dim EP_EmitterVisible() as integer
+   global dim EP_CollisionEvent() as EP_CollisionEventData
+   global dim EP_EmissionEvent() as EP_EmissionEventData
+   global dim EP_Shader1() as EP_ShaderData
+   global dim EP_Shader2() as EP_ShaderData
+   global dim EP_Shader3() as EP_ShaderData
+   global dim EP_ShaderType(3) as EP_ShaderTypeData
+   global dim EP_Image() as EP_ImageData
+   global dim EP_RayCastVec(4) as EP_Vec3Float
+   global dim EP_ViewProject(15) as float
+   global dim EP_ViewProjectFrustum(0,5,3) as float
+   global dim EP_Vector3(5) as integer
+   global dim EP_Vector4(4) as integer
+   global dim EP_Matrix(6) as integer
+   EP_Vector3(1)=220:null=make vector3(EP_Vector3(1))
+   EP_Vector3(2)=221:null=make vector3(EP_Vector3(2))
+   EP_Vector3(3)=222:null=make vector3(EP_Vector3(3))
+   EP_Vector3(4)=223:null=make vector3(EP_Vector3(4))
+   EP_Vector3(5)=224:null=make vector3(EP_Vector3(5))
+   EP_Vector4(1)=225:null=make vector4(EP_Vector4(1))
+   EP_Vector4(2)=226:null=make vector4(EP_Vector4(2))
+   EP_Vector4(3)=227:null=make vector4(EP_Vector4(3))
+   EP_Vector4(4)=228:null=make vector4(EP_Vector4(4))
+   EP_Matrix(1)=229:null=make matrix4(EP_Matrix(1))
+   EP_Matrix(2)=230:null=make matrix4(EP_Matrix(2))
+   EP_Matrix(3)=231:null=make matrix4(EP_Matrix(3))
+   EP_Matrix(4)=232:null=make matrix4(EP_Matrix(4))
+   EP_Matrix(5)=233:null=make matrix4(EP_Matrix(5))
+   EP_Matrix(6)=234:null=make matrix4(EP_Matrix(6))
+   EP_EmitterEnabled=1
+   EP_EmittersCount=-1
+   EP_SubEmittersCount=0
+   EP_SubEmittersArrayCount=0
+   EP_EmitterCount=-1
+   EP_SubEmitterCount=0
+   EP_SubEmitterArrayCount=0
+   EP_ParticleCount=0
+   EP_ParticleArrayCount=0
+   EP_ShaderType(1).Count=-1
+   EP_ShaderType(2).Count=-1
+   EP_ShaderType(3).Count=-1
+   EP_ShaderType(1).Limit=20
+   EP_ShaderType(2).Limit=15
+   EP_ShaderType(3).Limit=30
+   EP_EmitterVisibleCount=-1
+   EP_GetEmissionEvent=-1
+   EP_GetCollisionEvent=-1
+   EP_MaxParticles=500
+   EP_MaxParticleUpdate=5000
+   EP_UpdateDist=10000
+   EP_Gravity=0.01
+   EP_Wind.x=0.5
+   EP_Wind.y=0.5
+   EP_Wind.z=0.01
+   EP_ParticleMesh=EP_FreeUpMesh()
+   load mesh AL_Directory+"Resources/Particle.dbm",EP_ParticleMesh
+   for s=0 to EP_ShaderType(1).Limit
+       array insert at bottom EP_Shader1()
+       inc EP_ShaderType(1).Count
+       EP_Shader1(EP_ShaderType(1).Count).Effect=EP_FreeUpEffect()
+       load effect AL_Directory+"Alpha/Particles/Particles1.fx",EP_Shader1(EP_ShaderType(1).Count).Effect,0,1
+       EP_Shader1(EP_ShaderType(1).Count).AlphaEffectIndex=AlphaEffect_Add(EP_Shader1(EP_ShaderType(1).Count).Effect)
+   next s
+   for s=0 to EP_ShaderType(2).Limit
+      array insert at bottom EP_Shader2()
+      inc EP_ShaderType(2).Count
+      EP_Shader2(EP_ShaderType(2).Count).Effect=EP_FreeUpEffect()
+      load effect AL_Directory+"Alpha/Particles/Particles2.fx",EP_Shader2(EP_ShaderType(2).Count).Effect,0,1
+      EP_Shader2(EP_ShaderType(2).Count).AlphaEffectIndex=AlphaEffect_Add(EP_Shader2(EP_ShaderType(2).Count).Effect)
+   next s
+   for s=0 to EP_ShaderType(3).Limit
+      array insert at bottom EP_Shader3()
+      inc EP_ShaderType(3).Count
+      EP_Shader3(EP_ShaderType(3).Count).Effect=EP_FreeUpEffect()
+      load effect AL_Directory+"Alpha/Particles/Particles3.fx",EP_Shader3(EP_ShaderType(3).Count).Effect,0,1
+      EP_Shader3(EP_ShaderType(3).Count).AlphaEffectIndex=AlphaEffect_Add(EP_Shader3(EP_ShaderType(3).Count).Effect)
+   next s
+endfunction
+
+`--------------
+` Load Emitter
+`--------------
+function Emitter_Load(iFile as string,iSize as float)
+   if file exist(iFile)=1 and EP_EmitterEnabled=1
+      local tEmitter as integer
+      local tEmitters as integer
+      local tLifeAjust as float
+      local tNextParticle as integer
+      local tImage as integer
+      local tRnd as float
+      local tTexture as integer
+      local tAngle as EP_Vec3Float
+      dim tSubEmitter(2) as float
+      dim tParticle(2) as float
+      EP_ReadEmitterFile(iFile)
+      tEmitters=-1
+      iSize=iSize/100
+      for i=0 to EP_EmittersCount
+          if EP_Emitters(i).InUse=0 then tEmitters=i:exit
+      next i
+      if tEmitters=-1
+         array insert at bottom EP_Emitters()
+         inc EP_EmittersCount
+         tEmitters=EP_EmittersCount
+      endif
+      EP_Emitters(tEmitters).InUse=1
+      EP_Emitters(tEmitters).EmitterCount=EP_ReadFloat(0,0)
+      EP_Emitters(tEmitters).EmitterStart=EP_SubEmittersCount
+      EP_Emitters(tEmitters).EmitterEnd=EP_SubEmittersCount+(EP_Emitters(tEmitters).EmitterCount)
+      if EP_SubEmittersCount+EP_Emitters(tEmitters).EmitterCount>EP_SubEmittersArrayCount
+         EP_SubEmittersArrayCount=EP_SubEmittersCount+EP_Emitters(tEmitters).EmitterCount
+         dim EP_SubEmitters(EP_SubEmittersArrayCount)
+      endif
+      inc EP_SubEmittersCount,EP_Emitters(tEmitters).EmitterCount
+      for e=0 to EP_ReadFloat(0,0)-1
+         if EP_ReadFloat(e,59)>EP_MaxParticles then EP_ReadFloat(e,59)=EP_MaxParticles
+         tSubEmitter(1)=int((EP_ReadFloat(e,59)-1)/100)+1
+         if EP_ReadFloat(e,126)>2 then tSubEmitter(1)=int((EP_ReadFloat(e,59)-1)/75)+1
+         tParticle(1)=floor(EP_ReadFloat(e,59)/tSubEmitter(1))
+         tEmitter=-1
+         for i=0 to EP_EmitterCount
+            if EP_Emitter(i).InUse=0 then tEmitter=i:exit
+         next i
+         if tEmitter=-1
+            array insert at bottom EP_Emitter()
+            inc EP_EmitterCount
+            tEmitter=EP_EmitterCount
+         endif
+         EP_SubEmitters(e+EP_Emitters(tEmitters).EmitterStart)=tEmitter
+         EP_Emitter(tEmitter).Emitters=tEmitters
+         EP_Emitter(tEmitter).InUse=1
+         EP_Emitter(tEmitter).Emission=EP_ReadFloat(e,61)/100
+         EP_Emitter(tEmitter).EmissionID=0
+         EP_Emitter(tEmitter).Life=EP_ReadFloat(e,4)
+         EP_Emitter(tEmitter).SubEmitterCount=tSubEmitter(1)
+         EP_Emitter(tEmitter).SubEmitterStart=EP_SubEmitterCount
+         EP_Emitter(tEmitter).SubEmitterEnd=EP_Emitter(tEmitter).SubEmitterStart+(EP_Emitter(tEmitter).SubEmitterCount-1)
+         if EP_SubEmitterCount+EP_Emitter(tEmitter).SubEmitterCount>EP_SubEmitterArrayCount
+            EP_SubEmitterArrayCount=EP_SubEmitterCount+EP_Emitter(tEmitter).SubEmitterCount
+            dim EP_SubEmitter(EP_SubEmitterArrayCount)
+         endif
+         inc EP_SubEmitterCount,EP_Emitter(tEmitter).SubEmitterCount
+         EP_Emitter(tEmitter).ParticleCount=tParticle(1)*tSubEmitter(1)
+         EP_Emitter(tEmitter).ParticleStart=EP_ParticleCount
+         if EP_ParticleCount+EP_Emitter(tEmitter).ParticleCount>EP_ParticleArrayCount
+            EP_ParticleArrayCount=EP_ParticleCount+EP_Emitter(tEmitter).ParticleCount
+            dim EP_Particle(EP_ParticleArrayCount)
+         endif
+         EP_Emitter(tEmitter).ParticleLife=EP_ReadFloat(e,60)
+         EP_Emitter(tEmitter).zSort=0
+         EP_Emitter(tEmitter).Object=EP_FreeUpObject()
+         make object EP_Emitter(tEmitter).Object,EP_ParticleMesh,0
+         for l=2 to tSubEmitter(1)
+            add limb EP_Emitter(tEmitter).Object,l-1,EP_ParticleMesh
+         next l
+         for l=0 to tSubEmitter(1)-1
+            lock vertexdata for limb EP_Emitter(tEmitter).Object,l,2
+               for p=1 to tParticle(1)-1
+                  add mesh to vertexdata EP_ParticleMesh
+               next p
+               for p=0 to tParticle(1)-1
+                  tRnd=rnd(360)
+                  for v=0 to 4
+                     set vertexdata uv v+(p*4),1,p,tRnd/57.3
+                     set vertexdata uv v+(p*4),2,tTexture,((EP_ReadFloat(e,45)/100)*(1-tTexture))+((EP_ReadFloat(e,127)/100)*tTexture)
+                  next v
+                  tTexture=1
+              next p
+            unlock vertexdata
+         next l
+         AlphaObject_Add(EP_Emitter(tEmitter).Object)
+         set object transparency EP_Emitter(tEmitter).Object,2
+         exclude object on EP_Emitter(tEmitter).Object
+         hide object EP_Emitter(tEmitter).Object
+         EP_Emitter(tEmitter).Visible=0
+         tImage=EP_FindFreeImage(EP_ReadString(e,3))
+         if tImage>0 then texture object EP_Emitter(tEmitter).Object,1,tImage
+         tImage=EP_FindFreeImage(EP_ReadString(e,2))
+         if tImage>0 then texture object EP_Emitter(tEmitter).Object,2,tImage
+         EP_Emitter(tEmitter).AdditiveBlending=EP_ReadFloat(e,1)
+         AlphaObject_AdditiveBlending(EP_Emitter(tEmitter).Object,EP_Emitter(tEmitter).AdditiveBlending)
+         if EP_ReadFloat(e,2)=0 then set object cull EP_Emitter(tEmitter).Object,0
+         EP_Emitter(tEmitter).EmitterType=1
+         if EP_ReadFloat(e,126)>2 then EP_Emitter(tEmitter).EmitterType=2
+         EP_Emitter(tEmitter).UpdateTimer=1
+         EP_Emitter(tEmitter).AutoDelete=0
+         EP_Emitter(tEmitter).FrustumCull=EP_ReadFloat(e,3)
+         EP_Emitter(tEmitter).OldFrustumCull=-1
+         EP_Emitter(tEmitter).BoundsSize=EP_ReadFloat(e,7)
+         EP_Emitter(tEmitter).Zshift=EP_ReadFloat(e,8)*0.00005
+         EP_Emitter(tEmitter).zSort=EP_ReadFloat(e,9)*iSize
+         EP_Emitter(tEmitter).FadeIn=1+((EP_ReadFloat(e,6)/5)^1.5)
+         EP_Emitter(tEmitter).FadeOut=1+((EP_ReadFloat(e,5)/5)^1.5)
+         EP_Emitter(tEmitter).ColorIntensity.x=EP_ReadFloat(e,136)/100
+         EP_Emitter(tEmitter).AlphaIntensity.x=EP_ReadFloat(e,137)/100
+         EP_Emitter(tEmitter).ColorIntensity.y=EP_ReadFloat(e,138)/100
+         EP_Emitter(tEmitter).AlphaIntensity.y=EP_ReadFloat(e,139)/100
+         EP_Emitter(tEmitter).AlphaToSurface.x=EP_ReadFloat(e,140)/100
+         EP_Emitter(tEmitter).AlphaToSurface.y=EP_ReadFloat(e,141)/100
+         EP_Emitter(tEmitter).ParticleFadeIn=1+((EP_ReadFloat(e,62)/5)^1.5)
+         EP_Emitter(tEmitter).ParticleFadeOut=1+((EP_ReadFloat(e,63)/5)^1.5)
+         EP_Emitter(tEmitter).CollisionMode=EP_ReadFloat(e,12)
+         EP_Emitter(tEmitter).CollisionMass=EP_ReadFloat(e,13)/100
+         EP_Emitter(tEmitter).Position.x=0
+         EP_Emitter(tEmitter).Position.y=0
+         EP_Emitter(tEmitter).Position.z=0
+         EP_Emitter(tEmitter).Angle.x=0
+         EP_Emitter(tEmitter).Angle.y=0
+         EP_Emitter(tEmitter).Angle.z=0
+         EP_Emitter(tEmitter).RollSpeed=EP_ReadFloat(e,26)/25
+         EP_Emitter(tEmitter).RollRnd=EP_ReadFloat(e,27)/100
+         EP_Emitter(tEmitter).RotationalMode=EP_ReadFloat(e,44)
+         EP_Emitter(tEmitter).Length=EP_ReadFloat(e,45)/100
+         EP_Emitter(tEmitter).SinW.x=EP_ReadFloat(e,51)*iSize
+         EP_Emitter(tEmitter).SinW.y=EP_ReadFloat(e,52)*iSize
+         EP_Emitter(tEmitter).SinW.z=EP_ReadFloat(e,53)*iSize
+         EP_Emitter(tEmitter).CosW.x=EP_ReadFloat(e,54)*iSize
+         EP_Emitter(tEmitter).CosW.y=EP_ReadFloat(e,55)*iSize
+         EP_Emitter(tEmitter).CosW.z=EP_ReadFloat(e,56)*iSize
+         EP_Emitter(tEmitter).SinCosSpeed=EP_ReadFloat(e,57)/10
+         EP_Emitter(tEmitter).SinCosRnd=EP_ReadFloat(e,58)
+         EP_Emitter(tEmitter).Frames.x=EP_ReadFloat(e,64)
+         EP_Emitter(tEmitter).Frames.y=EP_ReadFloat(e,65)
+         EP_Emitter(tEmitter).ParticleEmit=0
+         EP_Emitter(tEmitter).ParticleCollisionMode=EP_ReadFloat(e,70)
+         EP_Emitter(tEmitter).ParticleCollisionMass=EP_ReadFloat(e,71)/100
+         EP_Emitter(tEmitter).ParticleRotationalMode=EP_ReadFloat(e,126)
+         EP_Emitter(tEmitter).ParticleLength=EP_ReadFloat(e,127)/100
+         EP_Emitter(tEmitter).ParticleLineSize=(EP_ReadFloat(e,128)/100)/iSize
+         EP_Emitter(tEmitter).Attach=EP_ReadFloat(e,77)-1
+         EP_Emitter(tEmitter).AttachMode=EP_ReadFloat(e,135)
+         EP_Emitter(tEmitter).CollisionStep=2
+         EP_Emitter(tEmitter).OrientationStep=2
+         EP_Emitter(tEmitter).UpdateDist=EP_UpdateDist
+         EP_Emitter(tEmitter).EdgeSoftness=0.1
+         EP_Emitter(tEmitter).Lighting=0
+         EP_Emitter(tEmitter).MaskAlpha=1
+         EP_Emitter(tEmitter).MaskRefract=0
+         EP_Emitter(tEmitter).MaskDistort=0
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).UpDate=0
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Life=EP_ReadFloat(e,4)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).LifeEnd=EP_ReadFloat(e,4)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).LifeCurrent=0
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).StartLife=0
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).LifeAdjust=0
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Gravity=(EP_ReadFloat(e,10)/50)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Wind=(EP_ReadFloat(e,11)/50)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Position.x=0
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Position.y=0
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Position.z=0
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).PositionRnd.x=EP_ReadFloat(e,14)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).PositionRnd.y=EP_ReadFloat(e,15)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).PositionRnd.z=EP_ReadFloat(e,16)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Move=EP_ReadFloat(e,17)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Angle.x=EP_ReadFloat(e,18)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Angle.y=EP_ReadFloat(e,19)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Angle.z=EP_ReadFloat(e,20)
+         rotate x matrix4 EP_Matrix(1),wrapvalue(EP_ReadFloat(e,21))/57.3
+         rotate y matrix4 EP_Matrix(2),wrapvalue(EP_ReadFloat(e,22))/57.3
+         rotate z matrix4 EP_Matrix(3),wrapvalue(EP_ReadFloat(e,23))/57.3
+         multiply matrix4 EP_Matrix(1),EP_Matrix(1),EP_Matrix(2)
+         multiply matrix4 EP_Matrix(1),EP_Matrix(1),EP_Matrix(3)
+         set vector3 EP_Vector3(2),0,0,1
+         transform normals vector3 EP_Vector3(1),EP_Vector3(2),EP_Matrix(1)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).AngleEnd.x=x vector3(EP_Vector3(1))
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).AngleEnd.y=y vector3(EP_Vector3(1))
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).AngleEnd.z=z vector3(EP_Vector3(1))
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).DirectionCurve=EP_ReadFloat(e,24)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).DirectionStart=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Life*(EP_ReadFloat(e,25)/100)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Velocity=(EP_ReadFloat(e,28)/10)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).VelocityEnd=(EP_ReadFloat(e,29)/10)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).VelocityCurve=EP_ReadFloat(e,30)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).VelocityStart=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Life*(EP_ReadFloat(e,31)/100)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Size=(EP_ReadFloat(e,32)/5)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).SizeEnd=(EP_ReadFloat(e,33)/5)*iSize
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).SizeCurve=EP_ReadFloat(e,34)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).SizeStart=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Life*(EP_ReadFloat(e,35)/100)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Color.x=EP_ReadFloat(e,36)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Color.y=EP_ReadFloat(e,37)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Color.z=EP_ReadFloat(e,38)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).ColorEnd.x=EP_ReadFloat(e,39)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).ColorEnd.y=EP_ReadFloat(e,40)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).ColorEnd.z=EP_ReadFloat(e,41)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).ColorCurve=EP_ReadFloat(e,42)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).ColorStart=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Life*(EP_ReadFloat(e,43)/100)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).StrobeSize.x=EP_ReadFloat(e,47)/100
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).StrobeSize.y=1-(EP_ReadFloat(e,47)/100)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).StrobeRnd=EP_ReadFloat(e,48)/2
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).StrobeRate=EP_ReadFloat(e,49)/50
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).StrobeStart=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Life*(EP_ReadFloat(e,50)/100)
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).Collision=0
+         EP_Particle(EP_Emitter(tEmitter).ParticleStart).CollisionHeight=-9999999999
+         tNextParticle=1
+         for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+            tSubEmitter(2)=s-EP_Emitter(tEmitter).SubEmitterStart
+            EP_SubEmitter(s).Emitter=tEmitter
+            EP_SubEmitter(s).ParticleCount=tParticle(1)
+            EP_SubEmitter(s).ParticleStart=EP_ParticleCount
+            EP_SubEmitter(s).ParticleEnd=EP_SubEmitter(s).ParticleStart+(EP_SubEmitter(s).ParticleCount-1)
+            EP_SubEmitter(s).EffectIndex=-1
+            tLifeAjust=(EP_ReadFloat(e,60)/(EP_SubEmitter(s).ParticleCount-1))*(tSubEmitter(2)/tSubEmitter(1))*EP_Emitter(tEmitter).Emission
+            for p=EP_SubEmitter(s).ParticleStart+tNextParticle to EP_SubEmitter(s).ParticleEnd
+               tParticle(2)=p-(EP_SubEmitter(s).ParticleStart+tNextParticle)
+               EP_Particle(p).SubEmitter=s
+               EP_Particle(p).UpDate=0
+               EP_Particle(p).Life=EP_ReadFloat(e,60)
+               EP_Particle(p).LifeEnd=EP_ReadFloat(e,60)-((EP_ReadFloat(e,60)*rnd(EP_ReadFloat(e,46)))/100)
+               EP_Particle(p).LifeCurrent=-(((tParticle(2)/(EP_SubEmitter(s).ParticleCount-1))*EP_Particle(p).Life)*EP_Emitter(tEmitter).Emission)+tLifeAjust
+               EP_Particle(p).StartLife=EP_Particle(p).LifeCurrent
+               EP_Particle(p).LifeAdjust=(EP_Particle(p).LifeCurrent-floor(EP_Particle(p).LifeCurrent))+1
+               EP_Particle(p).Gravity=((EP_ReadFloat(e,66)+rnd(EP_ReadFloat(e,67)))/50)*iSize
+               EP_Particle(p).Wind=((EP_ReadFloat(e,68)+rnd(EP_ReadFloat(e,69)))/50)*iSize
+               EP_Particle(p).PositionRnd.x=(rnd(EP_ReadFloat(e,72))-(EP_ReadFloat(e,72)/2))*iSize
+               EP_Particle(p).PositionRnd.y=(rnd(EP_ReadFloat(e,73))-(EP_ReadFloat(e,73)/2))*iSize
+               EP_Particle(p).PositionRnd.z=(rnd(EP_ReadFloat(e,74))-(EP_ReadFloat(e,74)/2))*iSize
+               EP_Particle(p).Move=(EP_ReadFloat(e,75)+(rnd(EP_ReadFloat(e,76))-(EP_ReadFloat(e,76)/2)))*iSize
+               EP_Particle(p).Position.x=0
+               EP_Particle(p).Position.y=0
+               EP_Particle(p).Position.z=0
+               tAngle.X=wrapvalue(EP_ReadFloat(e,78)+(rnd(EP_ReadFloat(e,81))-(EP_ReadFloat(e,81)/2)))
+               tAngle.Y=wrapvalue(EP_ReadFloat(e,79)+(rnd(EP_ReadFloat(e,82))-(EP_ReadFloat(e,82)/2)))
+               tAngle.Z=wrapvalue(EP_ReadFloat(e,80)+(rnd(EP_ReadFloat(e,83))-(EP_ReadFloat(e,83)/2)))
+               rotate x matrix4 EP_Matrix(1),tAngle.X/57.3
+               rotate y matrix4 EP_Matrix(2),tAngle.Y/57.3
+               rotate z matrix4 EP_Matrix(3),tAngle.Z/57.3
+               multiply matrix4 EP_Matrix(1),EP_Matrix(1),EP_Matrix(2)
+               multiply matrix4 EP_Matrix(1),EP_Matrix(1),EP_Matrix(3)
+               transform normals vector3 EP_Vector3(1),EP_Vector3(2),EP_Matrix(1)
+               EP_Particle(p).Angle.x=x vector3(EP_Vector3(1))
+               EP_Particle(p).Angle.y=y vector3(EP_Vector3(1))
+               EP_Particle(p).Angle.z=z vector3(EP_Vector3(1))
+               rotate x matrix4 EP_Matrix(1),wrapvalue(tAngle.X+EP_ReadFloat(e,84)+(rnd(EP_ReadFloat(e,87))-(EP_ReadFloat(e,87)/2)))/57.3
+               rotate y matrix4 EP_Matrix(2),wrapvalue(tAngle.Y+EP_ReadFloat(e,85)+(rnd(EP_ReadFloat(e,88))-(EP_ReadFloat(e,88)/2)))/57.3
+               rotate z matrix4 EP_Matrix(3),wrapvalue(tAngle.Z+EP_ReadFloat(e,86)+(rnd(EP_ReadFloat(e,89))-(EP_ReadFloat(e,89)/2)))/57.3
+               multiply matrix4 EP_Matrix(1),EP_Matrix(1),EP_Matrix(2)
+               multiply matrix4 EP_Matrix(1),EP_Matrix(1),EP_Matrix(3)
+               transform normals vector3 EP_Vector3(1),EP_Vector3(2),EP_Matrix(1)
+               EP_Particle(p).AngleEnd.x=x vector3(EP_Vector3(1))
+               EP_Particle(p).AngleEnd.y=y vector3(EP_Vector3(1))
+               EP_Particle(p).AngleEnd.z=z vector3(EP_Vector3(1))
+               EP_Particle(p).DirectionCurve=EP_ReadFloat(e,90)+rnd(EP_ReadFloat(e,91))
+               EP_Particle(p).DirectionStart=EP_Particle(p).Life*((EP_ReadFloat(e,92)+rnd(EP_ReadFloat(e,93)))/100)
+               EP_Particle(p).Velocity=rnd(EP_ReadFloat(e,95)*100)
+               EP_Particle(p).Velocity=(((EP_Particle(p).Velocity/100)+EP_ReadFloat(e,94))/10)*iSize
+               EP_Particle(p).VelocityEnd=rnd(EP_ReadFloat(e,97)*100)
+               EP_Particle(p).VelocityEnd=(((EP_Particle(p).VelocityEnd/100)+EP_ReadFloat(e,96))/10)*iSize
+               EP_Particle(p).VelocityCurve=EP_ReadFloat(e,98)+rnd(EP_ReadFloat(e,99))
+               EP_Particle(p).VelocityStart=EP_Particle(p).Life*((EP_ReadFloat(e,100)+rnd(EP_ReadFloat(e,101)))/100)
+               EP_Particle(p).Size=rnd(EP_ReadFloat(e,103)*100)
+               EP_Particle(p).Size=(((EP_Particle(p).Size/100)+EP_ReadFloat(e,102))/5)*iSize
+               EP_Particle(p).SizeEnd=rnd(EP_ReadFloat(e,105)*100)
+               EP_Particle(p).SizeEnd=(((EP_Particle(p).SizeEnd/100)+EP_ReadFloat(e,104))/5)*iSize
+               EP_Particle(p).SizeCurve=EP_ReadFloat(e,106)+rnd(EP_ReadFloat(e,107))
+               EP_Particle(p).SizeStart=EP_Particle(p).Life*((EP_ReadFloat(e,108)+rnd(EP_ReadFloat(e,109)))/100)
+               EP_Particle(p).Color.x=EP_ReadFloat(e,110)+rnd(EP_ReadFloat(e,113))
+               EP_Particle(p).Color.y=EP_ReadFloat(e,111)+rnd(EP_ReadFloat(e,114))
+               EP_Particle(p).Color.z=EP_ReadFloat(e,112)+rnd(EP_ReadFloat(e,115))
+               EP_Particle(p).ColorEnd.x=EP_ReadFloat(e,116)+rnd(EP_ReadFloat(e,119))
+               EP_Particle(p).ColorEnd.y=EP_ReadFloat(e,117)+rnd(EP_ReadFloat(e,120))
+               EP_Particle(p).ColorEnd.z=EP_ReadFloat(e,118)+rnd(EP_ReadFloat(e,121))
+               EP_Particle(p).ColorCurve=EP_ReadFloat(e,122)+rnd(EP_ReadFloat(e,123))
+               EP_Particle(p).ColorStart=EP_Particle(p).Life*((EP_ReadFloat(e,124)+rnd(EP_ReadFloat(e,125)))/100)
+               EP_Particle(p).StrobeSize.x=EP_ReadFloat(e,129)/100
+               EP_Particle(p).StrobeSize.y=1-(EP_ReadFloat(e,129)/100)
+               EP_Particle(p).StrobeRnd=rnd(EP_ReadFloat(e,131)*100)
+               EP_Particle(p).StrobeRnd=((EP_Particle(p).StrobeRnd/100)+EP_ReadFloat(e,130))/2
+               EP_Particle(p).StrobeRate=EP_ReadFloat(e,132)/50
+               EP_Particle(p).StrobeStart=EP_Particle(p).Life*((EP_ReadFloat(e,133)+rnd(EP_ReadFloat(e,134)))/100)
+               EP_Particle(p).Collision=0
+               EP_Particle(p).CollisionID=0
+               EP_Particle(p).CollisionHeight=-9999999999
+            next p
+            tNextParticle=0
+            inc EP_ParticleCount,EP_SubEmitter(s).ParticleCount
+         next s
+      next e
+      for e=EP_Emitters(tEmitters).EmitterStart to EP_Emitters(tEmitters).EmitterEnd-1
+         if EP_Emitter(EP_SubEmitters(e)).Attach>-1
+            EP_Emitter(EP_SubEmitters(e)).Attach=EP_SubEmitters(EP_Emitters(tEmitters).EmitterStart+EP_Emitter(EP_SubEmitters(e)).Attach)
+         endif
+      next e
+   endif
+endfunction tEmitters
+
+`--------------
+` Clone Emitter
+`--------------
+function Emitter_Clone(iEmitter as integer)
+   if EP_EmitterEnabled=1 and iEmitter>-1 and iEmitter<EP_EmittersCount+1
+      local tEmitter as integer
+      local tEmitters as integer
+      local tEmitterClone as integer
+      local tSubEmitterClone as integer
+      local tParticleClone as integer
+      local tEmitters=-1
+      for i=0 to EP_EmittersCount
+          if EP_Emitters(i).InUse=0 then tEmitters=i:exit
+      next i
+      if tEmitters=-1
+         array insert at bottom EP_Emitters()
+         inc EP_EmittersCount
+         tEmitters=EP_EmittersCount
+      endif
+      EP_Emitters(tEmitters)=EP_Emitters(iEmitter)
+      EP_Emitters(tEmitters).InUse=1
+      EP_Emitters(tEmitters).EmitterStart=EP_SubEmittersCount
+      EP_Emitters(tEmitters).EmitterEnd=EP_SubEmittersCount+(EP_Emitters(tEmitters).EmitterCount)
+      if EP_SubEmittersCount+EP_Emitters(tEmitters).EmitterCount>EP_SubEmittersArrayCount
+         EP_SubEmittersArrayCount=EP_SubEmittersCount+EP_Emitters(tEmitters).EmitterCount
+         dim EP_SubEmitters(EP_SubEmittersArrayCount)
+      endif
+      inc EP_SubEmittersCount,EP_Emitters(tEmitters).EmitterCount
+      for e=0 to EP_Emitters(iEmitter).EmitterCount-1
+         tEmitterClone=EP_SubEmitters(e+EP_Emitters(iEmitter).EmitterStart)
+         tEmitter=-1
+         for i=0 to EP_EmitterCount
+            if EP_Emitter(i).InUse=0 then tEmitter=i:exit
+         next i
+         if tEmitter=-1
+            array insert at bottom EP_Emitter()
+            inc EP_EmitterCount
+            tEmitter=EP_EmitterCount
+         endif
+         EP_SubEmitters(e+EP_Emitters(tEmitters).EmitterStart)=tEmitter
+         EP_Emitter(tEmitter)=EP_Emitter(tEmitterClone)
+         EP_Emitter(tEmitter).Emitters=tEmitters
+         EP_Emitter(tEmitter).SubEmitterStart=EP_SubEmitterCount
+         EP_Emitter(tEmitter).SubEmitterEnd=EP_Emitter(tEmitter).SubEmitterStart+(EP_Emitter(tEmitter).SubEmitterCount-1)
+         if EP_SubEmitterCount+EP_Emitter(tEmitter).SubEmitterCount>EP_SubEmitterArrayCount
+            EP_SubEmitterArrayCount=EP_SubEmitterCount+EP_Emitter(tEmitter).SubEmitterCount
+            dim EP_SubEmitter(EP_SubEmitterArrayCount)
+         endif
+         inc EP_SubEmitterCount,EP_Emitter(tEmitter).SubEmitterCount
+         EP_Emitter(tEmitter).ParticleStart=EP_ParticleCount
+         if EP_ParticleCount+EP_Emitter(tEmitter).ParticleCount>EP_ParticleArrayCount
+            EP_ParticleArrayCount=EP_ParticleCount+EP_Emitter(tEmitter).ParticleCount
+            dim EP_Particle(EP_ParticleArrayCount)
+         endif
+         EP_Emitter(tEmitter).Object=EP_FreeUpObject()
+         clone object EP_Emitter(tEmitter).Object,EP_Emitter(tEmitterClone).Object
+         AlphaObject_Add(EP_Emitter(tEmitter).Object)
+         AlphaObject_Mask(EP_Emitter(tEmitter).Object,EP_Emitter(tEmitter).MaskAlpha,EP_Emitter(tEmitter).MaskRefract,EP_Emitter(tEmitter).MaskDistort)
+         set object transparency EP_Emitter(tEmitter).Object,2
+         AlphaObject_AdditiveBlending(EP_Emitter(tEmitter).Object,EP_Emitter(tEmitter).AdditiveBlending)
+         exclude object on EP_Emitter(tEmitter).Object
+         hide object EP_Emitter(tEmitter).Object
+         EP_Emitter(tEmitter).Visible=0
+         if EP_Emitter(tEmitter).Attach>-1
+            EP_Emitter(tEmitter).Attach=EP_Emitter(tEmitter).Attach-EP_Emitters(iEmitter).EmitterStart
+         endif
+         for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+            tSubEmitterClone=EP_Emitter(tEmitterClone).SubEmitterStart+(s-EP_Emitter(tEmitter).SubEmitterStart)
+            EP_SubEmitter(s)=EP_SubEmitter(tSubEmitterClone)
+            EP_SubEmitter(s).Emitter=tEmitter
+            EP_SubEmitter(s).ParticleStart=EP_ParticleCount
+            EP_SubEmitter(s).ParticleEnd=EP_SubEmitter(s).ParticleStart+(EP_SubEmitter(s).ParticleCount-1)
+            EP_SubEmitter(s).EffectIndex=-1
+            for p=EP_SubEmitter(s).ParticleStart to EP_SubEmitter(s).ParticleEnd
+               tParticleClone=EP_SubEmitter(tSubEmitterClone).ParticleStart+(p-EP_SubEmitter(s).ParticleStart)
+               EP_Particle(p)=EP_Particle(tParticleClone)
+               EP_Particle(p).SubEmitter=s
+               EP_Particle(p).UpDate=0
+            next p
+            tNextParticle=0
+            inc EP_ParticleCount,EP_SubEmitter(s).ParticleCount
+         next s
+      next e
+      for e=EP_Emitters(tEmitters).EmitterStart to EP_Emitters(tEmitters).EmitterEnd-1
+         if EP_Emitter(EP_SubEmitters(e)).Attach>-1
+            EP_Emitter(EP_SubEmitters(e)).Attach=EP_SubEmitters(EP_Emitters(tEmitters).EmitterStart+EP_Emitter(EP_SubEmitters(e)).Attach)
+         endif
+      next e
+   endif
+endfunction tEmitters
+
+`--------------
+` Update Emitter
+`--------------
+function Emitter_Update(iTimer as float)
+   local tEmitter as integer
+   local tEmitterParticle as integer
+   local tCull as boolean
+   local tUpdateEmitter as boolean
+   local tAttachEmitter as integer
+   local tAttachToParticle as integer
+   local tEmitters as integer
+   local tTimer as float
+   local tDtimer as float
+   local tSize as float
+   local tParticleTimer as float
+   local tEmitterDist as float
+   local tEffectApply as integer
+   local tCamPos as EP_Vec3Float
+   local tCamAng as EP_Vec3Float
+   local tObjectPos as EP_Vec3Float
+   EP_EmitterUpdateCount=0
+   EP_ParticleUpdateCount=0
+   EP_EmissionEventCount=-1
+   EP_GetEmissionEvent=-1
+   EP_CollisionEventCount=-1
+   EP_GetCollisionEvent=-1
+
+   `Emitters last time updated & auto delete
+      if EP_EmitterVisibleCount>-1
+         for s=0 to EP_EmitterVisibleCount
+            tEmitter=EP_EmitterVisible(s)-1
+            inc EP_Emitter(tEmitter).LastUpdate
+            if EP_Emitter(tEmitter).DistUpdate>0 then dec EP_Emitter(tEmitter).DistUpdate
+            if EP_Emitter(tEmitter).Updated=1
+               EP_Emitter(tEmitter).Updated=0
+               EP_Emitter(tEmitter).LastUpdate=0
+            endif
+            if EP_Emitter(tEmitter).EmitterDelete=1
+               EP_Emitter(tEmitter).EmitterDelete=0
+               if EP_Emitter(tEmitter).Emitters>-1
+                  tEmitters=EP_Emitter(tEmitter).Emitters
+                  for e=EP_Emitters(tEmitters).EmitterStart to EP_Emitters(tEmitters).EmitterEnd-1
+                     EP_Emitter(EP_SubEmitters(e)).Emitters=-1
+                  next e
+                  for e=EP_Emitters(tEmitters).EmitterStart to EP_SubEmittersArrayCount-EP_Emitters(tEmitters).EmitterCount
+                      c=e+EP_Emitters(tEmitters).EmitterCount
+                      EP_SubEmitters(e)=EP_SubEmitters(c)
+                  next e
+                  for e=0 to EP_EmittersCount
+                      if EP_Emitters(e).InUse=1
+                         if EP_Emitters(e).EmitterStart>EP_Emitters(tEmitters).EmitterStart
+                            EP_Emitters(e).EmitterStart=EP_Emitters(e).EmitterStart-EP_Emitters(tEmitters).EmitterCount
+                            EP_Emitters(e).EmitterEnd=EP_Emitters(e).EmitterEnd-EP_Emitters(tEmitters).EmitterCount
+                         endif
+                      endif
+                  next e
+                  dec EP_SubEmittersCount,EP_Emitters(tEmitters).EmitterCount
+                  EP_Emitters(tEmitters).InUse=0
+               endif
+               EP_DeleteEmitter(tEmitter)
+            endif
+         next s
+
+      `Camera rotation matrix
+         tCamPos.x=camera position x()
+         tCamPos.y=camera position y()
+         tCamPos.z=camera position z()
+         tCamAng.x=camera angle x()
+         tCamAng.y=camera angle y()
+         tCamAng.z=camera angle z()
+         set vector3 EP_Vector3(3),0,0,0
+         set vector3 EP_Vector3(4),0,1,0
+         set vector3 EP_Vector3(5),0,0,1
+         rotate x matrix4 EP_Matrix(1),wrapvalue(tCamAng.x)/57.3
+         rotate y matrix4 EP_Matrix(2),wrapvalue(tCamAng.y)/57.3
+         rotate z matrix4 EP_Matrix(3),wrapvalue(tCamAng.z)/57.3
+         multiply matrix4 EP_Matrix(5),EP_Matrix(1),EP_Matrix(2)
+         multiply matrix4 EP_Matrix(5),EP_Matrix(5),EP_Matrix(3)
+
+      `Next emitter
+         repeat
+            inc EP_EmitterUpdate
+            if EP_EmitterUpdate>EP_EmitterVisibleCount
+               EP_EmitterUpdate=0
+               EP_ShaderType(1).Distance=0
+               EP_ShaderType(2).Distance=0
+               EP_ShaderType(3).Distance=0
+               EP_ShaderType(1).Current=0
+               EP_ShaderType(2).Current=0
+               EP_ShaderType(3).Current=0
+               for e=0 to EP_EmitterVisibleCount
+                  tEmitter=EP_EmitterVisible(e)-1
+                  if EP_Emitter(tEmitter).Effect>0
+                     for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+                        if EP_SubEmitter(s).EffectIndex>-1
+                           inc EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Current
+                        endif
+                     next s
+                     if EP_Emitter(tEmitter).Distance>EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Distance
+                        EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Distance=EP_Emitter(tEmitter).Distance
+                        EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Emitter=tEmitter
+                     endif
+                  endif
+               next e
+            endif
+            tEmitter=EP_EmitterVisible(EP_EmitterUpdate)-1
+            if EP_Emitter(tEmitter).DistUpdate<1
+               tEmitterParticle=EP_Emitter(tEmitter).ParticleStart
+               tAttachEmitter=EP_Emitter(tEmitter).Attach
+               EP_Emitter(tEmitter).Updated=1
+
+            `Frustum culling
+               tCull=AL_GetSphereInFrustum(0,EP_Particle(tEmitterParticle).Position.x,EP_Particle(tEmitterParticle).Position.y,EP_Particle(tEmitterParticle).Position.z,EP_Emitter(tEmitter).BoundsSize)
+               set vector3 EP_Vector3(1),EP_Particle(tEmitterParticle).Position.x-tCamPos.x,EP_Particle(tEmitterParticle).Position.y-tCamPos.y,EP_Particle(tEmitterParticle).Position.z-tCamPos.z
+               EP_Emitter(tEmitter).Distance=length vector3(EP_Vector3(1))
+               if tCull=1
+                  if EP_Emitter(tEmitter).Distance-EP_Emitter(tEmitter).BoundsSize>AL_Fog(1) then tCull=0
+               endif
+               if EP_Emitter(tEmitter).FrustumCull=0
+                  tUpdateEmitter=1
+               else
+                  tUpdateEmitter=tCull
+               endif
+               if EP_Emitter(tEmitter).OldFrustumCull<>tCull
+                  EP_Emitter(tEmitter).OldFrustumCull=tCull
+                  if EP_Emitter(tEmitter).OldFrustumCull=0
+                     for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+                        EP_RemoveShader(tEmitter,s)
+                        dec EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Current
+                     next s
+                     EP_Emitter(tEmitter).Effect=0
+                     hide object EP_Emitter(tEmitter).Object
+                  endif
+               endif
+               if EP_Emitter(tEmitter).OldFrustumCull=1 and EP_Emitter(tEmitter).Effect=0
+                  if EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Current<EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Limit
+                     tEmitterDist=99999999
+                     tEffectApply=tEmitter
+                     for e=0 to EP_EmitterVisibleCount
+                        if EP_Emitter(EP_EmitterVisible(e)-1).EmitterType=EP_Emitter(tEmitter).EmitterType and EP_Emitter(EP_EmitterVisible(e)-1).Distance<tEmitterDist and EP_Emitter(EP_EmitterVisible(e)-1).Effect=0 and EP_Emitter(EP_EmitterVisible(e)-1).OldFrustumCull=1
+                           tEmitterDist=EP_Emitter(EP_EmitterVisible(e)-1).Distance
+                           tEffectApply=EP_EmitterVisible(e)-1
+                        endif
+                     next e
+                     for s=EP_Emitter(tEffectApply).SubEmitterStart to EP_Emitter(tEffectApply).SubEmitterEnd
+                        EP_ApplyShader(tEffectApply,s)
+                        inc EP_ShaderType(EP_Emitter(tEffectApply).EmitterType).Current
+                     next s
+                     EP_Emitter(tEffectApply).Effect=1
+                  else
+                     if EP_Emitter(tEmitter).Distance<EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Distance
+                        if EP_Emitter(EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Emitter).Effect>0
+                           for s=EP_Emitter(EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Emitter).SubEmitterStart to EP_Emitter(EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Emitter).SubEmitterEnd
+                              EP_RemoveShader(EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Emitter,s)
+                              dec EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Current
+                           next s
+                           EP_Emitter(EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Emitter).Effect=0
+                           hide object EP_Emitter(EP_ShaderType(EP_Emitter(tEmitter).EmitterType).Emitter).Object
+                           tEmitterDist=99999999
+                           tEffectApply=tEmitter
+                           for e=0 to EP_EmitterVisibleCount
+                              if EP_Emitter(EP_EmitterVisible(e)-1).EmitterType=EP_Emitter(tEmitter).EmitterType and EP_Emitter(EP_EmitterVisible(e)-1).Distance<tEmitterDist and EP_Emitter(EP_EmitterVisible(e)-1).Effect=0 and EP_Emitter(EP_EmitterVisible(e)-1).OldFrustumCull=1
+                                 tEmitterDist=EP_Emitter(EP_EmitterVisible(e)-1).Distance
+                                 tEffectApply=EP_EmitterVisible(e)-1
+                              endif
+                           next e
+                           for s=EP_Emitter(tEffectApply).SubEmitterStart to EP_Emitter(tEffectApply).SubEmitterEnd
+                              EP_ApplyShader(tEffectApply,s)
+                              inc EP_ShaderType(EP_Emitter(tEffectApply).EmitterType).Current
+                           next s
+                           EP_Emitter(tEffectApply).Effect=1
+                        endif
+                     endif
+                  endif
+               endif
+               if EP_Emitter(tEmitter).Effect=1
+                  show object EP_Emitter(tEmitter).Object
+                  EP_Emitter(tEmitter).Effect=2
+               endif
+
+            `Emitter update
+               if tUpdateEmitter=1
+
+               `Timer on last update
+                  tTimer=iTimer*EP_Emitter(tEmitter).UpdateTimer*(1+EP_Emitter(tEmitter).LastUpdate)
+                  tDtimer=1/tTimer
+
+               `Position object
+                  if tCull=1
+                     normalize vector3 EP_Vector3(2),EP_Vector3(1)
+                     tObjectPos.x=EP_Particle(tEmitterParticle).Position.x+(x vector3(EP_Vector3(2))*EP_Emitter(tEmitter).zSort)
+                     tObjectPos.y=EP_Particle(tEmitterParticle).Position.y+(y vector3(EP_Vector3(2))*EP_Emitter(tEmitter).zSort)
+                     tObjectPos.z=EP_Particle(tEmitterParticle).Position.z+(z vector3(EP_Vector3(2))*EP_Emitter(tEmitter).zSort)
+                     position object EP_Emitter(tEmitter).Object,tObjectPos.x,tObjectPos.y,tObjectPos.z
+                  endif
+                  EP_Emitter(tEmitter).DistUpdate=length vector3(EP_Vector3(1))/EP_Emitter(tEmitter).UpdateDist
+                  if EP_Emitter(tEmitter).Effect=0 then EP_Emitter(tEmitter).DistUpdate=EP_Emitter(tEmitter).DistUpdate+5
+                  if EP_Emitter(tEmitter).FrustumCull=0 and tCull=0 then EP_Emitter(tEmitter).DistUpdate=EP_Emitter(tEmitter).DistUpdate+5
+
+               `Emitter rotation matrix
+                  rotate x matrix4 EP_Matrix(1),wrapvalue(EP_Emitter(tEmitter).Angle.x+EP_Particle(tEmitterParticle).Angle.x)/57.3
+                  rotate y matrix4 EP_Matrix(2),wrapvalue(EP_Emitter(tEmitter).Angle.y+EP_Particle(tEmitterParticle).Angle.y)/57.3
+                  rotate z matrix4 EP_Matrix(3),wrapvalue(EP_Emitter(tEmitter).Angle.z+EP_Particle(tEmitterParticle).Angle.z)/57.3
+                  multiply matrix4 EP_Matrix(4),EP_Matrix(1),EP_Matrix(2)
+                  multiply matrix4 EP_Matrix(4),EP_Matrix(4),EP_Matrix(3)
+
+               `Loop through sub-emitters
+                  for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+
+                  `Loop through particles
+                     for p=EP_SubEmitter(s).ParticleStart to EP_SubEmitter(s).ParticleEnd
+
+                     `Particles life
+                        if EP_Particle(p).LifeCurrent>EP_Particle(p).Life
+                           EP_Particle(p).LifeCurrent=(EP_Particle(p).LifeCurrent-EP_Particle(p).Life)
+                           EP_Particle(p).LifeAdjust=(EP_Particle(p).LifeCurrent-floor(EP_Particle(p).LifeCurrent))+1
+                           EP_Particle(p).UpDate=0
+                           EP_Particle(p).SizeCurrent=0
+                        endif
+                        inc EP_Particle(p).LifeCurrent,tTimer
+                        if EP_Particle(p).LifeCurrent=>0
+
+                        `Reset particle
+                           tParticleTimer=tTimer*EP_Particle(p).LifeAdjust
+                           if EP_Particle(p).UpDate=0
+                              if (EP_Emitter(tEmitter).EmitParticle=0 and ((EP_Emitter(tEmitter).StopLife=>EP_Particle(p).Life and EP_Emitter(tEmitter).StopPlay=2) or EP_Emitter(tEmitter).StopPlay=0)) or EP_Particle(p).EmitParticle=1
+                                 EP_Particle(p).UpDate=1
+                                 EP_Particle(p).Collision=0
+                                 EP_Particle(p).LifeAdjust=1.0
+                                 EP_Particle(p).GravityCurrent=0.0
+                                 EP_Particle(p).WindCurrent=0.0
+                                 if p=tEmitterParticle
+                                    set vector3 EP_Vector3(1),0,0,1
+                                    transform normals vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(4)
+                                 else
+                                    set vector3 EP_Vector3(1),EP_Particle(p).Angle.x,EP_Particle(p).Angle.y,EP_Particle(p).Angle.z
+                                    transform coords vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(4)
+                                 endif
+                                 EP_Particle(p).Direction.x=x vector3(EP_Vector3(1))
+                                 EP_Particle(p).Direction.y=y vector3(EP_Vector3(1))
+                                 EP_Particle(p).Direction.z=z vector3(EP_Vector3(1))
+                                 set vector3 EP_Vector3(1),EP_Particle(p).AngleEnd.x,EP_Particle(p).AngleEnd.y,EP_Particle(p).AngleEnd.z
+                                 transform coords vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(4)
+                                 EP_Particle(p).DirectionEnd.x=x vector3(EP_Vector3(1))
+                                 EP_Particle(p).DirectionEnd.y=y vector3(EP_Vector3(1))
+                                 EP_Particle(p).DirectionEnd.z=z vector3(EP_Vector3(1))
+                                 if EP_Emitter(tEmitter).EmitParticle=0
+                                    if p=tEmitterParticle
+                                       if tAttachEmitter=-1
+                                          EP_Particle(tEmitterParticle).Position.x=EP_Emitter(tEmitter).Position.x+EP_Particle(p).PositionRnd.x+(EP_Particle(p).Direction.x*EP_Particle(p).Move)
+                                          EP_Particle(tEmitterParticle).Position.y=EP_Emitter(tEmitter).Position.y+EP_Particle(p).PositionRnd.y+(EP_Particle(p).Direction.y*EP_Particle(p).Move)
+                                          EP_Particle(tEmitterParticle).Position.z=EP_Emitter(tEmitter).Position.z+EP_Particle(p).PositionRnd.z+(EP_Particle(p).Direction.z*EP_Particle(p).Move)
+                                       endif
+                                    else
+                                       if EP_Particle(tEmitterParticle).UpDate=2
+                                          EP_Particle(p).Position.x=0
+                                          EP_Particle(p).Position.y=-9999999999
+                                          EP_Particle(p).Position.z=0
+                                          EP_Particle(p).UpDate=2
+                                       else
+                                          if tAttachEmitter=-1
+                                             EP_Particle(p).Position.x=EP_Particle(tEmitterParticle).Position.x+EP_Particle(p).PositionRnd.x+(EP_Particle(p).Direction.x*EP_Particle(p).Move)
+                                             EP_Particle(p).Position.y=EP_Particle(tEmitterParticle).Position.y+EP_Particle(p).PositionRnd.y+(EP_Particle(p).Direction.y*EP_Particle(p).Move)
+                                             EP_Particle(p).Position.z=EP_Particle(tEmitterParticle).Position.z+EP_Particle(p).PositionRnd.z+(EP_Particle(p).Direction.z*EP_Particle(p).Move)
+                                          else
+                                             if EP_Emitter(tEmitter).AttachMode=0
+                                                tAttachToParticle=EP_Emitter(tAttachEmitter).ParticleStart
+                                                if EP_Particle(tAttachToParticle).LifeCurrent>0 and EP_Emitter(tAttachEmitter).Effect=2
+                                                   EP_Particle(p).Position=EP_Particle(tAttachToParticle).Position
+                                                else
+                                                   EP_Particle(p).Position.x=0
+                                                   EP_Particle(p).Position.y=-9999999999
+                                                   EP_Particle(p).Position.z=0
+                                                   EP_Particle(p).UpDate=2
+                                                endif
+                                             else
+                                                tAttachToParticle=EP_Emitter(tAttachEmitter).ParticleStart+EP_Emitter(tAttachEmitter).AttachParticle+1
+                                                if EP_Particle(tAttachToParticle).LifeCurrent>0
+                                                   EP_Particle(p).Position=EP_Particle(tAttachToParticle).Position
+                                                else
+                                                   EP_Particle(p).Position.x=0
+                                                   EP_Particle(p).Position.y=-9999999999
+                                                   EP_Particle(p).Position.z=0
+                                                   EP_Particle(p).UpDate=2
+                                                endif
+                                                inc EP_Emitter(tAttachEmitter).AttachParticle
+                                                if EP_Emitter(tAttachEmitter).AttachParticle>EP_Emitter(tAttachEmitter).ParticleCount-2 then EP_Emitter(tAttachEmitter).AttachParticle=0
+                                             endif
+                                             EP_Particle(tEmitterParticle).Position=EP_Particle(EP_Emitter(tAttachEmitter).ParticleStart).Position
+                                          endif
+                                       endif
+                                    endif
+                                 endif
+                                 if EP_Emitter(tEmitter).EmitterType=2 and EP_Emitter(tEmitter).Effect=2 and p>EP_SubEmitter(s).ParticleStart
+                                    null=get object effect(EP_Emitter(tEmitter).Object,s-EP_Emitter(tEmitter).SubEmitterStart)
+                                    set vector4 EP_Vector4(1),1000,0,0,0
+                                    set effect constant vector element "ParticleAngle",p-EP_SubEmitter(s).ParticleStart,EP_Vector4(1)
+                                    release effect pointer
+                                 endif
+                                 EP_Particle(p).PositionOld=EP_Particle(p).Position
+                                 EP_Particle(p).CollisionOldPos1=EP_Particle(p).Position
+                                 EP_Particle(p).CollisionOldPos2=EP_Particle(p).Position
+                                 EP_Particle(p).VelocityCurrent=EP_Particle(p).Velocity
+                                 EP_Particle(p).SizeCurrent=EP_Particle(p).Size
+                                 EP_Particle(p).StrobeCurrent=1.0
+                                 EP_Particle(p).ColorCurrent=EP_Particle(p).Color
+                                 EP_Particle(p).EmitParticle=0
+                                 if EP_Emitter(tEmitter).EmissionID>0
+                                    if EP_Particle(p).UpDate=1
+                                       inc EP_EmissionEventCount
+                                        if EP_EmissionEventCount>EP_EmissionEventArrayCount-1
+                                          array insert at bottom EP_EmissionEvent()
+                                          inc EP_EmissionEventArrayCount
+                                       endif
+                                       EP_EmissionEvent(EP_EmissionEventCount).Emitter=EP_Emitter(tEmitter).Emitters
+                                       EP_EmissionEvent(EP_EmissionEventCount).Particle=p
+                                       EP_EmissionEvent(EP_EmissionEventCount).EmissionID=EP_Emitter(tEmitter).EmissionID
+                                       EP_EmissionEvent(EP_EmissionEventCount).Position=EP_Particle(p).Position
+                                       EP_EmissionEvent(EP_EmissionEventCount).Direction=EP_Particle(p).Direction
+                                    endif
+                                 endif
+                              else
+                                 EP_Particle(p).UpDate=2
+                              endif
+                           endif
+
+                        `Updated particles
+                           if EP_Particle(p).UpDate=1
+                              if EP_Particle(p).LifeCurrent>EP_Particle(p).LifeEnd+1 then EP_Particle(p).UpDate=2
+                              if EP_Particle(p).LifeCurrent>EP_Particle(p).SizeStart
+                                 EP_Particle(p).SizeCurrent=curvevalue(EP_Particle(p).SizeEnd,EP_Particle(p).SizeCurrent,EP_Particle(p).SizeCurve*tDtimer)
+                              endif
+                              if EP_Particle(p).LifeCurrent>EP_Particle(p).StrobeStart
+                                 EP_Particle(p).StrobeCurrent=1-(sin(((EP_Particle(p).LifeCurrent-EP_Particle(p).StrobeStart)*EP_Particle(p).StrobeRnd)+270)+1)*EP_Particle(p).StrobeRate
+                                 if EP_Particle(p).StrobeCurrent<0.0 then EP_Particle(p).StrobeCurrent=0.0
+                                 EP_Particle(p).StrobeCurrent=EP_Particle(p).StrobeSize.x+(EP_Particle(p).StrobeCurrent*EP_Particle(p).StrobeSize.y)
+                              endif
+                              if EP_Particle(p).LifeCurrent>EP_Particle(p).ColorStart
+                                 EP_Particle(p).ColorCurrent.x=curvevalue(EP_Particle(p).ColorEnd.x,EP_Particle(p).ColorCurrent.x,EP_Particle(p).ColorCurve*tDtimer)
+                                 EP_Particle(p).ColorCurrent.y=curvevalue(EP_Particle(p).ColorEnd.y,EP_Particle(p).ColorCurrent.y,EP_Particle(p).ColorCurve*tDtimer)
+                                 EP_Particle(p).ColorCurrent.z=curvevalue(EP_Particle(p).ColorEnd.z,EP_Particle(p).ColorCurrent.z,EP_Particle(p).ColorCurve*tDtimer)
+                              endif
+                              if EP_Particle(p).Collision<2
+                                 dec EP_Particle(p).GravityCurrent,EP_Gravity*EP_Particle(p).Gravity*tTimer
+                                 dec EP_Particle(p).WindCurrent,EP_Wind.z*EP_Particle(p).Wind*tTimer
+                                 if EP_Particle(p).LifeCurrent>EP_Particle(p).VelocityStart
+                                    EP_Particle(p).VelocityCurrent=curvevalue(EP_Particle(p).VelocityEnd,EP_Particle(p).VelocityCurrent,EP_Particle(p).VelocityCurve*tDtimer)
+                                 endif
+                                 if EP_Particle(p).LifeCurrent>EP_Particle(p).DirectionStart
+                                    EP_Particle(p).Direction.x=curvevalue(EP_Particle(p).DirectionEnd.x,EP_Particle(p).Direction.x,EP_Particle(p).DirectionCurve*tDtimer)
+                                    EP_Particle(p).Direction.y=curvevalue(EP_Particle(p).DirectionEnd.y,EP_Particle(p).Direction.y,EP_Particle(p).DirectionCurve*tDtimer)
+                                    EP_Particle(p).Direction.z=curvevalue(EP_Particle(p).DirectionEnd.z,EP_Particle(p).Direction.z,EP_Particle(p).DirectionCurve*tDtimer)
+                                 endif
+                                 EP_Particle(p).PositionOld=EP_Particle(p).Position
+                                 inc EP_Particle(p).Position.x,((EP_Particle(p).Direction.x*EP_Particle(p).VelocityCurrent)+(EP_Particle(p).WindCurrent*EP_Wind.x))*tParticleTimer
+                                 inc EP_Particle(p).Position.y,((EP_Particle(p).Direction.y*EP_Particle(p).VelocityCurrent)+EP_Particle(p).GravityCurrent)*tParticleTimer
+                                 inc EP_Particle(p).Position.z,((EP_Particle(p).Direction.z*EP_Particle(p).VelocityCurrent)+(EP_Particle(p).WindCurrent*EP_Wind.x))*tParticleTimer
+                              endif
+                           endif
+
+                     `----------
+                        endif
+                     next p
+                  next s
+
+               `Collision
+                  if EP_Emitter(tEmitter).CollisionHeightEnabled=1
+                     if EP_Emitter(tEmitter).CollisionMode>0
+                        if EP_Particle(tEmitterParticle).UpDate=1 and EP_Particle(tEmitterParticle).Collision<2
+                           if EP_Particle(tEmitterParticle).Position.y<EP_Particle(tEmitterParticle).CollisionHeight
+                              if EP_Particle(tEmitterParticle).Collision=0
+                                 EP_RayCastHeight(EP_Particle(tEmitterParticle).CollisionOldPos1.x,EP_Particle(tEmitterParticle).CollisionOldPos1.y,EP_Particle(tEmitterParticle).CollisionOldPos1.z,EP_Particle(tEmitterParticle).Position.x,EP_Particle(tEmitterParticle).Position.y,EP_Particle(tEmitterParticle).Position.z,EP_Particle(tEmitterParticle).CollisionHeight)
+                                 EP_EmitterCollision(tEmitter,EP_RayCastVec(0).x,EP_RayCastVec(0).y,EP_RayCastVec(0).z,0,1,0)
+                                 if EP_Particle(tEmitterParticle).CollisionID>0 then EP_AddCollisionEvent(tEmitter,tEmitterParticle,EP_RayCastVec(0).x,EP_RayCastVec(0).y,EP_RayCastVec(0).z,0,1,0)
+                              else
+                                 EP_Particle(tEmitterParticle).GravityCurrent=0
+                                 EP_Particle(tEmitterParticle).WindCurrent=0
+                                 EP_Particle(tEmitterParticle).VelocityCurrent=0
+                                 EP_Particle(tEmitterParticle).Collision=2
+                              endif
+                           else
+                              EP_Particle(tEmitterParticle).Collision=0
+                           endif
+                           EP_Particle(tEmitterParticle).CollisionOldPos1=EP_Particle(tEmitterParticle).Position
+                        endif
+                     endif
+                     if EP_Emitter(tEmitter).ParticleCollisionMode>0
+                        tNextParticle=1
+                        for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+                           for p=EP_SubEmitter(s).ParticleStart+tNextParticle+EP_Emitter(tEmitter).CollisionStepNext to EP_SubEmitter(s).ParticleEnd step EP_Emitter(tEmitter).CollisionStep
+                              if EP_Particle(p).UpDate=1 and EP_Particle(p).Collision<2
+                                 if EP_Particle(p).Position.y<EP_Particle(p).CollisionHeight
+                                    if EP_Particle(p).Collision=0
+                                       EP_RayCastHeight(EP_Particle(p).CollisionOldPos1.x,EP_Particle(p).CollisionOldPos1.y,EP_Particle(p).CollisionOldPos1.z,EP_Particle(p).Position.x,EP_Particle(p).Position.y,EP_Particle(p).Position.z,EP_Particle(p).CollisionHeight)
+                                       EP_ParticleCollision(p,EP_RayCastVec(0).x,EP_RayCastVec(0).y,EP_RayCastVec(0).z,0,1,0)
+                                       if EP_Particle(p).CollisionID>0 then EP_AddCollisionEvent(tEmitter,p,EP_RayCastVec(0).x,EP_RayCastVec(0).y,EP_RayCastVec(0).z,0,1,0)
+                                    else
+                                       EP_Particle(p).GravityCurrent=0
+                                       EP_Particle(p).WindCurrent=0
+                                       EP_Particle(p).VelocityCurrent=0
+                                       EP_Particle(p).Collision=2
+                                    endif
+                                 else
+                                    EP_Particle(p).Collision=0
+                                 endif
+                                 EP_Particle(p).CollisionOldPos1=EP_Particle(p).Position
+                              endif
+                           next p
+                           tNextParticle=0
+                        next s
+                        inc EP_Emitter(tEmitter).CollisionStepNext
+                        if EP_Emitter(tEmitter).CollisionStepNext>EP_Emitter(tEmitter).CollisionStep-1 then EP_Emitter(tEmitter).CollisionStepNext=0
+                     endif
+                  endif
+                  if EP_Emitter(tEmitter).CollisionPlaneEnabled=1
+                     if EP_Emitter(tEmitter).CollisionMode>0
+                        if EP_Particle(tEmitterParticle).UpDate=1 and EP_Particle(tEmitterParticle).Collision<2
+                           set vector3 EP_Vector3(1),-EP_Particle(tEmitterParticle).CollisionNormal.x,-EP_Particle(tEmitterParticle).CollisionNormal.y,-EP_Particle(tEmitterParticle).CollisionNormal.z
+                           build lookat lhmatrix4 EP_Matrix(1),EP_Vector3(3),EP_Vector3(1),EP_Vector3(5)
+                           translate matrix4 EP_Matrix(2),EP_Particle(tEmitterParticle).CollisionPosition.x,EP_Particle(tEmitterParticle).CollisionPosition.y,EP_Particle(tEmitterParticle).CollisionPosition.z
+                           multiply matrix4 EP_Matrix(1),EP_Matrix(1),EP_Matrix(2)
+                           set vector3 EP_Vector3(1),EP_Particle(tEmitterParticle).Position.x-EP_Particle(tEmitterParticle).CollisionPosition.x,EP_Particle(tEmitterParticle).Position.y-EP_Particle(tEmitterParticle).CollisionPosition.y,EP_Particle(tEmitterParticle).Position.z-EP_Particle(tEmitterParticle).CollisionPosition.z
+                           transform coords vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(1)
+                           if z vector3(EP_Vector3(1))>EP_Particle(tEmitterParticle).CollisionPosition.z
+                              if EP_Particle(tEmitterParticle).Collision=0
+                                 EP_RayCastPlane(EP_Particle(tEmitterParticle).CollisionOldPos2.x,EP_Particle(tEmitterParticle).CollisionOldPos2.y,EP_Particle(tEmitterParticle).CollisionOldPos2.z,EP_Particle(tEmitterParticle).Position.x,EP_Particle(tEmitterParticle).Position.y,EP_Particle(tEmitterParticle).Position.z,EP_Particle(tEmitterParticle).CollisionPosition.x,EP_Particle(tEmitterParticle).CollisionPosition.y,EP_Particle(tEmitterParticle).CollisionPosition.z)
+                                 EP_EmitterCollision(tEmitter,EP_RayCastVec(0).x,EP_RayCastVec(0).y,EP_RayCastVec(0).z,EP_Particle(tEmitterParticle).CollisionNormal.x,EP_Particle(tEmitterParticle).CollisionNormal.y,EP_Particle(tEmitterParticle).CollisionNormal.z)
+                                 if EP_Particle(tEmitterParticle).CollisionID>0 then EP_AddCollisionEvent(tEmitter,tEmitterParticle,EP_RayCastVec(0).x,EP_RayCastVec(0).y,EP_RayCastVec(0).z,EP_Particle(tEmitterParticle).CollisionNormal.x,EP_Particle(tEmitterParticle).CollisionNormal.y,EP_Particle(tEmitterParticle).CollisionNormal.z)
+                              else
+                                 EP_Particle(tEmitterParticle).GravityCurrent=0
+                                 EP_Particle(tEmitterParticle).WindCurrent=0
+                                 EP_Particle(tEmitterParticle).VelocityCurrent=0
+                                 EP_Particle(tEmitterParticle).Collision=2
+                              endif
+                           else
+                              EP_Particle(tEmitterParticle).Collision=0
+                           endif
+                           EP_Particle(tEmitterParticle).CollisionOldPos2=EP_Particle(tEmitterParticle).Position
+                        endif
+                     endif
+                     if EP_Emitter(tEmitter).ParticleCollisionMode>0
+                        tNextParticle=1
+                        for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+                           for p=EP_SubEmitter(s).ParticleStart+tNextParticle+EP_Emitter(tEmitter).CollisionStepNext to EP_SubEmitter(s).ParticleEnd step EP_Emitter(tEmitter).CollisionStep
+                              if EP_Particle(p).UpDate=1 and EP_Particle(p).Collision<2
+                                 set vector3 EP_Vector3(1),-EP_Particle(p).CollisionNormal.x,-EP_Particle(p).CollisionNormal.y,-EP_Particle(p).CollisionNormal.z
+                                 build lookat lhmatrix4 EP_Matrix(1),EP_Vector3(3),EP_Vector3(1),EP_Vector3(5)
+                                 translate matrix4 EP_Matrix(2),EP_Particle(p).CollisionPosition.x,EP_Particle(p).CollisionPosition.y,EP_Particle(p).CollisionPosition.z
+                                 multiply matrix4 EP_Matrix(1),EP_Matrix(1),EP_Matrix(2)
+                                 set vector3 EP_Vector3(1),EP_Particle(p).Position.x-EP_Particle(p).CollisionPosition.x,EP_Particle(p).Position.y-EP_Particle(p).CollisionPosition.y,EP_Particle(p).Position.z-EP_Particle(p).CollisionPosition.z
+                                 transform coords vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(1)
+                                 if z vector3(EP_Vector3(1))>EP_Particle(p).CollisionPosition.z
+                                    if EP_Particle(p).Collision=0
+                                       EP_RayCastPlane(EP_Particle(p).CollisionOldPos2.x,EP_Particle(p).CollisionOldPos2.y,EP_Particle(p).CollisionOldPos2.z,EP_Particle(p).Position.x,EP_Particle(p).Position.y,EP_Particle(p).Position.z,EP_Particle(p).CollisionPosition.x,EP_Particle(p).CollisionPosition.y,EP_Particle(p).CollisionPosition.z)
+                                       EP_ParticleCollision(p,EP_RayCastVec(0).x,EP_RayCastVec(0).y,EP_RayCastVec(0).z,EP_Particle(p).CollisionNormal.x,EP_Particle(p).CollisionNormal.y,EP_Particle(p).CollisionNormal.z)
+                                       if EP_Particle(p).CollisionID>0 then EP_AddCollisionEvent(tEmitter,p,EP_RayCastVec(0).x,EP_RayCastVec(0).y,EP_RayCastVec(0).z,EP_Particle(p).CollisionNormal.x,EP_Particle(p).CollisionNormal.y,EP_Particle(p).CollisionNormal.z)
+                                    else
+                                       EP_Particle(p).GravityCurrent=0
+                                       EP_Particle(p).WindCurrent=0
+                                       EP_Particle(p).VelocityCurrent=0
+                                       EP_Particle(p).Collision=2
+                                    endif
+                                 else
+                                    EP_Particle(p).Collision=0
+                                 endif
+                                 EP_Particle(p).CollisionOldPos2=EP_Particle(p).Position
+                              endif
+                           next p
+                           tNextParticle=0
+                        next s
+                        inc EP_Emitter(tEmitter).CollisionStepNext
+                        if EP_Emitter(tEmitter).CollisionStepNext>EP_Emitter(tEmitter).CollisionStep-1 then EP_Emitter(tEmitter).CollisionStepNext=0
+                     endif
+                  endif
+
+               `Pass data to shader
+                  if tCull=1 and EP_Emitter(tEmitter).Effect=2
+                     if EP_Emitter(tEmitter).EmitterType<>2 and EP_Emitter(tEmitter).RotationalMode=1 or EP_Emitter(tEmitter).ParticleRotationalMode=1
+                        null=inverse matrix4(EP_Matrix(6),EP_Matrix(4))
+                        set vector3 EP_Vector3(1),0,0,1
+                        transform normals vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(5)
+                        transform coords vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(6)
+                        rotate object EP_Emitter(tEmitter).Object,EP_Particle(tEmitterParticle).Angle.x,EP_Particle(tEmitterParticle).Angle.y,EP_Particle(tEmitterParticle).Angle.z
+                        pitch object up EP_Emitter(tEmitter).Object,90
+                        turn object right EP_Emitter(tEmitter).Object,atanfull(x vector3(EP_Vector3(1)),y vector3(EP_Vector3(1)))
+                        rotate x matrix4 EP_Matrix(1),wrapvalue(object angle x(EP_Emitter(tEmitter).Object))/57.3
+                        rotate y matrix4 EP_Matrix(2),wrapvalue(object angle y(EP_Emitter(tEmitter).Object))/57.3
+                        rotate z matrix4 EP_Matrix(3),wrapvalue(object angle z(EP_Emitter(tEmitter).Object))/57.3
+                        multiply matrix4 EP_Matrix(6),EP_Matrix(1),EP_Matrix(2)
+                        multiply matrix4 EP_Matrix(6),EP_Matrix(6),EP_Matrix(3)
+                     endif
+                     tNextParticle=1
+                     for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+                        if EP_Emitter(tEmitter).EmitterType<>2
+                           if EP_Emitter(tEmitter).RotationalMode=0
+                              set effect constant matrix EP_SubEmitter(s).Effect,"EmitterMat",EP_Matrix(5)
+                           else
+                              if EP_Emitter(tEmitter).RotationalMode=1
+                                 set effect constant matrix EP_SubEmitter(s).Effect,"EmitterMat",EP_Matrix(6)
+                              else
+                                 set effect constant matrix EP_SubEmitter(s).Effect,"EmitterMat",EP_Matrix(4)
+                              endif
+                           endif
+                           if EP_Emitter(tEmitter).ParticleRotationalMode=0
+                              set effect constant matrix EP_SubEmitter(s).Effect,"ParticleMat",EP_Matrix(5)
+                           else
+                              if EP_Emitter(tEmitter).ParticleRotationalMode=1
+                                 set effect constant matrix EP_SubEmitter(s).Effect,"ParticleMat",EP_Matrix(6)
+                              else
+                                 set effect constant matrix EP_SubEmitter(s).Effect,"ParticleMat",EP_Matrix(4)
+                              endif
+                           endif
+                        endif
+                        null=get object effect(EP_Emitter(tEmitter).Object,s-EP_Emitter(tEmitter).SubEmitterStart)
+                        for p=EP_SubEmitter(s).ParticleStart to EP_SubEmitter(s).ParticleEnd
+                           if EP_Particle(p).UpDate=1
+                              set vector4 EP_Vector4(1),EP_Particle(p).Position.x,EP_Particle(p).Position.y,EP_Particle(p).Position.z,EP_Particle(p).SizeCurrent*EP_Particle(p).StrobeCurrent
+                              set effect constant vector element "ParticlePosition",p-EP_SubEmitter(s).ParticleStart,EP_Vector4(1)
+                              set vector4 EP_Vector4(1),EP_Particle(p).ColorCurrent.x/255,EP_Particle(p).ColorCurrent.y/255,EP_Particle(p).ColorCurrent.z/255,EP_Particle(p).LifeCurrent/EP_Particle(p).LifeEnd
+                              set effect constant vector element "ParticleColor",p-EP_SubEmitter(s).ParticleStart,EP_Vector4(1)
+                           endif
+                        next p
+                        if EP_Emitter(tEmitter).EmitterType=2
+                           if s=EP_Emitter(tEmitter).SubEmitterStart
+                              if EP_Emitter(tEmitter).RotationalMode=0
+                                 set vector4 EP_Vector4(1),(90-tCamAng.x)/114.6,-tCamAng.y/114.6,tCamAng.z/114.6,EP_Emitter(tEmitter).Length
+                                 set effect constant vector element "ParticleAngle",0,EP_Vector4(1)
+                              else
+                                 if EP_Emitter(tEmitter).RotationalMode=1
+                                    set vector3 EP_Vector3(1),0,0,1
+                                    transform normals vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(4)
+                                    set vector3 EP_Vector3(2),x vector3(EP_Vector3(1)),y vector3(EP_Vector3(1)),z vector3(EP_Vector3(1))
+                                    build lookat lhmatrix4 EP_Matrix(1),EP_Vector3(3),EP_Vector3(2),EP_Vector3(4)
+                                    set vector3 EP_Vector3(2),tCamPos.x-EP_Particle(EP_SubEmitter(s).ParticleStart).Position.x,tCamPos.y-EP_Particle(EP_SubEmitter(s).ParticleStart).Position.y,tCamPos.z-EP_Particle(EP_SubEmitter(s).ParticleStart).Position.z
+                                    transform coords vector3 EP_Vector3(2),EP_Vector3(2),EP_Matrix(1)
+                                    set vector4 EP_Vector4(1),asin(y vector3(EP_Vector3(1)))/114.6,-atanfull(x vector3(EP_Vector3(1)),z vector3(EP_Vector3(1)))/114.6,atanfull(x vector3(EP_Vector3(2)),y vector3(EP_Vector3(2)))/114.6,EP_Emitter(tEmitter).Length
+                                    set effect constant vector element "ParticleAngle",0,EP_Vector4(1)
+                                 else
+                                    set vector3 EP_Vector3(1),0,0,-1
+                                    transform normals vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(4)
+                                    set vector4 EP_Vector4(1),(asin(y vector3(EP_Vector3(1)))-90)/114.6,-atanfull(x vector3(EP_Vector3(1)),z vector3(EP_Vector3(1)))/114.6,0,EP_Emitter(tEmitter).Length
+                                    set effect constant vector element "ParticleAngle",0,EP_Vector4(1)
+                                 endif
+                              endif
+                           endif
+                           if EP_Emitter(tEmitter).ParticleRotationalMode=3
+                              for p=EP_SubEmitter(s).ParticleStart+tNextParticle+EP_Emitter(tEmitter).OrientationStepNext to EP_SubEmitter(s).ParticleEnd step EP_Emitter(tEmitter).OrientationStep
+                                 if EP_Particle(p).UpDate=1 and EP_Particle(p).Collision=0
+                                    set vector3 EP_Vector3(1),EP_Particle(p).Position.x-EP_Particle(p).PositionOld.x,EP_Particle(p).Position.y-EP_Particle(p).PositionOld.y,EP_Particle(p).Position.z-EP_Particle(p).PositionOld.z
+                                    tSize=EP_Emitter(tEmitter).ParticleLength+((length vector3(EP_Vector3(1))/tTimer)*EP_Emitter(tEmitter).ParticleLineSize)*EP_Particle(p).StrobeCurrent
+                                    normalize vector3 EP_Vector3(1),EP_Vector3(1)
+                                    set vector3 EP_Vector3(2),x vector3(EP_Vector3(1)),y vector3(EP_Vector3(1)),z vector3(EP_Vector3(1))
+                                    build lookat lhmatrix4 EP_Matrix(1),EP_Vector3(3),EP_Vector3(2),EP_Vector3(4)
+                                    set vector3 EP_Vector3(2),tCamPos.x-EP_Particle(p).Position.x,tCamPos.y-EP_Particle(p).Position.y,tCamPos.z-EP_Particle(p).Position.z
+                                    transform coords vector3 EP_Vector3(2),EP_Vector3(2),EP_Matrix(1)
+                                    set vector4 EP_Vector4(1),asin(y vector3(EP_Vector3(1)))/114.6,-atanfull(x vector3(EP_Vector3(1)),z vector3(EP_Vector3(1)))/114.6,atanfull(x vector3(EP_Vector3(2)),y vector3(EP_Vector3(2)))/114.6,tSize
+                                    set effect constant vector element "ParticleAngle",p-EP_SubEmitter(s).ParticleStart,EP_Vector4(1)
+                                 endif
+                              next p
+                           else
+                              for p=EP_SubEmitter(s).ParticleStart+tNextParticle+EP_Emitter(tEmitter).OrientationStepNext to EP_SubEmitter(s).ParticleEnd step EP_Emitter(tEmitter).OrientationStep
+                                 if EP_Particle(p).UpDate=1 and EP_Particle(p).Collision=0
+                                    set vector3 EP_Vector3(1),EP_Particle(p).Position.x-EP_Particle(p).PositionOld.x,EP_Particle(p).Position.y-EP_Particle(p).PositionOld.y,EP_Particle(p).Position.z-EP_Particle(p).PositionOld.z
+                                    normalize vector3 EP_Vector3(1),EP_Vector3(1)
+                                    set vector4 EP_Vector4(1),(asin(y vector3(EP_Vector3(1)))-90)/114.6,-atanfull(x vector3(EP_Vector3(1)),z vector3(EP_Vector3(1)))/114.6,0,EP_Emitter(tEmitter).ParticleLength
+                                    set effect constant vector element "ParticleAngle",p-EP_SubEmitter(s).ParticleStart,EP_Vector4(1)
+                                 endif
+                              next p
+                           endif
+                        endif
+                        tNextParticle=0
+                        release effect pointer
+                     next s
+                     inc EP_Emitter(tEmitter).OrientationStepNext
+                     if EP_Emitter(tEmitter).OrientationStepNext>EP_Emitter(tEmitter).OrientationStep-1 then EP_Emitter(tEmitter).OrientationStepNext=0
+                  endif
+
+               `Stop emitter
+                  if EP_Emitter(tEmitter).StopPlay=2 then dec EP_Emitter(tEmitter).Stoplife,tTimer
+                  if EP_Emitter(tEmitter).StopLife=<0 and EP_Emitter(tEmitter).StopPlay=2
+                     EP_Emitter(tEmitter).StopLife=0
+                     EP_Emitter(tEmitter).StopPlay=3
+                  endif
+                  if EP_Emitter(tEmitter).StopPlay=3
+                     EP_Emitter(tEmitter).StopPlay=0
+                     if EP_Emitter(tEmitter).AutoDelete=0
+                        EP_SetEmitterVisible(tEmitter,0)
+                     else
+                        EP_Emitter(tEmitter).EmitterDelete=1
+                     endif
+                  endif
+
+               `--------------
+                  inc EP_ParticleUpdateCount,EP_Emitter(tEmitter).ParticleCount
+               endif
+            endif
+            inc EP_EmitterUpdateCount
+         until EP_EmitterUpdateCount>EP_EmitterVisibleCount or EP_ParticleUpdateCount>EP_MaxParticleUpdate
+      endif
+
+   `Debug
+      remstart
+      text 20,40,"Emitters Allocated = "+str$(EP_EmitterCount)
+      text 20,60,"Emitters Visible = "+str$(EP_EmitterVisibleCount+1)
+      text 20,80,"Sub-Emitters  = "+str$(EP_SubEmitterCount)
+      text 20,100,"Sub-Emitters Allocated = "+str$(EP_SubEmitterArrayCount)
+      text 20,120,"Particles = "+str$(EP_ParticleCount)
+      text 20,140,"Particles Allocated = "+str$(EP_ParticleArrayCount)
+      text 20,160,"Emitter Update Count = "+str$(EP_EmitterUpdateCount)
+      text 20,180,"Particle Update Count = "+str$(EP_ParticleUpdateCount)
+      text 20,200,"Emission Event Count = "+str$(EP_EmissionEventCount)
+      text 20,220,"Collision Event Count = "+str$(EP_CollisionEventCount)
+      text 20,240,"Images Allocated = "+str$(EP_ImageArrayCount)
+      text 20,260,"Shaders Allocated 1= "+str$(EP_ShaderType(1).Count)
+      text 20,280,"Shaders Allocated 2= "+str$(EP_ShaderType(2).Count)
+      text 20,300,"Shaders Allocated 3= "+str$(EP_ShaderType(3).Count)
+      remend
+
+endfunction
+
+`--------------
+` Delete Emitter
+`--------------
+function Emitter_Delete(iEmitter as integer)
+   if EP_EmitterInUse(iEmitter)=1
+      for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+         EP_DeleteEmitter(EP_SubEmitters(e))
+      next e
+      for e=EP_Emitters(iEmitter).EmitterStart to EP_SubEmittersArrayCount-EP_Emitters(iEmitter).EmitterCount
+         c=e+EP_Emitters(iEmitter).EmitterCount
+         EP_SubEmitters(e)=EP_SubEmitters(c)
+      next e
+      for e=0 to EP_EmittersCount
+         if EP_Emitters(e).InUse=1
+            if EP_Emitters(e).EmitterStart>EP_Emitters(iEmitter).EmitterStart
+               EP_Emitters(e).EmitterStart=EP_Emitters(e).EmitterStart-EP_Emitters(iEmitter).EmitterCount
+               EP_Emitters(e).EmitterEnd=EP_Emitters(e).EmitterEnd-EP_Emitters(iEmitter).EmitterCount
+            endif
+         endif
+      next e
+      dec EP_SubEmittersCount,EP_Emitters(iEmitter).EmitterCount
+      EP_Emitters(iEmitter).InUse=0
+   endif
+endfunction
+
+`--------------
+` Emit Particle
+`--------------
+function Emitter_Emitparticle(iEmitter as integer,iSubEmitter as integer,iEmitCount as integer)
+   local tReturn as integer
+   local tEmitter as integer
+   local tParticle as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            tEmitter=EP_SubEmitters(e)
+            EP_SetEmitterVisible(tEmitter,1)
+            EP_Emitter(tEmitter).StopPlay=2
+            EP_Emitter(tEmitter).StopLife=EP_Emitter(tEmitter).ParticleLife
+            EP_Emitter(tEmitter).EmitParticle=1
+            tParticle=EP_Emitter(tEmitter).ParticleStart
+            EP_Particle(tParticle).UpDate=0
+            EP_Particle(tParticle).EmitParticle=1
+            EP_Particle(tParticle).LifeCurrent=0
+            EP_Particle(tParticle).Position.x=EP_Emitter(tEmitter).Position.x+EP_Particle(tParticle).PositionRnd.x+(EP_Particle(tParticle).Direction.x*EP_Particle(tParticle).Move)
+            EP_Particle(tParticle).Position.y=EP_Emitter(tEmitter).Position.y+EP_Particle(tParticle).PositionRnd.y+(EP_Particle(tParticle).Direction.y*EP_Particle(tParticle).Move)
+            EP_Particle(tParticle).Position.z=EP_Emitter(tEmitter).Position.z+EP_Particle(tParticle).PositionRnd.z+(EP_Particle(tParticle).Direction.z*EP_Particle(tParticle).Move)
+            for p=0 to iEmitCount
+               tParticle=EP_Emitter(tEmitter).ParticleStart+EP_Emitter(tEmitter).ParticleEmit+1
+               EP_Particle(tParticle).UpDate=0
+               EP_Particle(tParticle).EmitParticle=1
+               EP_Particle(tParticle).LifeCurrent=0
+               EP_Particle(tParticle).Position.x=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Position.x+EP_Particle(tParticle).PositionRnd.x+(EP_Particle(tParticle).Direction.x*EP_Particle(tParticle).Move)
+               EP_Particle(tParticle).Position.y=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Position.y+EP_Particle(tParticle).PositionRnd.y+(EP_Particle(tParticle).Direction.y*EP_Particle(tParticle).Move)
+               EP_Particle(tParticle).Position.z=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Position.z+EP_Particle(tParticle).PositionRnd.z+(EP_Particle(tParticle).Direction.z*EP_Particle(tParticle).Move)
+               if tReturn=0 then tReturn=tParticle
+               inc EP_Emitter(tEmitter).ParticleEmit
+               if EP_Emitter(tEmitter).ParticleEmit>EP_Emitter(tEmitter).ParticleCount-2 then EP_Emitter(tEmitter).ParticleEmit=0
+            next p
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            EP_SetEmitterVisible(tEmitter,1)
+            EP_Emitter(tEmitter).StopPlay=2
+            EP_Emitter(tEmitter).StopLife=EP_Emitter(tEmitter).ParticleLife
+            EP_Emitter(tEmitter).EmitParticle=1
+            tParticle=EP_Emitter(tEmitter).ParticleStart
+            EP_Particle(tParticle).UpDate=0
+            EP_Particle(tParticle).EmitParticle=1
+            EP_Particle(tParticle).LifeCurrent=0
+            EP_Particle(tParticle).Position.x=EP_Emitter(tEmitter).Position.x+EP_Particle(tParticle).PositionRnd.x+(EP_Particle(tParticle).Direction.x*EP_Particle(tParticle).Move)
+            EP_Particle(tParticle).Position.y=EP_Emitter(tEmitter).Position.y+EP_Particle(tParticle).PositionRnd.y+(EP_Particle(tParticle).Direction.y*EP_Particle(tParticle).Move)
+            EP_Particle(tParticle).Position.z=EP_Emitter(tEmitter).Position.z+EP_Particle(tParticle).PositionRnd.z+(EP_Particle(tParticle).Direction.z*EP_Particle(tParticle).Move)
+            for p=0 to iEmitCount
+               tParticle=EP_Emitter(tEmitter).ParticleStart+EP_Emitter(tEmitter).ParticleEmit+1
+               EP_Particle(tParticle).UpDate=0
+               EP_Particle(tParticle).EmitParticle=1
+               EP_Particle(tParticle).LifeCurrent=0
+               EP_Particle(tParticle).Position.x=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Position.x+EP_Particle(tParticle).PositionRnd.x+(EP_Particle(tParticle).Direction.x*EP_Particle(tParticle).Move)
+               EP_Particle(tParticle).Position.y=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Position.y+EP_Particle(tParticle).PositionRnd.y+(EP_Particle(tParticle).Direction.y*EP_Particle(tParticle).Move)
+               EP_Particle(tParticle).Position.z=EP_Particle(EP_Emitter(tEmitter).ParticleStart).Position.z+EP_Particle(tParticle).PositionRnd.z+(EP_Particle(tParticle).Direction.z*EP_Particle(tParticle).Move)
+               tReturn=tParticle
+               inc EP_Emitter(tEmitter).ParticleEmit
+               if EP_Emitter(tEmitter).ParticleEmit>EP_Emitter(tEmitter).ParticleCount-2 then EP_Emitter(tEmitter).ParticleEmit=0
+            next p
+         endif
+      endif
+   endif
+endfunction tReturn
+
+`--------------
+` Play Emitter
+`--------------
+function Emitter_Play(iEmitter as integer,iSubEmitter as integer)
+   local tEmitter as integer
+   local tVisible as boolean
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            if EP_Emitter(EP_SubEmitters(e)).Visible=1 then tVisible=1:exit
+         next e
+         if tVisible=0
+            for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+               tEmitter=EP_SubEmitters(e)
+               EP_SetEmitterVisible(tEmitter,1)
+               EP_Emitter(tEmitter).StopPlay=2
+               if (EP_Emitter(tEmitter).ParticleLife*(1+(1*EP_Emitter(tEmitter).Emission)))>EP_Emitter(tEmitter).Life
+                  EP_Emitter(tEmitter).StopLife=(EP_Emitter(tEmitter).ParticleLife*(1+(1*EP_Emitter(tEmitter).Emission)))+1
+               else
+                  EP_Emitter(tEmitter).StopLife=EP_Emitter(tEmitter).Life+(EP_Emitter(tEmitter).ParticleLife*(EP_Emitter(tEmitter).Emission))+1
+               endif
+            next e
+         endif
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            if EP_Emitter(tEmitter).AutoDelete=0
+               EP_SetEmitterVisible(tEmitter,1)
+               EP_Emitter(tEmitter).StopPlay=2
+               if (EP_Emitter(tEmitter).ParticleLife*(1+(1*EP_Emitter(tEmitter).Emission)))>EP_Emitter(tEmitter).Life
+                  EP_Emitter(tEmitter).StopLife=(EP_Emitter(tEmitter).ParticleLife*(1+(1*EP_Emitter(tEmitter).Emission)))+1
+               else
+                  EP_Emitter(tEmitter).StopLife=EP_Emitter(tEmitter).Life+(EP_Emitter(tEmitter).ParticleLife*(EP_Emitter(tEmitter).Emission))+1
+               endif
+            endif
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Stop Emitter
+`--------------
+function Emitter_Stop(iEmitter as integer,iSubEmitter as integer)
+   local tEmitter as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            tEmitter=EP_SubEmitters(e)
+            if EP_Emitter(tEmitter).Visible=1
+               if EP_Emitter(tEmitter).StopEmitter=0
+                  EP_Emitter(tEmitter).StopEmitter=1
+                  EP_Emitter(tEmitter).StopPlay=2
+                  tLife as float
+                  tNextParticle as integer
+                  tLife=0
+                  tNextParticle=1
+                  for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+                     for p=EP_SubEmitter(s).ParticleStart+tNextParticle to EP_SubEmitter(s).ParticleEnd
+                        if EP_Particle(p).Life>tLife then tLife=EP_Particle(p).Life
+                     next p
+                     tNextParticle=0
+                  next s
+                  EP_Emitter(tEmitter).StopLife=tLife
+                  EP_Particle(EP_Emitter(tEmitter).ParticleStart).UpDate=2
+                  EP_Particle(EP_Emitter(tEmitter).ParticleStart).SizeCurrent=0
+               endif
+            endif
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            if EP_Emitter(tEmitter).Visible=1
+               if EP_Emitter(tEmitter).StopEmitter=0
+                  EP_Emitter(tEmitter).StopEmitter=1
+                  EP_Emitter(tEmitter).StopPlay=2
+                  tLife as float
+                  tNextParticle as integer
+                  tLife=0
+                  tNextParticle=1
+                  for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+                     for p=EP_SubEmitter(s).ParticleStart+tNextParticle to EP_SubEmitter(s).ParticleEnd
+                        if EP_Particle(p).Life>tLife then tLife=EP_Particle(p).Life
+                     next p
+                     tNextParticle=0
+                  next s
+                  EP_Emitter(tEmitter).StopLife=tLife
+                  EP_Particle(EP_Emitter(tEmitter).ParticleStart).UpDate=2
+                  EP_Particle(EP_Emitter(tEmitter).ParticleStart).SizeCurrent=0
+               endif
+            endif
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Visible
+`--------------
+function Emitter_SetVisible(iEmitter as integer,iVisible as boolean)
+   if EP_EmitterInUse(iEmitter)=1
+      for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+         EP_SetEmitterVisible(EP_SubEmitters(e),iVisible)
+      next e
+   endif
+endfunction
+
+`--------------
+` Emitter Auto Delete
+`--------------
+function Emitter_SetAutoDelete(iEmitter as integer,iAutoDelete as boolean)
+   if EP_EmitterInUse(iEmitter)=1
+      for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+         EP_Emitter(EP_SubEmitters(e)).AutoDelete=iAutoDelete
+      next e
+   endif
+endfunction
+
+`--------------
+` Set Emitter Update Timer
+`--------------
+function Emitter_SetUpdateTimer(iEmitter as integer,iSubEmitter as integer,iUpdateTimer as float)
+   local tEmitter as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+             EP_Emitter(EP_SubEmitters(e)).UpdateTimer=iUpdateTimer
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            EP_Emitter(tEmitter).UpdateTimer=iUpdateTimer
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Update Step
+`--------------
+function Emitter_SetUpdateDistanceStep(iEmitter as integer,iSubEmitter as integer,iUpdateDist as integer)
+   local tEmitter as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            EP_Emitter(EP_SubEmitters(e)).UpdateDist=iUpdateDist
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            EP_Emitter(tEmitter).UpdateDist=iUpdateDist
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Position
+`--------------
+function Emitter_SetPosition(iEmitter as integer,iPositionX as float,iPositionY as float,iPositionZ as float,iMode as boolean)
+   if EP_EmitterInUse(iEmitter)=1
+      for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+         if iMode=0
+            EP_Emitter(EP_SubEmitters(e)).Position.x=iPositionX
+            EP_Emitter(EP_SubEmitters(e)).Position.y=iPositionY
+            EP_Emitter(EP_SubEmitters(e)).Position.z=iPositionZ
+         else
+            EP_Particle(EP_Emitter(EP_SubEmitters(e)).ParticleStart).Position.x=EP_Particle(EP_Emitter(EP_SubEmitters(e)).ParticleStart).Position.x+(iPositionX-EP_Emitter(EP_SubEmitters(e)).Position.x)
+            EP_Particle(EP_Emitter(EP_SubEmitters(e)).ParticleStart).Position.y=EP_Particle(EP_Emitter(EP_SubEmitters(e)).ParticleStart).Position.y+(iPositionY-EP_Emitter(EP_SubEmitters(e)).Position.y)
+            EP_Particle(EP_Emitter(EP_SubEmitters(e)).ParticleStart).Position.z=EP_Particle(EP_Emitter(EP_SubEmitters(e)).ParticleStart).Position.z+(iPositionZ-EP_Emitter(EP_SubEmitters(e)).Position.z)
+            EP_Emitter(EP_SubEmitters(e)).Position.x=iPositionX
+            EP_Emitter(EP_SubEmitters(e)).Position.y=iPositionY
+            EP_Emitter(EP_SubEmitters(e)).Position.z=iPositionZ
+         endif
+      next e
+   endif
+endfunction
+
+`--------------
+` Set Emitter Angle
+`--------------
+function Emitter_SetAngle(iEmitter as integer,iAngleX as float,iAngleY as float,iAngleZ as float)
+   if EP_EmitterInUse(iEmitter)=1
+      for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+         EP_Emitter(EP_SubEmitters(e)).Angle.x=iAngleX
+         EP_Emitter(EP_SubEmitters(e)).Angle.y=iAngleY
+         EP_Emitter(EP_SubEmitters(e)).Angle.z=iAngleZ
+      next e
+   endif
+endfunction
+
+`--------------
+` Set Emitter Emission ID
+`--------------
+function Emitter_SetEmissionID(iEmitter as integer,iSubEmitter as integer,iEmissionID as integer)
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            EP_Emitter(EP_SubEmitters(e)).EmissionID=iEmissionID
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).EmissionID=iEmissionID
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Collision ID
+`--------------
+function Emitter_SetCollisionID(iEmitter as integer,iSubEmitter as integer,iCollisionID as integer)
+   local tEmitter as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            for s=EP_Emitter(EP_SubEmitters(e)).SubEmitterStart to EP_Emitter(EP_SubEmitters(e)).SubEmitterEnd
+               for p=EP_SubEmitter(s).ParticleStart to EP_SubEmitter(s).ParticleEnd
+                   EP_Particle(p).CollisionID=iCollisionID
+               next p
+            next s
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+               for p=EP_SubEmitter(s).ParticleStart to EP_SubEmitter(s).ParticleEnd
+                  EP_Particle(p).CollisionID=iCollisionID
+               next p
+            next s
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Collision Height
+`--------------
+function Emitter_SetCollisionHeight(iEmitter as integer,iSubEmitter as integer,iEnable as boolean,iHeight as float)
+   local tEmitter as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            EP_Emitter(EP_SubEmitters(e)).CollisionHeightEnabled=iEnable
+            for s=EP_Emitter(EP_SubEmitters(e)).SubEmitterStart to EP_Emitter(EP_SubEmitters(e)).SubEmitterEnd
+               for p=EP_SubEmitter(s).ParticleStart+tNextParticle to EP_SubEmitter(s).ParticleEnd
+                  EP_Particle(p).CollisionHeight=iHeight
+               next p
+            next s
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            EP_Emitter(tEmitter).CollisionHeightEnabled=iEnable
+            for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+               for p=EP_SubEmitter(s).ParticleStart to EP_SubEmitter(s).ParticleEnd
+                   EP_Particle(p).CollisionHeight=iHeight
+               next p
+            next s
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Collision Plane
+`--------------
+function Emitter_SetCollisionPlane(iEmitter as integer,iSubEmitter as integer,iEnable as boolean,iPosX as float,iPosY as float,iPosZ as float,iNorX as float,iNorY as float,iNorZ as float)
+   local tEmitter as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            EP_Emitter(EP_SubEmitters(e)).CollisionPlaneEnabled=iEnable
+            for s=EP_Emitter(EP_SubEmitters(e)).SubEmitterStart to EP_Emitter(EP_SubEmitters(e)).SubEmitterEnd
+               for p=EP_SubEmitter(s).ParticleStart+tNextParticle to EP_SubEmitter(s).ParticleEnd
+                  EP_Particle(p).CollisionPosition.x=iPosX
+                  EP_Particle(p).CollisionPosition.y=iPosY
+                  EP_Particle(p).CollisionPosition.z=iPosZ
+                  EP_Particle(p).CollisionNormal.x=iNorX
+                  EP_Particle(p).CollisionNormal.y=iNorY
+                  EP_Particle(p).CollisionNormal.z=iNorZ
+               next p
+            next s
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            EP_Emitter(tEmitter).CollisionHeightEnabled=iEnable
+            for s=EP_Emitter(tEmitter).SubEmitterStart to EP_Emitter(tEmitter).SubEmitterEnd
+               for p=EP_SubEmitter(s).ParticleStart to EP_SubEmitter(s).ParticleEnd
+                  EP_Particle(p).CollisionPosition.x=iPosX
+                  EP_Particle(p).CollisionPosition.y=iPosY
+                  EP_Particle(p).CollisionPosition.z=iPosZ
+                  EP_Particle(p).CollisionNormal.x=iNorX
+                  EP_Particle(p).CollisionNormal.y=iNorY
+                  EP_Particle(p).CollisionNormal.z=iNorZ
+               next p
+            next s
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Collision Step
+`--------------
+function Emitter_SetCollisionStep(iEmitter as integer,iSubEmitter as integer,iStep as integer)
+   local tEmitter as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            EP_Emitter(EP_SubEmitters(e)).CollisionStep=iStep
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            EP_Emitter(tEmitter).CollisionStep=iStep
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Orientation Step
+`--------------
+function Emitter_SetOrientationStep(iEmitter as integer,iSubEmitter as integer,iStep as integer)
+   local tEmitter as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            EP_Emitter(EP_SubEmitters(e)).OrientationStep=iStep
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            EP_Emitter(tEmitter).OrientationStep=iStep
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Softness
+`--------------
+function Emitter_SetSoftness(iEmitter as integer,iSubEmitter as integer,iEdgeSoftness as float)
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            EP_Emitter(EP_SubEmitters(e)).EdgeSoftness=iEdgeSoftness
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).EdgeSoftness=iEdgeSoftness
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Lighting
+`--------------
+function Emitter_SetLighting(iEmitter as integer,iSubEmitter as integer,iLighting as integer)
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            if EP_Emitter(EP_SubEmitters(e)).Lighting<>iLighting and EP_Emitter(EP_SubEmitters(e)).EmitterType<>2
+               EP_Emitter(EP_SubEmitters(e)).Lighting=iLighting
+               if EP_Emitter(EP_SubEmitters(e)).Lighting>0
+                  EP_Emitter(EP_SubEmitters(e)).EmitterType=3
+               else
+                  EP_Emitter(EP_SubEmitters(e)).EmitterType=1
+               endif
+            endif
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            if EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).Lighting<>iLighting
+               EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).Lighting=iLighting
+               if EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).Lighting>0 and EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).EmitterType<>2
+                  EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).EmitterType=3
+               else
+                  EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).EmitterType=1
+               endif
+            endif
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Emitter Mask
+`--------------
+function Emitter_Mask(iEmitter as integer,iSubEmitter as integer,iAlpha as boolean,iRefract as boolean,iDistort as boolean)
+   local tEmitter as integer
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+            EP_Emitter(EP_SubEmitters(e)).MaskAlpha=iAlpha
+            EP_Emitter(EP_SubEmitters(e)).MaskRefract=iRefract
+            EP_Emitter(EP_SubEmitters(e)).MaskDistort=iDistort
+            AlphaObject_Mask(EP_Emitter(EP_SubEmitters(e)).Object,iAlpha,iRefract,iDistort)
+         next e
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tEmitter=EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)
+            EP_Emitter(tEmitter).MaskAlpha=iAlpha
+            EP_Emitter(tEmitter).MaskRefract=iRefract
+            EP_Emitter(tEmitter).MaskDistort=iDistort
+            AlphaObject_Mask(EP_Emitter(tEmitter).Object,iAlpha,iRefract,iDistort)
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Get Emitter Visible
+`--------------
+function Emitter_GetVisible(iEmitter as integer)
+   local tReturn as boolean
+   if EP_EmitterInUse(iEmitter)=1
+      for e=EP_Emitters(iEmitter).EmitterStart to EP_Emitters(iEmitter).EmitterEnd-1
+         if EP_Emitter(EP_SubEmitters(e)).Visible=1 then tReturn=1:exit
+      next e
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emitter Position X
+`--------------
+function Emitter_GetPositionX(iEmitter as integer,iSubEmitter as integer)
+   local tReturn as float
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         tReturn=EP_Particle(EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart)).ParticleStart).Position.x
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tReturn=EP_Particle(EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).ParticleStart).Position.x
+         endif
+      endif
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emitter Position Y
+`--------------
+function Emitter_GetPositionY(iEmitter as integer,iSubEmitter as integer)
+   local tReturn as float
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         tReturn=EP_Particle(EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart)).ParticleStart).Position.y
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tReturn=EP_Particle(EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).ParticleStart).Position.y
+         endif
+      endif
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emitter Position Z
+`--------------
+function Emitter_GetPositionZ(iEmitter as integer,iSubEmitter as integer)
+   local tReturn as float
+   if EP_EmitterInUse(iEmitter)=1
+      if iSubEmitter=0
+         tReturn=EP_Particle(EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart)).ParticleStart).Position.z
+      else
+         if iSubEmitter-1<EP_Emitters(iEmitter).EmitterCount and iSubEmitter>0
+            tReturn=EP_Particle(EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart+iSubEmitter-1)).ParticleStart).Position.Z
+         endif
+      endif
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emitter Angle X
+`--------------
+function Emitter_GetAngleX(iEmitter as integer)
+   local tReturn as float
+   if EP_EmitterInUse(iEmitter)=1
+      tReturn=EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart)).Angle.x
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emitter Angle Y
+`--------------
+function Emitter_GetAngleY(iEmitter as integer)
+   local tReturn as float
+   if EP_EmitterInUse(iEmitter)=1
+      tReturn=EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart)).Angle.y
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emitter Angle Z
+`--------------
+function Emitter_GetAngleZ(iEmitter as integer)
+   local tReturn as float
+   if EP_EmitterInUse(iEmitter)=1
+      tReturn=EP_Emitter(EP_SubEmitters(EP_Emitters(iEmitter).EmitterStart)).Angle.z
+   endif
+endfunction tReturn
+
+`--------------
+` Get Next Emission Event
+`--------------
+function Emitter_GetEmissionEvent()
+   local tReturn as integer
+   inc EP_GetEmissionEvent
+   if EP_GetEmissionEvent>EP_EmissionEventCount then EP_GetEmissionEvent=-1
+   tReturn=EP_GetEmissionEvent
+endfunction tReturn
+
+`--------------
+` Get Emission Event Emitter
+`--------------
+function Emitter_GetEmissionEmitter()
+   local tReturn as integer
+   if EP_GetEmissionEvent>-1
+      tReturn=EP_EmissionEvent(EP_GetEmissionEvent).Emitter
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emission Event Particle
+`--------------
+function Emitter_GetEmissionParticle()
+   local tReturn as integer
+   if EP_GetEmissionEvent>-1
+      tReturn=EP_EmissionEvent(EP_GetEmissionEvent).Particle
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emission Event ID
+`--------------
+function Emitter_GetEmissionID()
+   local tReturn as integer
+   if EP_GetEmissionEvent>-1
+      tReturn=EP_EmissionEvent(EP_GetEmissionEvent).EmissionID
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emission Event Position X
+`--------------
+function Emitter_GetEmissionPositionX()
+   local tReturn as float
+   if EP_GetEmissionEvent>-1
+      tReturn=EP_EmissionEvent(EP_GetEmissionEvent).Position.x
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emission Event Position Y
+`--------------
+function Emitter_GetEmissionPositionY()
+   local tReturn as float
+   if EP_GetEmissionEvent>-1
+      tReturn=EP_EmissionEvent(EP_GetEmissionEvent).Position.y
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emission Event Position Z
+`--------------
+function Emitter_GetEmissionPositionZ()
+   local tReturn as float
+   if EP_GetEmissionEvent>-1
+      tReturn=EP_EmissionEvent(EP_GetEmissionEvent).Position.z
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emission Event Direction X
+`--------------
+function Emitter_GetEmissionDirectionX()
+   local tReturn as float
+   if EP_GetEmissionEvent>-1
+      tReturn=EP_EmissionEvent(EP_GetEmissionEvent).Direction.x
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emission Event Direction Y
+`--------------
+function Emitter_GetEmissionDirectionY()
+   local tReturn as float
+   if EP_GetEmissionEvent>-1
+      tReturn=EP_EmissionEvent(EP_GetEmissionEvent).Direction.y
+   endif
+endfunction tReturn
+
+`--------------
+` Get Emission Event Direction Z
+`--------------
+function Emitter_GetEmissionDirectionZ()
+   local tReturn as float
+   if EP_GetEmissionEvent>-1
+      tReturn=EP_EmissionEvent(EP_GetEmissionEvent).Direction.z
+   endif
+endfunction tReturn
+
+`--------------
+` Get Next Collision Event
+`--------------
+function Emitter_GetCollisionEvent()
+   local tReturn as integer
+   inc EP_GetCollisionEvent
+   if EP_GetCollisionEvent>EP_CollisionEventCount then EP_GetCollisionEvent=-1
+   tReturn=EP_GetCollisionEvent
+endfunction tReturn
+
+`--------------
+` Get Collision Event Emitter
+`--------------
+function Emitter_GetCollisionEmitter()
+   local tReturn as integer
+   if EP_GetCollisionEvent>-1
+      tReturn=EP_CollisionEvent(EP_GetCollisionEvent).Emitter
+   endif
+endfunction tReturn
+
+`--------------
+` Get Collision Event Particle
+`--------------
+function Emitter_GetCollisionParticle()
+   local tReturn as integer
+   if EP_GetCollisionEvent>-1
+      tReturn=EP_CollisionEvent(EP_GetCollisionEvent).Particle
+   endif
+endfunction tReturn
+
+`--------------
+` Get Collision Event ID
+`--------------
+function Emitter_GetCollisionID()
+   local tReturn as integer
+   if EP_GetCollisionEvent>-1
+      tReturn=EP_CollisionEvent(EP_GetCollisionEvent).CollisionID
+   endif
+endfunction tReturn
+
+`--------------
+` Get Collision Event Position X
+`--------------
+function Emitter_GetCollisionPositionX()
+   local tReturn as float
+   if EP_GetCollisionEvent>-1
+      tReturn=EP_CollisionEvent(EP_GetCollisionEvent).Position.x
+   endif
+endfunction tReturn
+
+`--------------
+` Get Collision Event Position Y
+`--------------
+function Emitter_GetCollisionPositionY()
+   local tReturn as float
+   if EP_GetCollisionEvent>-1
+      tReturn=EP_CollisionEvent(EP_GetCollisionEvent).Position.y
+   endif
+endfunction tReturn
+
+`--------------
+` Get Collision Event Position Z
+`--------------
+function Emitter_GetCollisionPositionZ()
+   local tReturn as float
+   if EP_GetCollisionEvent>-1
+      tReturn=EP_CollisionEvent(EP_GetCollisionEvent).Position.z
+   endif
+endfunction tReturn
+
+`--------------
+` Get Collision Event Normal Z
+`--------------
+function Emitter_GetCollisionNormalX()
+   local tReturn as float
+   if EP_GetCollisionEvent>-1
+      tReturn=EP_CollisionEvent(EP_GetCollisionEvent).Normal.x
+   endif
+endfunction tReturn
+
+`--------------
+` Get Collision Event Normal Y
+`--------------
+function Emitter_GetCollisionNormalY()
+   local tReturn as float
+   if EP_GetCollisionEvent>-1
+      tReturn=EP_CollisionEvent(EP_GetCollisionEvent).Normal.y
+   endif
+endfunction tReturn
+
+`--------------
+` Get Collision Event Normal Z
+`--------------
+function Emitter_GetCollisionNormalZ()
+   local tReturn as float
+   if EP_GetCollisionEvent>-1
+      tReturn=EP_CollisionEvent(EP_GetCollisionEvent).Normal.z
+   endif
+endfunction tReturn
+
+`==================================================================================================================================================
+
+`--------------
+` Free Image
+`--------------
+function EP_FreeUpImage()
+   local tFreeup=20000
+   repeat
+      inc tFreeup
+   until image exist(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Free Object
+`--------------
+function EP_FreeUpObject()
+   local tFreeup=20000
+   repeat
+      inc tFreeup
+   until object exist(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Free Effect
+`--------------
+function EP_FreeUpEffect()
+   local tFreeup=2000
+   repeat
+      inc tFreeup
+   until Effect exist(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Free Mesh
+`--------------
+function EP_FreeUpMesh()
+   local tFreeup=20000
+   repeat
+      inc tFreeup
+   until mesh exist(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Free File
+`--------------
+function EP_FreeUpFile()
+   local tFreeup=0
+   repeat
+      inc tFreeup
+   until file open(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Find Free Image
+`--------------
+function EP_FindFreeImage(iFile as string)
+   local tFreeup as integer
+   tFreeup=0
+   for i=0 to EP_ImageArrayCount-1
+      if EP_Image(i).File=iFile then tFreeup=EP_Image(i).Image:exit
+   next i
+   if tFreeup=0
+      if file exist(iFile)=1
+         array insert at bottom EP_Image()
+         EP_Image(EP_ImageArrayCount).Image=EP_FreeUpImage()
+         EP_Image(EP_ImageArrayCount).File=iFile
+         load image EP_Image(EP_ImageArrayCount).File,EP_Image(EP_ImageArrayCount).Image
+         tFreeup=EP_Image(EP_ImageArrayCount).Image
+         inc EP_ImageArrayCount
+      endif
+   endif
+endfunction tFreeup
+
+`--------------
+` Read Emitter File
+`--------------
+function EP_ReadEmitterFile(iFile as string)
+   tFile as integer
+   tFloat as float
+   tString as string
+   tFile=EP_FreeUpFile()
+   open to read tFile,iFile
+   read float tFile,tFloat:EP_ReadFloat(0,0)=tFloat
+   for e=0 to EP_ReadFloat(0,0)-1
+      read String tFile,tString:EP_ReadString(e,1)=tString
+      read String tFile,tString:EP_ReadString(e,2)=tString
+      read String tFile,tString:EP_ReadString(e,3)=tString
+      for f=1 to 141
+         read float tFile,tFloat:EP_ReadFloat(e,f)=tFloat
+      next f
+   next e
+   close file tFile
+endfunction
+
+`--------------
+` Delete Emitter
+`--------------
+function EP_DeleteEmitter(iEmitter as integer)
+   if EP_Emitter(iEmitter).InUse=1
+      EP_SetEmitterVisible(iEmitter,0)
+      AlphaObject_Remove(EP_Emitter(iEmitter).Object)
+      delete object EP_Emitter(iEmitter).Object
+      for p=EP_Emitter(iEmitter).ParticleStart to EP_ParticleArrayCount-EP_Emitter(iEmitter).ParticleCount
+          c=p+EP_Emitter(iEmitter).ParticleCount
+          EP_Particle(p)=EP_Particle(c)
+      next p
+      for s=EP_Emitter(iEmitter).SubEmitterStart to EP_SubEmitterArrayCount-EP_Emitter(iEmitter).SubEmitterCount
+          c=s+EP_Emitter(iEmitter).SubEmitterCount
+          EP_SubEmitter(s)=EP_SubEmitter(c)
+      next s
+      for e=0 to EP_EmitterCount
+         if EP_Emitter(e).InUse=1
+            if EP_Emitter(e).SubEmitterStart>EP_Emitter(iEmitter).SubEmitterStart
+               EP_Emitter(e).SubEmitterStart=EP_Emitter(e).SubEmitterStart-EP_Emitter(iEmitter).SubEmitterCount
+               EP_Emitter(e).SubEmitterEnd=EP_Emitter(e).SubEmitterEnd-EP_Emitter(iEmitter).SubEmitterCount
+               for s=EP_Emitter(e).SubEmitterStart to EP_Emitter(e).SubEmitterEnd
+                  EP_SubEmitter(s).Emitter=e
+                  EP_SubEmitter(s).ParticleStart=EP_SubEmitter(s).ParticleStart-EP_Emitter(iEmitter).ParticleCount
+                  EP_SubEmitter(s).ParticleEnd=EP_SubEmitter(s).ParticleEnd-EP_Emitter(iEmitter).ParticleCount
+                  for p=EP_SubEmitter(s).ParticleStart to EP_SubEmitter(s).ParticleEnd
+                     EP_Particle(p).SubEmitter=s
+                  next p
+               next s
+               EP_Emitter(e).ParticleStart=EP_SubEmitter(EP_Emitter(e).SubEmitterStart).ParticleStart
+            endif
+         endif
+      next e
+      dec EP_SubEmitterCount,EP_Emitter(iEmitter).SubEmitterCount
+      dec EP_ParticleCount,EP_Emitter(iEmitter).ParticleCount
+      EP_Emitter(iEmitter).InUse=0
+   endif
+endfunction
+
+`--------------
+` Set Emitter Visible
+`--------------
+function EP_SetEmitterVisible(iEmitter as integer,iVisible as boolean)
+   if EP_Emitter(iEmitter).Visible<>iVisible
+      if iVisible=0
+         EP_Emitter(iEmitter).Visible=0
+         EP_Emitter(iEmitter).OldFrustumCull=0
+         EP_Emitter(iEmitter).StopPlay=0
+         EP_Emitter(iEmitter).StopLife=0
+         EP_Emitter(iEmitter).StopEmitter=0
+         EP_Emitter(tEmitter).EmitParticle=0
+         for e=0 to EP_EmitterVisibleCount
+             if EP_EmitterVisible(e)=iEmitter+1
+                array delete element EP_EmitterVisible(),e
+                dec EP_EmitterVisibleCount
+                exit
+             endif
+         next e
+         exclude object on EP_Emitter(iEmitter).Object
+         hide object EP_Emitter(iEmitter).Object
+         if EP_Emitter(iEmitter).Effect>0
+            for s=EP_Emitter(iEmitter).SubEmitterStart to EP_Emitter(iEmitter).SubEmitterEnd
+                EP_RemoveShader(iEmitter,s)
+                dec EP_ShaderType(EP_Emitter(iEmitter).EmitterType).Current
+            next s
+            EP_Emitter(iEmitter).Effect=0
+         endif
+      else
+         EP_Emitter(iEmitter).Visible=1
+         EP_Emitter(iEmitter).OldFrustumCull=0
+         EP_Emitter(iEmitter).StopPlay=0
+         EP_Emitter(iEmitter).StopLife=0
+         EP_Emitter(iEmitter).StopEmitter=0
+         EP_Emitter(tEmitter).EmitParticle=0
+         tAddVisible as integer
+         tAddVisible=0
+         for e=0 to EP_EmitterVisibleCount
+            if EP_EmitterVisible(e)=iEmitter+1
+               tAddVisible=1
+               exit
+            endif
+         next e
+         if tAddVisible=0
+            array insert at bottom EP_EmitterVisible()
+            inc  EP_EmitterVisibleCount
+            EP_EmitterVisible(EP_EmitterVisibleCount)=iEmitter+1
+         endif
+         exclude object off EP_Emitter(iEmitter).Object
+         show object EP_Emitter(iEmitter).Object
+         for s=EP_Emitter(iEmitter).SubEmitterStart to EP_Emitter(iEmitter).SubEmitterEnd
+            for p=EP_SubEmitter(s).ParticleStart to EP_SubEmitter(s).ParticleEnd
+               EP_Particle(p).LifeCurrent=EP_Particle(p).StartLife
+               EP_Particle(p).UpDate=0
+               EP_Particle(p).SizeCurrent=0
+               EP_Particle(p).EmitParticle=0
+               EP_Particle(p).Collision=0
+            next p
+         next s
+      endif
+   endif
+endfunction
+
+`--------------
+` Apply Shader
+`--------------
+function EP_ApplyShader(iEmitter as integer,iSubEmitter as integer)
+   if EP_SubEmitter(iSubEmitter).EffectIndex=-1
+      if EP_Emitter(iEmitter).EmitterType=1
+         for e=0 to EP_ShaderType(1).Count
+            if EP_Shader1(e).Inuse=0
+               EP_Shader1(e).Inuse=1
+               EP_SubEmitter(iSubEmitter).EffectIndex=e
+               EP_SubEmitter(iSubEmitter).Effect=EP_Shader1(e).Effect
+               exit
+            endif
+         next e
+         if EP_SubEmitter(iSubEmitter).EffectIndex=-1
+            array insert at bottom EP_Shader1()
+            inc EP_ShaderType(1).Count
+            EP_Shader1(EP_ShaderType(1).Count).Inuse=1
+            EP_Shader1(EP_ShaderType(1).Count).Effect=EP_FreeUpEffect()
+            load effect AL_Directory+"Alpha/Particles/Particles1.fx",EP_Shader1(EP_ShaderType(1).Count).Effect,0,1
+            EP_Shader1(EP_ShaderType(1).Count).AlphaEffectIndex=AlphaEffect_Add(EP_Shader1(EP_ShaderType(1).Count).Effect)
+            EP_SubEmitter(iSubEmitter).EffectIndex=EP_ShaderType(1).Count
+            EP_SubEmitter(iSubEmitter).Effect=EP_Shader1(EP_ShaderType(1).Count).Effect
+         endif
+         if EP_Emitter(EP_SubEmitters(e)).MaskAlpha=1 or EP_Emitter(EP_SubEmitters(e)).MaskRefract=1
+            AL_AlphaEffect(EP_Shader1(EP_SubEmitter(iSubEmitter).EffectIndex).AlphaEffectIndex).Blocker=1
+         else
+            AL_AlphaEffect(EP_Shader1(EP_SubEmitter(iSubEmitter).EffectIndex).AlphaEffectIndex).Blocker=0
+         endif
+      endif
+      if EP_Emitter(iEmitter).EmitterType=2
+         for e=0 to EP_ShaderType(2).Count
+            if EP_Shader2(e).Inuse=0
+               EP_Shader2(e).Inuse=1
+               EP_SubEmitter(iSubEmitter).EffectIndex=e
+               EP_SubEmitter(iSubEmitter).Effect=EP_Shader2(e).Effect
+               exit
+            endif
+         next e
+         if EP_SubEmitter(iSubEmitter).EffectIndex=-1
+            array insert at bottom EP_Shader2()
+            inc EP_ShaderType(2).Count
+            EP_Shader2(EP_ShaderType(2).Count).Inuse=1
+            EP_Shader2(EP_ShaderType(2).Count).Effect=EP_FreeUpEffect()
+            load effect AL_Directory+"Alpha/Particles/Particles1.fx",EP_Shader2(EP_ShaderType(2).Count).Effect,0,1
+            EP_Shader2(EP_ShaderType(2).Count).AlphaEffectIndex=AlphaEffect_Add(EP_Shader2(EP_ShaderType(2).Count).Effect)
+            EP_SubEmitter(iSubEmitter).EffectIndex=EP_ShaderType(2).Count
+            EP_SubEmitter(iSubEmitter).Effect=EP_Shader2(EP_ShaderType(2).Count).Effect
+         endif
+         if EP_Emitter(EP_SubEmitters(e)).MaskAlpha=1 or EP_Emitter(EP_SubEmitters(e)).MaskRefract=1
+            AL_AlphaEffect(EP_Shader2(EP_SubEmitter(iSubEmitter).EffectIndex).AlphaEffectIndex).Blocker=1
+         else
+            AL_AlphaEffect(EP_Shader2(EP_SubEmitter(iSubEmitter).EffectIndex).AlphaEffectIndex).Blocker=0
+         endif
+      endif
+      if EP_Emitter(iEmitter).EmitterType=3
+         for e=0 to EP_ShaderType(3).Count
+            if EP_Shader3(e).Inuse=0
+               EP_Shader3(e).Inuse=1
+               EP_SubEmitter(iSubEmitter).EffectIndex=e
+               EP_SubEmitter(iSubEmitter).Effect=EP_Shader3(e).Effect
+               exit
+            endif
+         next e
+         if EP_SubEmitter(iSubEmitter).EffectIndex=-1
+            array insert at bottom EP_Shader3()
+            inc EP_ShaderType(3).Count
+            EP_Shader3(EP_ShaderType(3).Count).Inuse=1
+            EP_Shader3(EP_ShaderType(3).Count).Effect=EP_FreeUpEffect()
+            load effect AL_Directory+"Alpha/Particles/Particles1.fx",EP_Shader3(EP_ShaderType(3).Count).Effect,0,1
+            EP_Shader3(EP_ShaderType(3).Count).AlphaEffectIndex=AlphaEffect_Add(EP_Shader3(EP_ShaderType(3).Count).Effect)
+            EP_SubEmitter(iSubEmitter).EffectIndex=EP_ShaderType(3).Count
+            EP_SubEmitter(iSubEmitter).Effect=EP_Shader3(EP_ShaderType(3).Count).Effect
+         endif
+         if EP_Emitter(EP_SubEmitters(e)).MaskAlpha=1 or EP_Emitter(EP_SubEmitters(e)).MaskRefract=1
+            AL_AlphaEffect(EP_Shader3(EP_SubEmitter(iSubEmitter).EffectIndex).AlphaEffectIndex).Blocker=1
+         else
+            AL_AlphaEffect(EP_Shader3(EP_SubEmitter(iSubEmitter).EffectIndex).AlphaEffectIndex).Blocker=0
+         endif
+      endif
+      set limb effect EP_Emitter(iEmitter).Object,iSubEmitter-EP_Emitter(iEmitter).SubEmitterStart,EP_SubEmitter(iSubEmitter).Effect
+      set effect constant float EP_SubEmitter(iSubEmitter).Effect,"ZshiftScale",EP_Emitter(iEmitter).Zshift
+      set vector4 EP_Vector4(1),EP_Emitter(iEmitter).RollRnd,EP_Emitter(iEmitter).RollSpeed,0,0
+      set effect constant vector EP_SubEmitter(iSubEmitter).Effect,"Rotation",EP_Vector4(1)
+      set vector4 EP_Vector4(1),EP_Emitter(iEmitter).ColorIntensity.x,EP_Emitter(iEmitter).AlphaIntensity.x,EP_Emitter(iEmitter).ColorIntensity.y,EP_Emitter(iEmitter).AlphaIntensity.y
+      set effect constant vector EP_SubEmitter(iSubEmitter).Effect,"Intensity",EP_Vector4(1)
+      set vector4 EP_Vector4(1),EP_Emitter(iEmitter).AlphaToSurface.x,EP_Emitter(iEmitter).AlphaToSurface.y,0,0
+      set effect constant vector EP_SubEmitter(iSubEmitter).Effect,"AlphaToSurface",EP_Vector4(1)
+      set vector4 EP_Vector4(1),EP_Emitter(iEmitter).SinW.x,EP_Emitter(iEmitter).SinW.y,EP_Emitter(iEmitter).SinW.z,EP_Emitter(iEmitter).SinCosRnd
+      set effect constant vector EP_SubEmitter(iSubEmitter).Effect,"Sinw",EP_Vector4(1)
+      set vector4 EP_Vector4(1),EP_Emitter(iEmitter).CosW.x,EP_Emitter(iEmitter).CosW.y,EP_Emitter(iEmitter).CosW.z,EP_Emitter(iEmitter).SinCosSpeed
+      set effect constant vector EP_SubEmitter(iSubEmitter).Effect,"Cosw",EP_Vector4(1)
+      set vector4 EP_Vector4(1),EP_Emitter(iEmitter).FadeIn,EP_Emitter(iEmitter).FadeOut,EP_Emitter(iEmitter).ParticleFadeIn,EP_Emitter(iEmitter).ParticleFadeOut
+      set effect constant vector EP_SubEmitter(iSubEmitter).Effect,"AlphaMultiplier",EP_Vector4(1)
+      set vector4 EP_Vector4(1),EP_Emitter(iEmitter).Frames.x,EP_Emitter(iEmitter).Frames.y,EP_Emitter(iEmitter).Frames.x*EP_Emitter(iEmitter).Frames.y,1.0-(1.0/(EP_Emitter(iEmitter).Frames.x*EP_Emitter(iEmitter).Frames.y))
+      set effect constant vector EP_SubEmitter(iSubEmitter).Effect,"Animation",EP_Vector4(1)
+      set effect constant float EP_SubEmitter(iSubEmitter).Effect,"EdgeSoftness",EP_Emitter(iEmitter).EdgeSoftness
+      if EP_Emitter(iEmitter).Lighting>0
+         AlphaEffect_EnableLighting(EP_SubEmitter(iSubEmitter).Effect,EP_Emitter(iEmitter).Lighting)
+         AlphaEffect_SetLightingPositonToObject(EP_SubEmitter(iSubEmitter).Effect,EP_Emitter(iEmitter).Object)
+      endif
+      set vector4 EP_Vector4(1),0,-9999999,0,0
+      set vector4 EP_Vector4(2),0,0,0,0
+      set vector4 EP_Vector4(3),0,0,0,EP_Emitter(iEmitter).ParticleLength
+      null=get object effect(EP_Emitter(iEmitter).Object,iSubEmitter-EP_Emitter(iEmitter).SubEmitterStart)
+      for p=EP_SubEmitter(iSubEmitter).ParticleStart to EP_SubEmitter(iSubEmitter).ParticleEnd
+         set effect constant vector element "ParticlePosition",p-EP_SubEmitter(iSubEmitter).ParticleStart,EP_Vector4(1)
+         set effect constant vector element "ParticleColor",p-EP_SubEmitter(iSubEmitter).ParticleStart,EP_Vector4(2)
+         set effect constant vector element "ParticleAngle",p-EP_SubEmitter(iSubEmitter).ParticleStart,EP_Vector4(3)
+      next p
+      if iSubEmitter=EP_Emitter(iEmitter).SubEmitterStart
+         set vector4 EP_Vector4(1),0,0,0,EP_Emitter(iEmitter).Length
+         set effect constant vector element "ParticleAngle",0,EP_Vector4(1)
+      endif
+   endif
+endfunction
+
+`--------------
+` Remove Shader
+`--------------
+function EP_RemoveShader(iEmitter as integer,iSubEmitter as integer)
+   if EP_SubEmitter(iSubEmitter).EffectIndex>-1
+      set limb effect EP_Emitter(iEmitter).Object,iSubEmitter-EP_Emitter(iEmitter).SubEmitterStart,0
+      if EP_Emitter(iEmitter).EmitterType=1 then EP_Shader1(EP_SubEmitter(iSubEmitter).EffectIndex).Inuse=0
+      if EP_Emitter(iEmitter).EmitterType=2 then EP_Shader2(EP_SubEmitter(iSubEmitter).EffectIndex).Inuse=0
+      if EP_Emitter(iEmitter).EmitterType=3 then EP_Shader3(EP_SubEmitter(iSubEmitter).EffectIndex).Inuse=0
+      if EP_Emitter(iEmitter).Lighting>0 then AlphaEffect_EnableLighting(EP_SubEmitter(iSubEmitter).Effect,0)
+      EP_SubEmitter(iSubEmitter).EffectIndex=-1
+      EP_SubEmitter(iSubEmitter).Effect=0
+   endif
+endfunction
+
+`--------------
+` Emitter In Use
+`--------------
+function EP_EmitterInUse(iEmitter)
+   if EP_EmitterEnabled=1 and iEmitter>-1 and iEmitter<EP_EmittersCount+1
+      if EP_Emitters(iEmitter).InUse=1
+         Exitfunction 1
+      endif
+   endif
+endfunction 0
+
+`--------------
+` Emitter Collision
+`--------------
+function EP_EmitterCollision(iEmitter as integer,iPosX as float,iPosY as float,iPosZ as float,iNorX as float,iNorY as float,iNorZ as float)
+   tParticle as integer
+   tParticle=EP_Emitter(iEmitter).ParticleStart
+   if EP_Emitter(iEmitter).CollisionMode=1
+      EP_Particle(tParticle).Collision=1
+      EP_Particle(tParticle).Position.x=iPosX
+      EP_Particle(tParticle).Position.y=iPosY
+      EP_Particle(tParticle).Position.z=iPosZ
+      EP_Particle(tParticle).PositionOld.x=EP_Particle(tParticle).Position.x
+      EP_Particle(tParticle).PositionOld.y=EP_Particle(tParticle).Position.y
+      EP_Particle(tParticle).PositionOld.z=EP_Particle(tParticle).Position.z
+      EP_Particle(tParticle).GravityCurrent=-EP_Particle(tParticle).GravityCurrent*EP_Emitter(iEmitter).CollisionMass
+      EP_Particle(tParticle).WindCurrent=EP_Particle(tParticle).WindCurrent*EP_Emitter(iEmitter).CollisionMass
+      EP_Particle(tParticle).VelocityCurrent=EP_Particle(tParticle).VelocityCurrent*EP_Emitter(iEmitter).CollisionMass
+      EP_Particle(tParticle).Direction.x=(-EP_Particle(tParticle).Direction.x*iNorX)+(-EP_Particle(tParticle).Direction.x*(-iNorY))+(-EP_Particle(tParticle).Direction.x*(-iNorZ))
+      EP_Particle(tParticle).Direction.y=(-EP_Particle(tParticle).Direction.y*(-iNorX))+(-EP_Particle(tParticle).Direction.y*iNorY)+(-EP_Particle(tParticle).Direction.y*(-iNorZ))
+      EP_Particle(tParticle).Direction.z=(-EP_Particle(tParticle).Direction.z*(-iNorX))+(-EP_Particle(tParticle).Direction.z*(-iNorY))+(-EP_Particle(tParticle).Direction.z*iNorZ)
+   else
+      EP_HideParticle(tParticle)
+      if EP_Emitter(iEmitter).StopPlay=2 and EP_Emitter(iEmitter).StopEmitter=0
+         EP_Emitter(iEmitter).StopEmitter=1
+         tLife as float
+         tNextParticle as integer
+         tLife=0
+         tNextParticle=1
+         for s=EP_Emitter(iEmitter).SubEmitterStart to EP_Emitter(iEmitter).SubEmitterEnd
+             for p=EP_SubEmitter(s).ParticleStart+tNextParticle to EP_SubEmitter(s).ParticleEnd
+                 if EP_Particle(p).Life>tLife then tLife=EP_Particle(p).Life
+             next p
+             tNextParticle=0
+         next s
+         EP_Emitter(iEmitter).StopLife=tLife
+      endif
+   endif
+endfunction
+
+`--------------
+` Particle Collision
+`--------------
+function EP_ParticleCollision(iParticle as integer,iPosX as float,iPosY as float,iPosZ as float,iNorX as float,iNorY as float,iNorZ as float)
+   tEmitter as integer
+   tSubEmitter as integer
+   tSubEmitter=EP_Particle(iParticle).SubEmitter
+   tEmitter=EP_SubEmitter(tSubEmitter).Emitter
+   if EP_Emitter(tEmitter).ParticleCollisionMode=1
+      EP_Particle(iParticle).Collision=1
+      EP_Particle(iParticle).Position.x=iPosX
+      EP_Particle(iParticle).Position.y=iPosY
+      EP_Particle(iParticle).Position.z=iPosZ
+      EP_Particle(iParticle).PositionOld.x=EP_Particle(iParticle).Position.x
+      EP_Particle(iParticle).PositionOld.y=EP_Particle(iParticle).Position.y
+      EP_Particle(iParticle).PositionOld.z=EP_Particle(iParticle).Position.z
+      EP_Particle(iParticle).GravityCurrent=-EP_Particle(iParticle).GravityCurrent*EP_Emitter(tEmitter).ParticleCollisionMass
+      EP_Particle(iParticle).WindCurrent=EP_Particle(iParticle).WindCurrent*EP_Emitter(tEmitter).ParticleCollisionMass
+      EP_Particle(iParticle).VelocityCurrent=EP_Particle(iParticle).VelocityCurrent*EP_Emitter(tEmitter).ParticleCollisionMass
+      EP_Particle(iParticle).Direction.x=(-EP_Particle(iParticle).Direction.x*iNorX)+(-EP_Particle(iParticle).Direction.x*(-iNorY))+(-EP_Particle(iParticle).Direction.x*(-iNorZ))
+      EP_Particle(iParticle).Direction.y=(-EP_Particle(iParticle).Direction.y*(-iNorX))+(-EP_Particle(iParticle).Direction.y*iNorY)+(-EP_Particle(iParticle).Direction.y*(-iNorZ))
+      EP_Particle(iParticle).Direction.z=(-EP_Particle(iParticle).Direction.z*(-iNorX))+(-EP_Particle(iParticle).Direction.z*(-iNorY))+(-EP_Particle(iParticle).Direction.z*iNorZ)
+   else
+      EP_HideParticle(iParticle)
+   endif
+endfunction
+
+`--------------
+` Add Collision Event
+`--------------
+function EP_AddCollisionEvent(iEmitter as integer,iParticle as integer,iPosX as float,iPosY as float,iPosZ as float,iNorX as float,iNorY as float,iNorZ as float)
+   inc EP_CollisionEventCount
+   if EP_CollisionEventCount>EP_CollisionEventArrayCount-1
+      array insert at bottom EP_CollisionEvent()
+      inc EP_CollisionEventArrayCount
+   endif
+   EP_CollisionEvent(EP_CollisionEventCount).Emitter=EP_Emitter(iEmitter).Emitters
+   EP_CollisionEvent(EP_CollisionEventCount).Particle=iParticle
+   EP_CollisionEvent(EP_CollisionEventCount).CollisionID=EP_Particle(iParticle).CollisionID
+   EP_CollisionEvent(EP_CollisionEventCount).Position.x=iPosX
+   EP_CollisionEvent(EP_CollisionEventCount).Position.y=iPosY
+   EP_CollisionEvent(EP_CollisionEventCount).Position.z=iPosZ
+   EP_CollisionEvent(EP_CollisionEventCount).Normal.x=iNorX
+   EP_CollisionEvent(EP_CollisionEventCount).Normal.y=iNorY
+   EP_CollisionEvent(EP_CollisionEventCount).Normal.z=iNorZ
+endfunction
+
+`--------------
+` Hide Particle
+`--------------
+function EP_HideParticle(iParticle as integer)
+   tEmitter as integer
+   tSubEmitter as integer
+   tSubEmitter=EP_Particle(iParticle).SubEmitter
+   tEmitter=EP_SubEmitter(tSubEmitter).Emitter
+   EP_Particle(iParticle).UpDate=2
+   if EP_SubEmitter(tSubEmitter).EffectIndex>-1
+      null=get object effect(EP_Emitter(tEmitter).Object,tSubEmitter-EP_Emitter(tEmitter).SubEmitterStart)
+      set vector4 EP_Vector4(1),0,-9999999999,0,0
+      set effect constant vector element "ParticlePosition",iParticle-EP_SubEmitter(tSubEmitter).ParticleStart,EP_Vector4(1)
+      release effect pointer
+   endif
+endfunction
+
+`--------------
+` Set Ray Cast Vector
+`--------------
+function EP_SetRayCastVec()
+   if EP_RayCastVec(1).x>EP_RayCastVec(2).x
+      EP_RayCastVec(3).x=EP_RayCastVec(1).x
+      EP_RayCastVec(4).x=EP_RayCastVec(2).x
+   else
+      EP_RayCastVec(3).x=EP_RayCastVec(2).x
+      EP_RayCastVec(4).x=EP_RayCastVec(1).x
+   endif
+   if EP_RayCastVec(1).y>EP_RayCastVec(2).y
+      EP_RayCastVec(3).y=EP_RayCastVec(1).y
+      EP_RayCastVec(4).y=EP_RayCastVec(2).y
+   else
+      EP_RayCastVec(3).y=EP_RayCastVec(2).y
+      EP_RayCastVec(4).y=EP_RayCastVec(1).y
+   endif
+   if EP_RayCastVec(1).z>EP_RayCastVec(2).z
+      EP_RayCastVec(3).z=EP_RayCastVec(1).z
+      EP_RayCastVec(4).z=EP_RayCastVec(2).z
+   else
+      EP_RayCastVec(3).z=EP_RayCastVec(2).z
+      EP_RayCastVec(4).z=EP_RayCastVec(1).z
+   endif
+endfunction
+
+`--------------
+` Ray Cast Height
+`--------------
+function EP_RayCastHeight(iFromX as float,iFromY as float,iFromZ as float,iToX as float,iToY as float,iToZ as float,iHeight as float)
+   tDst as float
+   EP_RayCastVec(1).x=iFromX
+   EP_RayCastVec(1).y=iFromY-iHeight
+   EP_RayCastVec(1).z=iFromZ
+   EP_RayCastVec(2).x=iToX
+   EP_RayCastVec(2).y=iToY-iHeight
+   EP_RayCastVec(2).z=iToZ
+   EP_SetRayCastVec()
+   if EP_RayCastVec(3).y>0 and  EP_RayCastVec(4).y<0
+      tDst=1-(EP_RayCastVec(3).y/(EP_RayCastVec(3).y-EP_RayCastVec(4).y))
+      if EP_RayCastVec(1).y>EP_RayCastVec(2).y
+         if EP_RayCastVec(1).x<EP_RayCastVec(2).x
+            EP_RayCastVec(0).x=EP_RayCastVec(3).x-((EP_RayCastVec(3).x-EP_RayCastVec(4).x)*tDst)
+         else
+            EP_RayCastVec(0).x=EP_RayCastVec(4).x+((EP_RayCastVec(3).x-EP_RayCastVec(4).x)*tDst)
+         endif
+         if EP_RayCastVec(1).z<EP_RayCastVec(2).z
+            EP_RayCastVec(0).z=EP_RayCastVec(3).z-((EP_RayCastVec(3).z-EP_RayCastVec(4).z)*tDst)
+         else
+            EP_RayCastVec(0).z=EP_RayCastVec(4).z+((EP_RayCastVec(3).z-EP_RayCastVec(4).z)*tDst)
+         endif
+      else
+         if EP_RayCastVec(1).x<EP_RayCastVec(2).x
+            EP_RayCastVec(0).x=EP_RayCastVec(4).x+((EP_RayCastVec(3).x-EP_RayCastVec(4).x)*tDst)
+         else
+            EP_RayCastVec(0).x=EP_RayCastVec(3).x-((EP_RayCastVec(3).x-EP_RayCastVec(4).x)*tDst)
+         endif
+         if EP_RayCastVec(1).z<EP_RayCastVec(2).z
+            EP_RayCastVec(0).z=EP_RayCastVec(4).z+((EP_RayCastVec(3).z-EP_RayCastVec(4).z)*tDst)
+         else
+            EP_RayCastVec(0).z=EP_RayCastVec(3).z-((EP_RayCastVec(3).z-EP_RayCastVec(4).z)*tDst)
+         endif
+      endif
+      EP_RayCastVec(0).y=iHeight
+      exitfunction 1
+   endif
+endfunction 0
+
+`--------------
+` Ray Cast Plane
+`--------------
+function EP_RayCastPlane(iFromX as float,iFromY as float,iFromZ as float,iToX as float,iToY as float,iToZ as float,iPosX as float,iPosY as float,iPosZ as float)
+   tDst as float
+   set vector3 EP_Vector3(1),iFromX-iPosX,iFromY-iPosY,iFromZ-iPosZ
+   transform coords vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(1)
+   EP_RayCastVec(1).x=x vector3(EP_Vector3(1))
+   EP_RayCastVec(1).y=y vector3(EP_Vector3(1))
+   EP_RayCastVec(1).z=z vector3(EP_Vector3(1))
+   set vector3 EP_Vector3(1),iToX-iPosX,iToY-iPosY,iToZ-iPosZ
+   transform coords vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(1)
+   EP_RayCastVec(2).x=x vector3(EP_Vector3(1))
+   EP_RayCastVec(2).y=y vector3(EP_Vector3(1))
+   EP_RayCastVec(2).z=z vector3(EP_Vector3(1))
+   EP_SetRayCastVec()
+   if EP_RayCastVec(3).z>0 and  EP_RayCastVec(4).z<0
+      tDst=1-(EP_RayCastVec(3).z/(EP_RayCastVec(3).z-EP_RayCastVec(4).z))
+      if EP_RayCastVec(1).z>EP_RayCastVec(2).z
+         if EP_RayCastVec(1).x<EP_RayCastVec(2).x
+            EP_RayCastVec(0).x=EP_RayCastVec(3).x-((EP_RayCastVec(3).x-EP_RayCastVec(4).x)*tDst)
+         else
+            EP_RayCastVec(0).x=EP_RayCastVec(4).x+((EP_RayCastVec(3).x-EP_RayCastVec(4).x)*tDst)
+         endif
+         if EP_RayCastVec(1).y<EP_RayCastVec(2).y
+            EP_RayCastVec(0).y=EP_RayCastVec(3).y-((EP_RayCastVec(3).y-EP_RayCastVec(4).y)*tDst)
+         else
+            EP_RayCastVec(0).y=EP_RayCastVec(4).y+((EP_RayCastVec(3).y-EP_RayCastVec(4).y)*tDst)
+         endif
+      else
+         if EP_RayCastVec(1).x<EP_RayCastVec(2).x
+            EP_RayCastVec(0).x=EP_RayCastVec(4).x+((EP_RayCastVec(3).x-EP_RayCastVec(4).x)*tDst)
+         else
+            EP_RayCastVec(0).x=EP_RayCastVec(3).x-((EP_RayCastVec(3).x-EP_RayCastVec(4).x)*tDst)
+         endif
+         if EP_RayCastVec(1).y<EP_RayCastVec(2).y
+            EP_RayCastVec(0).y=EP_RayCastVec(4).y+((EP_RayCastVec(3).y-EP_RayCastVec(4).y)*tDst)
+         else
+            EP_RayCastVec(0).y=EP_RayCastVec(3).y-((EP_RayCastVec(3).y-EP_RayCastVec(4).y)*tDst)
+         endif
+      endif
+      null=inverse matrix4(EP_Matrix(2),EP_Matrix(1))
+      set vector3 EP_Vector3(1),EP_RayCastVec(0).x,EP_RayCastVec(0).y,0
+      transform coords vector3 EP_Vector3(1),EP_Vector3(1),EP_Matrix(2)
+      EP_RayCastVec(0).x=x vector3(EP_Vector3(1))+iPosX
+      EP_RayCastVec(0).y=y vector3(EP_Vector3(1))+iPosY
+      EP_RayCastVec(0).z=z vector3(EP_Vector3(1))+iPosZ
+      exitfunction 1
+   endif
+endfunction 0
+

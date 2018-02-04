@@ -1,0 +1,68 @@
+SQLITE TABLE COLUMN NUMBER  -   a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING, ColumnName STRING)
+ 
+ 
+ 
+ 
+***********************************************************
+ 
+HELP:-
+ 
+This function closes any open SQL query and record and then returns the number of the named column within the current named table..  
+If no such named column exists in the named table, this function returns a 0.  
+ 
+ 
+ 
+***********************************************************
+ 
+Other commands/functions in this DLL:-
+ 
+SQLITE OPEN DATABASE                           -  a function returning an INTEGER value from (DatabaseID INTEGER, DatabaseFilename STRING, Username STRING, Password STRING)
+SQLITE CLOSE DATABASE                          -  a function returning an INTEGER value from (DatabaseID INTEGER,[ flagVacuumTheDatabase INTEGER])
+SQLITE SAVE DATABASE                           -  a function returning an INTEGER value from (DatabaseID INTEGER, DatabaseFileName STRING, Username STRING, Password STRING)
+SQLITE VACUUM DATABASE                         -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE DATABASE EXIST                          -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE GET LAST ERROR$                         -  a function returning a STRING value from <*no parameters*>
+SQLITE TABLE EXIST                             -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE TRUNCATE TABLE                          -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE EMPTY TABLE                             -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE DROP TABLE                              -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE DELETE TABLE                            -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE CREATE TABLE                            -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING, ColumnsDefinitionsAndConstraints STRING)
+SQLITE RENAME TABLE                            -  a function returning an INTEGER value from (DatabaseID INTEGER, OriginalTableName STRING, NewTableName STRING)
+SQLITE TABLE ROW COUNT                         -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE TABLE COLUMN NAME$                      -  a function returning a STRING value from (DatabaseID INTEGER, TableName STRING, ColumnNumber INTEGER)
+SQLITE TABLE COLUMN DEFINITION$                -  a function returning a STRING value from (DatabaseID INTEGER, TableName STRING, ColumnNumber INTEGER)
+SQLITE TABLE COLUMN SIZE                       -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING, ColumnNumber INTEGER)
+SQLITE TABLE COLUMN COUNT                      -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE TABLE CELL STRING$                      -  a function returning a STRING value from (DatabaseID INTEGER, TableName STRING, ColumnNumber INTEGER, RowNumber INTEGER)
+SQLITE TABLE CELL INTEGER                      -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING, ColumnNumber INTEGER, RowNumber INTEGER)
+SQLITE TABLE CELL FLOAT                        -  a function returning a FLOAT value from (DatabaseID INTEGER, TableName STRING, ColumnNumber INTEGER, RowNumber INTEGER)
+SQLITE BEGIN SQL QUERY                         -  a function returning an INTEGER value from (DatabaseID INTEGER, SQLQuery STRING)
+SQLITE BEGIN SQL QUERY PRAGMA TABLEINFO        -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE BEGIN SQL QUERY PRAGMA INDEXLIST        -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE BEGIN SQL QUERY PRAGMA INDEXINFO        -  a function returning an INTEGER value from (DatabaseID INTEGER, IndexName STRING)
+SQLITE BEGIN SQL QUERY PRAGMA FOREIGNKEYLIST   -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING)
+SQLITE BEGIN SQL QUERY SPECIFIC                -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING, ColumnName1 STRING, ColumnValue1 STRING,[ ColumnName2 STRING,[ ColumnValue2 STRING,[ ColumnName3 STRING,[ ColumnValue3 STRING])
+SQLITE FURTHER SQL QUERY                       -  a function returning an INTEGER value from (DatabaseID INTEGER, AdditionalSQLQuery STRING)
+SQLITE FIRST RECORD ROW                        -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE PREVIOUS RECORD ROW                     -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE NEXT RECORD ROW                         -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE LAST RECORD ROW                         -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE RECORD COLUMN NAME$                     -  a function returning a STRING value from (DatabaseID INTEGER, ColumnNumber INTEGER)
+SQLITE RECORD COLUMN COUNT                     -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE RECORD ROW COUNT                        -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE RECORD CURRENT ROW STRING$              -  a function returning a STRING value from (DatabaseID INTEGER, ColumnNumber INTEGER)
+SQLITE RECORD CURRENT ROW INTEGER              -  a function returning an INTEGER value from (DatabaseID INTEGER, ColumnNumber INTEGER)
+SQLITE RECORD CURRENT ROW FLOAT                -  a function returning a FLOAT value from (DatabaseID INTEGER, ColumnNumber INTEGER)
+SQLITE FINISH SQL QUERY                        -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE UPDATING SQL STATEMENT                  -  a function returning an INTEGER value from (DatabaseID INTEGER, UpdatingSQLStatement STRING)
+SQLITE BEGIN TRANSACTION                       -  a function returning an INTEGER value from <*no parameters*>
+SQLITE ADD TO TRANSACTION                      -  a function returning an INTEGER value from (SQLStatementToAddToTransaction STRING)
+SQLITE GET CURRENT TRANSACTION STRING$         -  a function returning a STRING value from <*no parameters*>
+SQLITE COMMIT TRANSACTION                      -  a function returning an INTEGER value from (DatabaseID INTEGER)
+SQLITE ADD COLUMN TO TABLE                     -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING, ColumnDefinitionAndConstraint STRING)
+SQLITE INSERT ROW INTO TABLE                   -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING, SpecifiedNamedColumns STRING, SpecifiedValuesForThoseColumns STRING)
+SQLITE DELETE ROWS FROM TABLE                  -  a function returning an INTEGER value from (DatabaseID INTEGER, TableName STRING, WhereConditions STRING)
+SQLITE CREATE INDEX                            -  a function returning an INTEGER value from (DatabaseID INTEGER, IndexName STRING, TableName STRING, ColumnName STRING)
+SQLITE DROP INDEX                              -  a function returning an INTEGER value from (DatabaseID INTEGER, IndexName STRING)
+SQLITE DELETE INDEX                            -  a function returning an INTEGER value from (DatabaseID INTEGER, IndexName STRING)

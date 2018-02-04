@@ -1,0 +1,106 @@
+rem Particles Functionality
+
+rem Standard Setup Code for all examples
+sync on : sync rate 0 : color backdrop rgb(0,128,0)
+set text font "arial" : set text size 16
+set text to bold : set text transparent
+
+rem Load images
+ImageNumberA=1 : load image "snow.bmp",ImageNumberA
+ImageNumberB=2 : load image "fire.bmp",ImageNumberB
+ImageNumberC=3 : load image "spec.bmp",ImageNumberC
+
+rem Make special particle effects
+ParticleNumberA=1 : make snow particles ParticleNumberA, ImageNumberA, 500,-5,5,5, 10,10,10
+ParticleNumberB=2 : make fire particles ParticleNumberB, ImageNumberB, 500, 5,5,5, 10,10,10
+
+rem Make textured particle effects
+ParticleNumberC=3
+make particles ParticleNumberC, ImageNumberC, 10, 10.0
+position particles ParticleNumberC, -3, 0, 10
+gosub _usingvectors
+
+rem Make colored particle effects in the air
+ParticleNumberD=4
+make particles ParticleNumberD, 0, 10, 10.0
+position particles ParticleNumberD, 3, 2, 10
+set particle emissions ParticleNumberD, 1
+set particle speed ParticleNumberD, 0.005
+set particle velocity ParticleNumberD, 10
+
+rem Setup camera
+position camera 0,1,0
+point camera 0,1,400
+
+rem Main loop
+desc$="Particle Effects"
+while mouseclick()=0
+
+rem Camera control to view particles
+if upkey()=1 then move camera 0.1
+if downkey()=1 then move camera -0.1
+if leftkey()=1 then turn camera left 1
+if rightkey()=1 then turn camera right 1
+
+rem Spark across floor using mouse
+rot#=wrapvalue(rot#+1.0)
+color particles ParticleNumberC, rnd(255), rnd(255), rnd(255)
+position particles ParticleNumberC, (mousex()-320)/50.0, 0, 10
+rotate particles ParticleNumberC, 0, 0, rot#
+
+rem Trigger random particle commands
+if rnd(50)=1 then show particles ParticleNumberD
+if rnd(50)=1 then hide particles ParticleNumberD
+if rnd(5)=1 then set particle emissions ParticleNumberC, 2+rnd(8)
+if rnd(5)=1 then set particle speed ParticleNumberC, (2+rnd(1))/100.0
+if rnd(5)=1 then set particle velocity ParticleNumberC, 4+rnd(2)
+if rnd(5)=1 then set particle gravity ParticleNumberC, rnd(5)
+if rnd(5)=1 then set particle life ParticleNumberC, 50+rnd(50)
+if rnd(5)=1 then set particle floor ParticleNumberC, rnd(1)
+if rnd(5)=1 then set particle chaos ParticleNumberC, rnd(10)/10.0
+if rnd(5)=1 then color particles ParticleNumberD, rnd(255), rnd(255), 0
+
+rem Expressions
+set cursor 0,0
+print "PARTICLES DATA"
+print "exist:";particles exist(ParticleNumberC)
+if particles exist(ParticleNumberC)=1
+ print "x:";particles position x(ParticleNumberC)
+ print "y:";particles position y(ParticleNumberC)
+ print "z:";particles position z(ParticleNumberC)
+endif
+
+rem Show Framerate
+text 20,screen height()-40,desc$
+fps$="DBPro Fps: "+str$(screen fps())
+text screen width()-20-text width(fps$),screen height()-40,fps$
+
+rem Update screen
+sync
+
+rem End loop
+endwhile
+
+rem Delete particles
+delete particles ParticleNumberA
+delete particles ParticleNumberB
+delete particles ParticleNumberC
+delete particles ParticleNumberD
+
+rem End program
+end
+
+_usingvectors:
+
+VectorNumber=1 : ParticlesNumber=3
+result==make vector3(VectorNumber)
+set vector3 VectorNumber, -3, 0, 10
+position particles ParticlesNumber, VectorNumber
+set vector3 VectorNumber, 0, 0, 45
+rotate particles ParticlesNumber, VectorNumber
+set vector3 to particles position VectorNumber, ParticlesNumber
+set vector3 to particles rotation VectorNumber, ParticlesNumber
+rot#=z vector3(VectorNumber)
+result=delete vector3(VectorNumber)
+
+return

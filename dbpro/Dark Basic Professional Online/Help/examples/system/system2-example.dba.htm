@@ -1,0 +1,56 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem System Functionality
+
+rem Standard Setup Code for all examples
+set text font "arial" : set text size 16
+set text to bold : set text transparent
+
+rem Set and read global controls
+print "Memory Available"
+print "Texture:";system tmem available()
+print "Display:";system dmem available()
+print "System:";system smem available()
+print "Hit Any Key"
+wait key
+sync
+
+rem Deactivate escape keys
+disable escapekey
+disable systemkeys
+print "ESCAPE No Longer Quits - Press Any Key"
+wait key
+
+rem Restore system keys
+enable systemkeys
+enable escapekey
+
+print "Loading DLL..."
+LOAD DLL "TestDLL.dll",1
+if DLL EXIST(1)=1
+
+ print "Calling DLL Function...";
+ if DLL CALL EXIST(1, "?MyFunc@@YAXXZ")=1
+  print "okay."
+  CALL DLL 1, "?MyFunc@@YAXXZ"
+ else
+  print "does not exist."
+ endif
+
+ print "Calling DLL Function with Return Value...";
+ if DLL CALL EXIST(1, "?MyFunc@@YAHH@Z")=1
+  print CALL DLL(1, "?MyFunc@@YAHH@Z")
+ else
+  print "does not exist."
+ endif
+
+ print "Deleting DLL..."
+ DELETE DLL 1
+
+else
+ print "not loaded."
+endif
+
+rem Set an exit prompt
+exit prompt "Exit","Prompt"
+
+print "Done. Kit Any Key"
+wait key</pre></FONT></BODY>

@@ -1,0 +1,62 @@
+<html><head><title>Matrix1Util_10 - Writing to the log - WRITELN LOG</title><!-- <style type="text/css">a { margin-left: 40px } p { margin-left: 40px }</style> --></head><body color=black background="../gfx/dbpro_bg.jpg" bgproperties=fixed><font face="Verdana, Arial, Helvetica, sans-serif" size=2><table width='100%' border='0' cellpadding='0' cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr><tr><td align='center'><b><font size="4">Matrix1 Utility Plug-ins</font></b></td></tr></table><br><h1>WRITELN LOG</h1><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Syntax</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> WRITELN LOG Format$ [, Arguments]<br>
+ WRITELN LOG TagNumber, Format$ [, Arguments]</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Description</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> Write the specified data to the log file if it has been opened. The line output is terminated by a newline.<br>
+<br>
+ *WARNING* Incorrectly matching format data and their arguments will cause your application to crash - use with care.<br>
+<br>
+ When using the first form of the command, the formatted text will be written straight to the log file. The format string is used to describe the data format and the argument types, and up to 8 arguments of DBPro's basic type can be passed as arguments.<br>
+<br>
+ When using the second form, the prefix data for the tag number is output, followed by the formatted data, and then finally by and postfix data for the tag number.<br>
+<br>
+ Although the format string is similar to the C 'printf' function, it has been modified and simplified for easier use with DBPro.<br>
+<br>
+ The layout of argument specifiers in the format string is: %[flags][width][.precision][type-extension][type]<br>
+<br>
+ Type:<br>
+ c - convert the integer number passed to it's character equivalent -flags, width and precision are ignored.<br>
+ i or d - integer number<br>
+ e - float in exponent format<br>
+ f - float in decimal format<br>
+ g - float in shorter or 'e' or 'f' format<br>
+ s - string<br>
+ x - hexadecimal of integer number<br>
+ p - Pointer form (equivalent to displaying an integer using %#08x)<br>
+<br>
+ E - Like 'e', but shows the exponent in uppercase<br>
+ G - Like 'g', but shows the exponent in uppercase<br>
+ X - Like x, but shows hex digits in uppercase<br>
+<br>
+ Type extension:<br>
+ l - value passed is a double-sized numeric value (eg, double float, or double integer)<br>
+ u - value passed is unsigned (only works for integer value)<br>
+<br>
+ Precision:<br>
+ For floating point output, specifies the number of decimal places to allow.<br>
+ For strings, specifies the maximum length of the string output.<br>
+ For integers, specifies the minimum number of digits to output.<br>
+<br>
+ Width:<br>
+ The output will be extended to the width specified with spaces.<br>
+ If the output is numeric, and if the width starts with a leading zero, the output will be padded with leadingzeros.<br>
+ Padding will follow the alignment rules (see - flag above) for strings.<br>
+<br>
+ Flags:<br>
+ - = left align (default is to align on the right)<br>
+ + = display sign (default is no sign shown for positive numbers)<br>
+ space = space for positive numbers<br>
+ # = Display prefix of '0x' or '0X' for hexadecimal numbers, or always show a decimal point for floating point numbers.<br>
+<br>
+ DBPro's internal type system converts to the following type and extension:<br>
+ s - string<br>
+ ui,ud - byte, word, dword<br>
+ i,d - integer<br>
+ f,e,g - float<br>
+ li - double integer<br>
+ lf - double float<br>
+<br>
+ Special formatting is signalled by a % character - to get a % character into the log file, use %%.<br>
+<br>
+ The following command:<br>
+ WRITELN LOG "Hello %i %.8s", 2, "everyone here"<br>
+<br>
+ Will write the following to the log destination.<br>
+ Hello 2 everyone</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Go back to ...</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='0'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1Util_10_index.html">Matrix1Util_10 Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Index.html">Matrix1 Utils Main Index</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Commands.html">Matrix1 Utils Command List</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Commands.htm">Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../main.htm">Main Menu</A></font></td></table><p align="center"><font size="1">Copyright &copy; Ian Mold - Matrix1 Software 2006 - 2011</font></p><table width='100%' border='0' Cellpadding='0' Cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr></table></font></body></html>

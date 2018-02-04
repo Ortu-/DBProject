@@ -1,0 +1,200 @@
+Upgrade 5
+=========
+
+GENERAL
+-------
+* New Vertex Shaders have two distinct changes. The usage values for Vertex Input Data is different (0,3,10,5 not 0,3,5,7)
+* New Vertex Shader assembly scripts now require the dcl_position/normal/color/texcord specifier to indicate register usage
+* Can now load objexts that have no textures or material data (ie from a save mesh command)
+* COLOR OBJECT nopw assigns the diffuse compoent to 0xFF so material colour can be fully visible
+* Renamed CORE.DLL to DBPROCORE.DLL in order to avoid confusion with other generic DLLs of the same name
+* CHANGE MESH no longer slowly leaks vertex buffer allocations
+* COPY BITMAP 0,2 (from zero) caused a crash now fixed
+* DISPLAY MODES now ignore the refresh rate variations in the checklist for a reasonable display list
+* PRINT now scrolls when text hits bottom of screen using 3d-based-display
+* COPY BITMAP can no longer copy A to A, and same-bitmap copy regions work again
+* SHIFT MATRIX no longer inverts the height each update and no longer copies the wrong tile when wrapping
+* RANDOMIZE MATRIX now extends to the very last X and Z edges of the matrix
+* Solved issue of 'ugly lines' once and for all with a new SET MATRIX TRIM command which manually controls the UV edge trim
+* Matrix no longer crashes when random parameter input of zero used
+* Added runtime error if try and read a file that does not exist 
+* Increased PRINT and STR$() value precision size to 12
+* LOAD IMAGE no longer fails to load images from internal media resources
+* SHADOW Volume is now 0.01 greater than the mesh casting it to avoid the zbuffer clash on self-shadowing
+* MAKE MATRIX now has built in check for index buffer usage that exceeds 65535 indices (only 16bit index buffer supported)
+* Music Playing State will now change when a CD-Audio or Music Score has finished playing
+* Activated code to handle full specular control in engine. Default is no specular for backward compatibility
+* Dithering removed from image loading, and now reverts to same method as bitmap loading, simple point scaling only
+* When ghosting a matrix, the priority of the draw order decreases automatically so object under the matrix can be seen
+* MD2 and MD3 can now be adjusted for speed and return correct total animation frame counts
+* Fixed MDL and 3DS where some instances can mean the textures and correct model file are not loaded
+* EMPTY ARRAY no longer reports an error if array already empty
+* VIEW AND PROJECTION matrices from the 3dmaths command set now work on camera zero, even if multiple cameras exist
+* Gave in to the demands added in SAVE IMAGE and work with BMP, DDS, DIB and JPG.
+
+COMPILER
+--------
+* Variables can no longer be reserved words
+* SET DIR and WRITE STRING no longer crash when a string is passed that has not been assigned data
+* FOR NEXT statements no longer allow space between variable and equate symbol to cause a parser error
+* DOUBLE INTEGER and DOUBLE FLOAT can now be passed in and out of functions without a parser error
+* The very first semi-colon after a PRINT on the first line of a program caused the concat to fail
+* ARRAY INSERT AT ELEMEMT no longer corrupts the contents of the array when inserting middle items
+* Variables that contain # anywhere but the last character will now produce a compiler error
+* Comments using symbol ` can not be placed at the end of a line without a seperator for easier commenting
+* BOOLEAN,BYTE,WORD and DWORD comparisons all now work as expected
+* Rogue @ symbols are no longer accepted in values or variable names
+* Parameters passed into User Functions no longer get parsed as global items thus avoiding data corruption
+* Additionally, User Function local variables take full precidence over globals of same name!
+* When faced with a float and a double integer math operation, the resulting cast is to floats
+* A single speech mark after a DATA statment no longer crashes the compiler
+* Using brackets when calling a subroutine no longer causes the compiler to crash
+* ARRAY INSERT AT TOP and ELEMENT refined to leave no corruption after extended use
+* User Defined Types can now be assign directly from array element to array element as well as immediates
+* SELECT statement now works with arrays and arrays using data types
+* Arrays declared with an illegal set of brackets no longer crashes the compiler
+* Now CONSTANT defines work with or without the equate symbol between name and value
+* Negative step value in FOR NEXT loop no longer confuses parser
+* INC and DEC now work with Arrays
+
+BETA2
+-----
+* Fixed rather major and important bug that caused crashes when types where used in subs and functions - stack leak!
+* UDT Variables (but not arrays and no return UDT passing) can now be passed into functions and managed locally
+* SET CAMERA TO FOLLOW now moves the camera based additionally on the TARGET Y parameter of the command
+* SET WINDOW LAYOUT icon parameter now toggles between the default icon and a standad application icon
+* Low level vertex shader commands now generate stream offsets to provide correct input data to shader
+* Changed particles so they do not default to fade to red near the end of their lifecycle
+* Particle ghosting can now accept an extra parameter for an alpha effect fade
+* Text commands could crash if the characters exceeded 256 in size while being processed, now fixed
+* Declarations such as global x as integer = 4 now parse with and without various space-combinations
+* When ENDTYPE is the last keyword in a program, program still parses correctly
+* Replied with snippet to claim that media cannot be attached to EXES - alas it works in my tests
+* CASE now detects for a literal parameter and reports if this is not the case
+* Constant declarations do not need any spaces anywhere anymore, ie #CONSTANT lee=42 will work
+* MAKE MEHH FROM OBJECT only converted to a 228 FVF. Now converts to the original mesh FVF
+* Clone objects that used special effects, and then the source was deleted, the cloned object would crash
+* Animation Volume and Speed capped to 0-100 to ensure no strange effects result from misuse
+* ALPHA MAPPING now works with objects that do not use textures
+* SPECULAR disabled on all BSP formats as this interferres with regular visual effect
+* When ENDFUNCTION uses a global variable, it is the global that is used and not a local version of it
+* SMOOTHING Commands now have cropping to percentage can only be in the range 0-100
+* Internal OBJECT COLLISION command for Polygon Detection (objA=poly,objB=sphere) improved for accuracy
+* MAKE OBJECT PLAIN command corrected with 0->1 UV data, and rotated default object 180 degrees for compatibility
+* Corrected bug that caused a positive matrix height to create a hole instead of a hill, now resolved
+* Default object identity values now allow LIMB data to be extracted the moment a model is loaded (no SYNC)
+* 0xffffffff hex, oct and binary are no longer treated as signed literals, and can now represent all values
+* Global Strings returned from functions would only pass a reference and cause later crashing, now string duplicated
+* Finally aligned Free Flight Camera commands to DBV1 system in both rotation and movement
+* Sprite Width and Height now reported adjusted to the scale of the sprite as well as the size
+
+BETA3
+-----
+* LOCAL and GLOBAL declarations for variables and arrays in and out of functions corrected for minor errors
+* For backwards compatibility, a DIM without LOCAL or GLOBAL declaration will default to a GLOBAL if global exists
+* Sprites once more use the backsave mode 1 to restore the background under the sprite
+* TYPE command on its own without a name no longer crashes the compiler
+* Angles from a free flight camera are now identical to the same free flight matrix values from an object
+* BYTE, WORD and DWORD no longer interfer with the promotion of temporary values to floats when floats are required
+* FOR Variable no longer strict against types, and only ensures floats and integers cannot mix together
+* An object glued to a parent object which is then deleted will crash the program, now fixed
+* Sometimes textures would not be seen where secondary textures such as lightmaps are used, now fixed
+* PERFORM CHECKLIST FOR EFFECT ERRORS now takes an optional parameter for reference to effect number, though redundant
+* Multiple cameras now use identical initial FOV and ASPECT values no matter what the camera creation order might be
+* BSP no longer enforces a total 100% ambient light setting, allowing lights to be used for BSP and other objects
+* Variables can no longer share names with instructions and user functions
+* Reserved words and instruction names can no longer be used for user function names
+* Both left and right operands of a DWORD based comparison are now resolved if the operand is an array
+* MD2 and other meshes that use no index data can now produce and cast shadows like regular indexed objects
+* Sprite animations when using CREATE ANIMATED SPRITE no longer have stretch distortion from a rogue error correction
+* ARRAY INSERT Commands now work in final build, prior versions used maximum speed build that caused memory issues
+* SEY SHADING OFF now restores any objects that where associated with the vertex buffer used to hold a shadow mesh
+* LOAD EFFECT and SET EFFECT ON now detect whether the file exists before proceeding to load it
+* Objects and other meshes that use large vertex data without index buffers can now be rendered even larger now
+* INTERSECT OBJECT can now handle meshes that have no index data and which have vertex indexes larger than a WORD
+* FTP commands no longer automatically maximise and minimise screen if not in full screen exclusive mode
+* Comments can now be used inside a TYPE declaration structure
+* OBJECT SIZE now scales with the SCALE OBJECT command
+* Attempts to assign or compare a TYPE and a NON-TYPE value will now result in a compiler error
+* READ STRING from File Commands would treat a TAB as a carriage return. No longer the case, is now part of string
+* SET CAMERA VIEW no longer changes the viewport un-necessarily causing draw problems immediately after the command
+* MAKE MATRIX no longer suffers from a limit imposed by the index buffer. Matrixes are now only limited by memory
+* DX9 MEMORY LEAK fixed within the Text DLL which was leaking around 55K of DX memory - this can actually make crashes!
+* The Exlamation Symbol is used for break points in debug mode (!), which was detected even in comments, now fixed
+* Compiler no longer returns incorrect data when the INPUT command is used with arrays, or array style variations
+
+NEW COMMANDS
+------------
+Please refer to the help system for an explanation of the new commands introduced with Upgrade 5. With the exception of the FX System, the commands we have introduced where considered essential to complete missing functionality within the language.
+
+BASIC3D:
+ INSTANCE OBJECT
+ DISABLE OBJECT ZREAD
+ DISABLE OBJECT ZWRITE
+ ENABLE OBJECT ZREAD
+ ENABLE OBJECT ZWRITE
+ SHOW OBJECT BOUNDS
+ HIDE OBJECT BOUNDS
+ SET OBJECT SMOOTHING
+ SET LIMB SMOOTHING
+ SET OBJECT AMBIENCE
+ SET OBJECT DIFFUSE
+ SET OBJECT EMISSIVE
+ SET OBJECT SPECULAR POWER
+ SET OBJECT SPECULAR
+ SET ALPHA MAPPING ON
+ SET SHADING OFF
+ SET EFFECT ON
+ LOAD EFFECT
+ DELETE EFFECT
+ SET OBJECT EFFECT
+ SET LIMB EFFECT
+ PERFORM CHECKLIST FOR EFFECT VALUES
+ PERFORM CHECKLIST FOR EFFECT ERRORS
+ SET EFFECT CONSTANT BOOLEAN
+ SET EFFECT CONSTANT INTEGER
+ SET EFFECT CONSTANT FLOAT
+ SET EFFECT CONSTANT VECTOR
+ SET EFFECT CONSTANT MATRIX
+ SET EFFECT TECHNIQUE
+ SET EFFECT TRANSPOSE
+ EFFECT EXIST()
+ PICK OBJECT
+ PICK SCREEN
+ GET PICK VECTOR X
+ GET PICK VECTOR Y
+ GET PICK VECTOR Z
+ GET PICK DISTANCE
+
+IMAGE:
+ SAVE IMAGE
+
+CAMERA:
+ SET CAMERA ASPECT
+
+MATRIX:
+ SET MATRIX PRIORITY
+ SET MATRIX TRIM
+
+PARTICLES:
+ GHOST PARTICLES OFF
+ GHOST PARTICLES ON
+
+MIGRATION NOTES
+===============
+
+SHADERS
+-------
+Previous versions of DirectX could assemble vertex shaders without the now required DCL_POSITION, etc syntax. These are required to declare the vertex input format for the low level shader. High level shaders do not require this form of syntax as they have other methods of describing the vertex input format. You will also find the values that represent the usage of each vertex component have also been changed. Refer to the DirectX SDK for information on the new values if you wish to continue using the low-level form of vertex shader programming within DBPro. It is for the reason that this process is often difficult to approach that we have introduced something called the FX System. DBPro can now directly load FX files which takes care of such things as FVF format, vertex input format, render states, shader versions, low or high level scripts and generally anything else that might confuse the beginner. It is now as simpleas finding the FX you want and applying it with a single command.
+
+SPECULAR
+--------
+Specular lighting has been enabled from Upgrade 5 onwards, so some loaded models and objects may appear brighter or pure white when viewed. This will happen in situations where the specular component of an object has high specular values. To set the specular to look like pre-U5, use the command SET OBJECT SPECULAR and set the value to zero.
+
+OBJECT PLAIN
+------------
+A bug involving the UV data of all plains to use -1.0 to 0.0 has been fixed. In addition to the fix, and to keep compatibility the correct plain is now default to a rotation on the Y axis of 180 degrees to it still faces the camera.
+
+ALPHA MODES FOR 16/32 BIT
+-------------------------
+With the increased number of alpha commands, it is important to know the expected results of using alpha commands on 16 and 32 bit display hardware. 16bit display mode uses a one bit alpha component, which means the pixel controlled by the alpha is either visible or not. There is no gradual blending of colours as you see in 32 bit mode, which has eight bits for the alpha component. It is important to regard this limit when supporting 16 bit display modes in your programs.

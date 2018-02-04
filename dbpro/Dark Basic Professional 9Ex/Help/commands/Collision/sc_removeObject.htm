@@ -1,0 +1,30 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+
+SC_removeObject
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    SC_removeObject  objNum
+
+<BR><BR>
+        <u>-objNum</u>:    the object you want to remove<br>
+	    <br>
+		Will remove an object from the collision system, all it's collision data will be deleted.<br>
+		The object may or may not exist in Darkbasic. The system won't check.<br>
+            The object can be setup again if it is required.<br>
+		Also, setupObject can be sucessfully called on an existing object instead, doing so<br>
+		will overwrite any stored collision data with the new object's data and reset collision to ON<br>
+		and scaling to False. The only drawback is re-settingup a complex/polygon object may take time.<br>
+
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

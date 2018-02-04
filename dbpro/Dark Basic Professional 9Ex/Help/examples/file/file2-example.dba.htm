@@ -1,0 +1,157 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem File Functionality
+
+rem Standard Setup Code for all examples
+set text font "arial" : set text size 16
+set text to bold : set text transparent
+
+rem Launch external program and wait
+EXECUTE FILE "Exe.exe","","",1
+
+rem Run file tests
+gosub _checklistfiles : gosub _waitkey
+gosub _checklistdrives : gosub _waitkey
+gosub _diranddrive : gosub _waitkey
+gosub _makefiles : gosub _waitkey
+gosub _deletefiles : gosub _waitkey
+gosub _sequentialwrite : gosub _waitkey
+gosub _sequentialread : gosub _waitkey
+gosub _readtoend : gosub _waitkey
+gosub _viewfiles : gosub _waitkey
+gosub _modifyafilebyte : gosub _waitkey
+gosub _showdata : gosub _waitkey
+
+rem End program
+end
+
+_checklistfiles:
+ cls : print "CHECKLIST FILES"
+ perform checklist for files
+ for f=1 to checklist quantity()
+ print "> ";checklist string$(f)
+ next f
+return
+
+_checklistdrives:
+ cls : print "CHECKLIST DRIVES"
+ perform checklist for drives
+ for f=1 to checklist quantity()
+ print "> ";checklist string$(f)
+ next f
+return
+
+_diranddrive:
+ cls : print "DRIVELIST AND DIR"
+ drivelist
+ dir
+return
+
+_makefiles:
+ cls : print "MAKE FILES AND FOLDERS"
+ make directory "leedir"
+ set dir "leedir"
+ make file "leefile.txt"
+ copy file "leefile.txt","newfile.txt"
+ rename file "newfile.txt","renamed.txt"
+ move file "renamed.txt","moved.txt"
+ dir
+ set dir ".."
+return
+
+_deletefiles:
+ cls : print "DELETE FILES AND FOLDERS"
+ set dir "leedir"
+ delete file "leefile.txt"
+ delete file "moved.txt"
+ dir
+ set dir ".."
+ delete directory "leedir"
+return
+
+_sequentialwrite:
+ cls : print "WRITE SEQUENTIAL FILES"
+ if file exist("seq.txt") then delete file "seq.txt"
+ open to write 1,"seq.txt"
+ write file 1,1000
+ write byte 1,255
+ write word 1,65535
+ write long 1,2200000
+ write float 1,42.24
+ write string 1,"hello world"
+ write fileblock 1,"file.dat"
+ close file 1
+ print "file written"
+return
+
+_sequentialread:
+ cls : print "READ SEQUENTIAL FILES"
+ open to read 1,"seq.txt"
+ read file 1,a : print a
+ read byte 1,a : print a
+ read word 1,a : print a
+ read long 1,a : print a
+ read float 1,a# : print a#
+ read string 1,a$ : print a$
+ read fileblock 1,"file2.dat"
+ close file 1
+ print "file read"
+return
+
+_readtoend:
+ cls : print "READ EVERY BYTE OF A FILE"
+ open to read 1,"seq.txt"
+ if file open(1)=1
+  c=0
+  while file end(1)=0 and c<1000
+   read byte 1,A
+   print ">";A
+   inc c
+  endwhile
+  close file 1
+ endif
+return
+
+_viewfiles:
+ cls : print "VIEW EACH FILE IN A FOLDER"
+ find first
+ while get file type()<>-1
+  print "Type:";get file type();
+  print " Name:";get file name$();
+  print " Date:";get file date$()
+  find next
+ endwhile
+return
+
+_modifyafilebyte:
+
+rem Read byte content of a file
+byte=read byte from file("exe.exe",1000)
+
+rem Write a transposed value back in same place
+write byte to file "exe.exe",1000,255-byte
+
+rem Open file for sequential access
+open to read 1,"exe.exe"
+skip bytes 1,1000
+read byte 1,newbyte
+close file 1
+print newbyte
+
+rem Restore file to normal
+write byte to file "exe.exe",1000,byte
+
+return
+
+_showdata:
+ cls : print "SHOW FILE DATA"
+ print "appname:";appname$()
+ print "windir:";windir$()
+ print "dir:";get dir$()
+ print "exist:";file exist("seq.txt")
+ print "pathexist:";path exist("leedir")
+ print "size:";file size("seq.txt")
+return
+
+_waitkey:
+ print : print "Press Key"
+ wait key : sleep 500
+return</pre></FONT></BODY>

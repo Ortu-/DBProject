@@ -1,0 +1,109 @@
+10/09/02 Patch 1 Notes
+======================
+
+General Fixes
+-------------
+* Cursors specified in the editor are once again accessable via CHANGE MOUSE
+* Paste Image now in line with DBV1 compatability. The extra param controls transparency
+* Setting the style of text multiple times within a loop no longer causes text artifacts
+* File commands that manipulated memblocks did not tie into the main memblock memory area
+* Activated all the Runtime Warning errors to completely report avoidable command failures
+* New DBProAssociator written to correctly link DBPRO and DBA filetypes to editor
+* Arrays used as subscripts to other multidimensional arrays messed up - 4 hours to fix!
+* Black on Black Transparent Text did not get displayed on the screen
+* Fixed once and for all the matrix ground height finding function. Now smooth as silk!
+* print 1.0=1.1 and print 1.0<1.1 now report correct float math comparisons
+* Fixed bug that allowed arrays to be used without being declared causing confusion
+* Corrected spelling of Principles in help system
+* Fixed a bug where spaces within a complex data structure would be eaten, ie (array count())
+* Expressions used as part of array subscript calculations would not be used correctly
+* Arrays that omit a subscript will now correctly use the internal array index for list access
+* User type fields would not be parsed correctly if expression contained a nested field
+* Fixed a bug which now loads images into the entire texture plate by default as in DBV1
+* Added ability for the PREPARE MATRIX TEXTURE to stretch a manual image to fix black areas bugs
+* Fixed a bug where the last tile height of a matrix could not be assigned
+* PLAY ANIMATION TO IMAGE can now handle image regions smaller and larger than the anim source
+* PLAY ANIMATION TO IMAGE can now render to existing images and within sub-regions too
+* INC and DEC now work inside functions correctly
+* An array declaration on the last line of a program could not compile, now fixed
+* Some parameter declarations within functions would not be parsed correctly (ie red(file$) )
+* SET CAMERA TO IMAGE can now handle recreation of larger depth buffers during multiple calls
+* SET CAMERA TO IMAGE now enforces only image sizes to a power of two for better texture handling
+* GET IMAGE now works like DBV1, with an optional parameter for using the DBPro accuracy method
+* Single letter variables now parse correctly when used as a user defined type
+* Array subscripts less than a negative value of one will no longer stray into raw memory
+* POSITION MOUSE now accurately positions the mouse at the designated coordinates in all modes
+* SELECT CASE items would not correctly detect floats and cause logic errors, now fixed
+* Variables that would use the assignment symbol but not place a R-value no longer crash
+* RETURN commands placed outside of a subroutine would crash the exe, now safely exits
+* Line comments are now allowed inside user defined type declarations
+* Constants no longer replace words that are inside speech marks
+* Added Soft Runtime warnings to silently ignore errors such as not loading via LOAD DLL
+* Added code to prevent a curve speed value from being assigned below a value of one
+* Global Strings declared without a string value would crash the exe, now fixed
+* Expression commands that required a DWORD input param would become wrong when passed an array
+* Now reports a correct error when an array is declared without brackets
+* LOAD and SAVE ARRAY now fixed to correctly detect an array and additionally restricts usertypes
+* Variables that share the same user defined type can now be assigned using the equate symbol
+
+Half Life
+---------
+* Lightmaps now shown      
+* Multi texture options      
+* Fixed sticky collision      
+* Collision threshold command now works      
+* Can no longer fall through ground on collision      
+* Collision radius can be controlled in all 3 axis      
+      
+Basic3D & Primitive      
+-------------------
+* Ghosted objects will now respond to cull modes      
+* Point object command now works as in DB      
+* Set ambient light now works correctly      
+* Scale object texture now multiplies input by 100      
+* Scale limb texture now multiplies input by 100      
+* Make object box now accepts floats      
+* Make object sphere now accepts floats      
+* Make object cube now accepts floats      
+* Make object cylinder now accepts floats      
+* Make object cone now accepts floats      
+* Make object plane now accepts floats      
+      
+X Object      
+--------
+* Removed "SAFE_DELETE_ARRAY ( m_BoneMatrices );" in sMesh.cpp, stops crashing on exit 
+* Created block so compressed models will not load - see "Load" in "cEnhancedX.cpp"   
+* Fixed internal D3D crash on loading some models      
+* Stopped a crash from occurring when running a loop through bone names     
+      
+3DS Object      
+----------
+* Fixed a crash on exit due to invalid memory pointers      
+* Texture loading is now more reliable      
+      
+Quake 3      
+-------
+* Meshes are no longer drawn      
+* Quick fix applied to stop white textures      
+* Stopped a crash from occurring when trying to delete invalid memory     
+* "set collision threshold" now works      
+* Fixed a problem with renderstates      
+* Can no longer fall through ground      
+* Collision radius can be controlled in all 3 axis      
+      
+Sound      
+-----
+* Update function will not crash if no sound card      
+      
+Multiplayer      
+-----------
+* Setup lots of error checking for possible crashes      
+      
+MD3      
+---
+* Quick fix for bounding box problem      
+      
+CustomBSP      
+---------
+* Collision radius can be controlled in all 3 axis      
+* Can no longer fall through ground on collision 

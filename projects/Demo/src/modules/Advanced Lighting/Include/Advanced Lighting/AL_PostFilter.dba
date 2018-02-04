@@ -1,0 +1,358 @@
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+`Post frame target data
+type AL_FrameTargetData
+   Object as integer
+   Effect as integer
+endtype
+
+`Post render target data
+type AL_RenderTargetData
+   UpDate as integer
+   Camera as integer
+   Image as integer
+   Object as integer
+   Effect as integer
+endtype
+
+`--------------
+` Post Processing SetUp
+`--------------
+function PostProcessing_SetUp(iRefraction as boolean,iDistortion as boolean,iSSAO as boolean,iScatter as boolean,iAntiAsling as boolean,iBloom as boolean,iDOF as boolean)
+   if AL_Enabled=1
+      global AL_RefractionEnabled as boolean
+      global AL_DistortionEnabled as boolean
+      global AL_SSAOEnabled as boolean
+      global AL_ScatteringEnabled as integer
+      global dim AL_PostProcessingObject(3) as integer
+      global dim AL_PostProcessingEffect(3) as integer
+      AL_DistortionEnabled=iDistortion
+      AL_RefractionEnabled=iRefraction
+      AL_SSAOEnabled=iSSAO
+      AL_ScatteringEnabled=iScatter
+
+   `Refraction (for water effects)
+      if AL_RefractionEnabled=1
+         AL_Camera(4)=find free camera()
+         AL_Image(4)=find free image()
+         AL_CreateCamera(AL_Camera(4),AL_Image(4),AL_ViewVec.x,AL_ViewVec.y,36)
+         AL_PostProcessingObject(1)=find free object()
+         make object plain AL_PostProcessingObject(1),2,2,1
+         AL_PostProcessingEffect(1)=find free effect()
+         load effect AL_Directory+"Post Processing/Fill Backdrop.fx",AL_PostProcessingEffect(1),0,1
+         set object effect AL_PostProcessingObject(1),AL_PostProcessingEffect(1)
+         texture object AL_PostProcessingObject(1),0,AL_Image(4)
+         set object mask AL_PostProcessingObject(1),2^AL_Camera(9)
+         set vector4 AL_Vector4(1),0.5/AL_ViewVec.x,0.5/AL_ViewVec.y,1,1
+         set effect constant vector AL_PostProcessingEffect(1),"ViewSize",AL_Vector4(1)
+         set effect constant vector AL_PostProcessingEffect(1),"ViewVec",AL_Vector4(1)
+      endif
+
+   `Distortion & SSAO & light scattering
+      if AL_DistortionEnabled=1 or AL_SSAOEnabled=1 or AL_ScatteringEnabled=1
+         if AL_SSAOEnabled=1
+            AL_PostProcessingObject(2)=find free object()
+            make object plain AL_PostProcessingObject(2),2,2,1
+            AL_PostProcessingEffect(2)=find free effect()
+            load effect AL_Directory+"Post Processing/SSAO.fx",AL_PostProcessingEffect(2),0
+            texture object AL_PostProcessingObject(2),0,AL_Image(1)
+            texture object AL_PostProcessingObject(2),1,AL_Image(2)
+            texture object AL_PostProcessingObject(2),2,AL_Image(8)
+            set object effect AL_PostProcessingObject(2),AL_PostProcessingEffect(2)
+            set object mask AL_PostProcessingObject(2),2^AL_Camera(5)
+            set vector4 AL_Vector4(1),0.5/(AL_PostViewVec.x/4),0.5/(AL_PostViewVec.y/4),1,1
+            set effect constant vector AL_PostProcessingEffect(2),"ViewSize",AL_Vector4(1)
+            set effect constant vector AL_PostProcessingEffect(2),"ViewVec",AL_Vector4(1)
+            texture object AL_AmbientObject,3,AL_Image(6)
+            if AL_DirLightInUse=1 then texture object AL_DirLightObject,6,AL_Image(6)
+         endif
+         AL_PostProcessingObject(3)=find free object()
+         make object plain AL_PostProcessingObject(3),2,2,1
+         AL_PostProcessingEffect(3)=find free effect()
+         load effect AL_Directory+"Post Processing/Light Scattering.fx",AL_PostProcessingEffect(3),0
+         texture object AL_PostProcessingObject(3),0,AL_Image(5)
+         set object effect AL_PostProcessingObject(3),AL_PostProcessingEffect(3)
+         set object mask AL_PostProcessingObject(3),2^AL_Camera(6)
+         set vector4 AL_Vector4(1),0.5/(AL_PostViewVec.x/4),0.5/(AL_PostViewVec.y/4),1,1
+         set effect constant vector AL_PostProcessingEffect(3),"ViewSize",AL_Vector4(1)
+         set effect constant vector AL_PostProcessingEffect(3),"ViewVec",AL_Vector4(1)
+      endif
+
+   `Post Filters
+      if iAntiAsling=1 or iBloom=1 or iDOF=1 or AL_MotionBlur=1 or AL_DistortionEnabled=1 or AL_ScatteringEnabled=1
+         global AL_FrameRender as integer
+         global AL_FinalComp as integer
+         global AL_Brightpass=-1
+         global AL_BloomV=-1
+         global AL_BloomH=-1
+         global AL_Luminance1=-1
+         global AL_Luminance2=-1
+         global AL_Luminance3=-1
+         global AL_Blur=-1
+         AL_FrameRender=PostFilter_SetUp(AL_ViewVec.x,AL_ViewVec.y,36)
+         Effect_LockIdentifier(AL_Directory+"Post Processing/Final Comp.fx")
+         Effect_SetIdentifier("EnableAA",iAntiAsling)
+         Effect_SetIdentifier("EnableBloom",iBloom)
+         Effect_SetIdentifier("EnableScatter",iScatter)
+         Effect_SetIdentifier("EnableDOF",iDOF)
+         Effect_SetIdentifier("EnableMotionBlur",AL_MotionBlur)
+         Effect_SetIdentifier("EnableDistortion",iDistortion)
+         Effect_UnLockIdentifier()
+         AL_FinalComp=PostFilter_AddFrameTarget(AL_Directory+"Post Processing/Final Comp.fx")
+         PostFilter_SetFrameTargetImage(AL_FinalComp,0,PostFilter_GetRenderTargetImage(AL_FrameRender))
+         if AL_DistortionEnabled=1 or AL_ScatteringEnabled=1
+            PostFilter_SetFrameTargetImage(AL_FinalComp,1,AL_Image(2))
+            PostFilter_SetFrameTargetImage(AL_FinalComp,2,AL_Image(6))
+         endif
+         if iBloom=1 or iAntiAsling=1 or iDOF=1
+            Effect_LockIdentifier(AL_Directory+"Post Processing/BrightPass.fx")
+            Effect_SetIdentifier("EnableBloom",iBloom)
+            if iDOF=1 or iAntiAsling=1
+               Effect_SetIdentifier("EnableEdge",1)
+            else
+               Effect_SetIdentifier("EnableEdge",0)
+            endif
+            Effect_UnLockIdentifier()
+            AL_Brightpass=PostFilter_AddRenderTarget(AL_Directory+"Post Processing/BrightPass.fx",AL_PostViewVec.x/4,AL_PostViewVec.y/4,36)
+            PostFilter_SetRenderTargetImage(AL_Brightpass,0,PostFilter_GetRenderTargetImage(AL_FrameRender))
+            PostFilter_SetRenderTargetImage(AL_Brightpass,1,AL_Image(2))
+            PostFilter_SetFrameTargetImage(AL_FinalComp,3,PostFilter_GetRenderTargetImage(AL_Brightpass))
+         endif
+         if iBloom=1
+            AL_Luminance1=PostFilter_AddRenderTarget(AL_Directory+"Post Processing/Luminance1.fx",9,9,111)
+            PostFilter_SetRenderTargetImage(AL_Luminance1,0,PostFilter_GetRenderTargetImage(AL_FrameRender))
+            AL_Luminance2=PostFilter_AddRenderTarget(AL_Directory+"Post Processing/Luminance2.fx",3,3,112)
+            PostFilter_SetRenderTargetImage(AL_Luminance2,0,PostFilter_GetRenderTargetImage(AL_Luminance1))
+            AL_Luminance3=PostFilter_AddRenderTarget(AL_Directory+"Post Processing/Luminance3.fx",1,1,111)
+            PostFilter_SetRenderTargetImage(AL_Luminance3,0,PostFilter_GetRenderTargetImage(AL_Luminance2))
+            PostFilter_SetRenderTargetImage(AL_Luminance2,1,PostFilter_GetRenderTargetImage(AL_Luminance3))
+            PostFilter_SetRenderTargetImage(AL_Brightpass,2,PostFilter_GetRenderTargetImage(AL_Luminance3))
+            PostFilter_SetFrameTargetImage(AL_FinalComp,5,PostFilter_GetRenderTargetImage(AL_Luminance3))
+            AL_BloomH=PostFilter_AddRenderTarget(AL_Directory+"Post Processing/Bloom Horizontal.fx",AL_PostViewVec.x/8,AL_PostViewVec.y/8,36)
+            PostFilter_SetRenderTargetImage(AL_BloomH,0,PostFilter_GetRenderTargetImage(AL_Brightpass))
+            AL_BloomV=PostFilter_AddRenderTarget(AL_Directory+"Post Processing/Bloom Vertical.fx",AL_PostViewVec.x/8,AL_PostViewVec.y/8,36)
+            PostFilter_SetRenderTargetImage(AL_BloomV,0,PostFilter_GetRenderTargetImage(AL_BloomH))
+            PostFilter_SetFrameTargetImage(AL_FinalComp,4,PostFilter_GetRenderTargetImage(AL_BloomV))
+         endif
+         if iDOF=1 or AL_MotionBlur=1
+            Effect_LockIdentifier(AL_Directory+"Post Processing/Blur.fx")
+            Effect_SetIdentifier("EnableDOF",iDOF)
+            Effect_SetIdentifier("EnableMotionBlur",AL_MotionBlur)
+            Effect_UnLockIdentifier()
+            AL_Blur=PostFilter_AddRenderTarget(AL_Directory+"Post Processing/Blur.fx",AL_PostViewVec.x/2,AL_PostViewVec.y/2,36)
+            PostFilter_SetRenderTargetImage(AL_Blur,0,PostFilter_GetRenderTargetImage(AL_FrameRender))
+            PostFilter_SetRenderTargetImage(AL_Blur,1,AL_Image(2))
+            if iDOF=1 then PostFilter_SetRenderTargetImage(AL_Blur,2,PostFilter_GetRenderTargetImage(AL_Brightpass))
+            PostFilter_SetFrameTargetImage(AL_FinalComp,6,PostFilter_GetRenderTargetImage(AL_Blur))
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Post Filter SetUp
+`--------------
+function PostFilter_SetUp(iWidth as integer,iHeight as integer,iD3DFormat as integer)
+   if AL_PostFilterEnabled=0
+      global AL_PostFilterEnabled as integer
+      global AL_FrameTargetCount as integer
+      global AL_RenderTargetCount as integer
+      global dim AL_FrameTarget(1) as AL_FrameTargetData
+      global dim AL_RenderTarget(1) as AL_RenderTargetData
+      global AL_PostFilterViewVec as AL_Vec2Float
+      AL_PostFilterEnabled=1
+      AL_PostFilterViewVec.x=iWidth
+      AL_PostFilterViewVec.y=iHeight
+      AL_RenderTarget(0).UpDate=1
+      AL_RenderTarget(0).Camera=find free camera()
+      AL_RenderTarget(0).Image=find free image()
+      make camera AL_RenderTarget(0).Camera
+      if iD3DFormat=0 then set camera to image AL_RenderTarget(0).Camera,AL_RenderTarget(0).Image,iWidth,iHeight
+      if iD3DFormat>0 then set camera to image AL_RenderTarget(0).Camera,AL_RenderTarget(0).Image,iWidth,iHeight,3,iD3DFormat
+      backdrop off AL_RenderTarget(0).Camera
+      inc AL_RenderTargetCount
+   endif
+endfunction 0
+
+`--------------
+` Post Filter Update
+`--------------
+function PostFilter_Update()
+   if AL_PostFilterEnabled=1
+      for t=0 to AL_FrameTargetCount-1
+         position object AL_FrameTarget(t).Object,AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+         rotate object AL_FrameTarget(t).Object,AL_CameraAng.x,AL_CameraAng.y,AL_CameraAng.z
+      next t
+   endif
+   if AL_RefractionEnabled=1
+      position object AL_PostProcessingObject(1),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+      rotate object AL_PostProcessingObject(1),AL_CameraAng.x,AL_CameraAng.y,AL_CameraAng.z
+   endif
+   if AL_SSAOEnabled=1
+      position object AL_PostProcessingObject(2),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+      rotate object AL_PostProcessingObject(2),AL_CameraAng.x,AL_CameraAng.y,AL_CameraAng.z
+   endif
+   if AL_SSAOEnabled=1 or AL_ScatteringEnabled>0 or AL_DistortionEnabled=1
+      position object AL_PostProcessingObject(3),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+      rotate object AL_PostProcessingObject(3),AL_CameraAng.x,AL_CameraAng.y,AL_CameraAng.z
+   endif
+   if AL_ScatteringEnabled>0 and AL_SkyEnabled=1
+      tViewDirScatter as float
+      set vector3 AL_Vector3(1),AL_CameraDir.x-AL_DirLightDirection.X,AL_CameraDir.y-AL_DirLightDirection.y,AL_CameraDir.z-AL_DirLightDirection.Z
+      tViewDirScatter=(dot product vector3(AL_Vector3(1),AL_Vector3(1))/2)-1
+      if AL_SkyVisible=1 and  tViewDirScatter>0
+         set vector4 AL_Vector4(1),(AL_DirLightColor.x/255)*tViewDirScatter,(AL_DirLightColor.y/255)*tViewDirScatter,(AL_DirLightColor.z/255)*tViewDirScatter,0
+         set effect constant vector AL_FrameTarget(0).Effect,"ScatteringColor",AL_Vector4(1)
+         AL_ScatteringEnabled=1
+         show object AL_SkyObject(3)
+      else
+         AL_ScatteringEnabled=2
+         set vector4 AL_Vector4(1),0,0,0,0
+         set effect constant vector AL_FrameTarget(0).Effect,"ScatteringColor",AL_Vector4(1)
+         hide object AL_SkyObject(3)
+      endif
+   endif
+   if AL_SSAOEnabled=0 and AL_ScatteringEnabled=0 and AL_DistortionEnabled=1 then set effect technique AL_PostProcessingEffect(3),"Distortion"
+   if AL_SSAOEnabled=0 and AL_ScatteringEnabled=1 then set effect technique AL_PostProcessingEffect(3),"LightScattering"
+   if AL_SSAOEnabled=1 and AL_ScatteringEnabled<>1 then set effect technique AL_PostProcessingEffect(3),"SSAO"
+   if AL_SSAOEnabled=1 and AL_ScatteringEnabled=1 then set effect technique AL_PostProcessingEffect(3),"SSAOLightScattering"
+endfunction
+
+`--------------
+` Delete Post Filter
+`--------------
+function PostFilter_Delete()
+   if AL_PostFilterEnabled=1
+      for t=0 to AL_FrameTargetCount-1
+         if object exist(AL_FrameTarget(t).Object)=1 then delete object AL_FrameTarget(t).Object
+         if effect exist(AL_FrameTarget(t).Effect)=1 then delete effect AL_FrameTarget(t).Effect
+      next t
+      for t=0 to AL_RenderTargetCount-1
+         if Camera exist(AL_RenderTarget(t).Camera)=1 then delete camera AL_RenderTarget(t).Camera
+         if image exist(AL_RenderTarget(t).Image)=1 then delete image AL_RenderTarget(t).Image
+         if object exist(AL_RenderTarget(t).Object)=1 then delete object AL_RenderTarget(t).Object
+         if effect exist(AL_RenderTarget(t).Effect)=1 then delete effect AL_RenderTarget(t).Effect
+      next t
+      FilterEnabled=0
+      undim AL_FrameTarget()
+      undim AL_RenderTarget()
+   endif
+endfunction
+
+`--------------
+` Add Frame Target
+`--------------
+function PostFilter_AddFrameTarget(iEffect as string)
+   local tReturn as integer
+   if AL_PostFilterEnabled=1
+      array insert at bottom AL_FrameTarget()
+      AL_FrameTarget(AL_FrameTargetCount).Object=find free object()
+      AL_FrameTarget(AL_FrameTargetCount).Effect=find free effect()
+      make object plain  AL_FrameTarget(AL_FrameTargetCount).Object,2,2,1
+      set object mask AL_FrameTarget(AL_FrameTargetCount).Object,2^0
+      load effect iEffect,AL_FrameTarget(AL_FrameTargetCount).Effect,0,1
+      set vector4 AL_Vector4(1),0.5/AL_PostFilterViewVec.x,0.5/AL_PostFilterViewVec.y,1,1
+      set effect constant vector AL_FrameTarget(AL_FrameTargetCount).Effect,"ViewVec",AL_Vector4(1)
+      set effect constant vector AL_FrameTarget(AL_FrameTargetCount).Effect,"ViewSize1",AL_Vector4(1)
+      set vector4 AL_Vector4(1),0.5/(AL_PostViewVec.x/2),0.5/(AL_PostViewVec.y/2),1,1
+      set effect constant vector AL_FrameTarget(AL_FrameTargetCount).Effect,"ViewSize2",AL_Vector4(1)
+      set vector4 AL_Vector4(1),0.5/(AL_PostViewVec.x/8),0.5/(AL_PostViewVec.y/8),1,1
+      set effect constant vector AL_FrameTarget(AL_FrameTargetCount).Effect,"ViewSize3",AL_Vector4(1)
+      set object effect AL_FrameTarget(AL_FrameTargetCount).Object,AL_FrameTarget(AL_FrameTargetCount).Effect
+      tReturn=AL_FrameTargetCount
+      inc AL_FrameTargetCount
+   endif
+endfunction tReturn
+
+`--------------
+` Texture Frame Target
+`--------------
+function PostFilter_SetFrameTargetImage(iTarget as integer,iStage as integer,iImage as integer)
+   if AL_PostFilterEnabled=1 and iTarget>-1 and iTarget<AL_FrameTargetCount
+      texture object AL_FrameTarget(iTarget).Object,iStage,iImage
+   endif
+endfunction
+
+`--------------
+` Frame Target Effect
+`--------------
+function PostFilter_GetFrameTargetEffect(iTarget as integer)
+   local tReturn as integer
+   if AL_PostFilterEnabled=1 and iTarget>-1 and iTarget<AL_FrameTargetCount
+      tReturn=AL_FrameTarget(iTarget).Effect
+   endif
+endfunction tReturn
+
+`--------------
+` Add Render Target
+`--------------
+function PostFilter_AddRenderTarget(iEffect as string,iWidth as integer,iHeight as integer,iD3DFormat as integer)
+   local tReturn as integer
+   if AL_PostFilterEnabled=1
+      local tViewVec as AL_Vec2Float
+      tViewVec.x=iWidth
+      tViewVec.y=iHeight
+      array insert at bottom AL_RenderTarget()
+      AL_RenderTarget(AL_RenderTargetCount).UpDate=1
+      AL_RenderTarget(AL_RenderTargetCount).Camera=find free camera()
+      AL_RenderTarget(AL_RenderTargetCount).Image=find free image()
+      AL_RenderTarget(AL_RenderTargetCount).Object=find free object()
+      AL_RenderTarget(AL_RenderTargetCount).Effect=find free effect()
+      make camera AL_RenderTarget(AL_RenderTargetCount).Camera
+      if iD3DFormat=0 then set camera to image AL_RenderTarget(AL_RenderTargetCount).Camera,AL_RenderTarget(AL_RenderTargetCount).Image,iWidth,iHeight
+      if iD3DFormat>0 then set camera to image AL_RenderTarget(AL_RenderTargetCount).Camera,AL_RenderTarget(AL_RenderTargetCount).Image,iWidth,iHeight,3,iD3DFormat
+      backdrop off AL_RenderTarget(AL_RenderTargetCount).Camera
+      set camera range AL_RenderTarget(AL_RenderTargetCount).Camera,1,10
+      position camera AL_RenderTarget(AL_RenderTargetCount).Camera,0,-9999999999,0
+      make object plain AL_RenderTarget(AL_RenderTargetCount).Object,2,2,1
+      position object AL_RenderTarget(AL_RenderTargetCount).Object,0,-9999999999,0
+      load effect iEffect,AL_RenderTarget(AL_RenderTargetCount).Effect,0,1
+      set vector4 AL_Vector4(1),0.5/tViewVec.x,0.5/tViewVec.y,1,1
+      set effect constant vector AL_RenderTarget(AL_RenderTargetCount).Effect,"ViewSize",AL_Vector4(1)
+      set effect constant vector AL_RenderTarget(AL_RenderTargetCount).Effect,"ViewVec",AL_Vector4(1)
+      set object effect AL_RenderTarget(AL_RenderTargetCount).Object,AL_RenderTarget(AL_RenderTargetCount).Effect
+      set object mask AL_RenderTarget(AL_RenderTargetCount).Object,2^AL_RenderTarget(AL_RenderTargetCount).Camera
+      tReturn=AL_RenderTargetCount
+      inc AL_RenderTargetCount
+   endif
+endfunction tReturn
+
+`--------------
+` Render Target Enabled
+`--------------
+function PostFilter_SetRenderTargetEnabled(iTarget as integer,iEnable as boolean)
+   AL_RenderTarget(iTarget).UpDate=iEnable
+endfunction
+
+`--------------
+` Texture Render Target
+`--------------
+function PostFilter_SetRenderTargetImage(iTarget as integer,iStage as integer,iImage as integer)
+   if AL_PostFilterEnabled=1 and iTarget>-1 and iTarget<AL_RenderTargetCount
+      texture object AL_RenderTarget(iTarget).Object,iStage,iImage
+   endif
+endfunction
+
+`--------------
+` Render Target Image
+`--------------
+function PostFilter_GetRenderTargetImage(iTarget as integer)
+   local tReturn as integer
+   if AL_PostFilterEnabled=1 and iTarget>-1 and iTarget<AL_RenderTargetCount
+      tReturn=AL_RenderTarget(iTarget).Image
+   endif
+endfunction tReturn
+
+`--------------
+` Render Target Effect
+`--------------
+function PostFilter_GetRenderTargetEffect(iTarget as integer)
+   local tReturn as integer
+   if AL_PostFilterEnabled=1 and iTarget>-1 and iTarget<AL_RenderTargetCount
+      tReturn=AL_RenderTarget(iTarget).Effect
+   endif
+endfunction tReturn
+

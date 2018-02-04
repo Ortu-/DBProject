@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<document>
+
+	<class
+		name="btn-standard">
+		<class_style
+			width="150px"
+			height="50px"
+			d3d-font="3"
+			text-alignH="center"
+			text-alignV="center"
+			background-color="#ffcccccc"
+			border-color="#ff777777"
+			border-width="1px">
+		</class_style>
+	</class>
+
+	<class
+		name="btn-standard-pop">
+		<class_style
+			width="150px"
+			height="50px"
+			d3d-font="3"
+			text-alignH="center"
+			text-alignV="center"
+			background-color="#ffdddddd"
+			border-color="#ffaaaaaa"
+			border-width="1px">
+		</class_style>
+	</class>
+
+	<class
+		name="btn-standard-push">
+		<class_style
+			width="150px"
+			height="50px"
+			d3d-font="3"
+			text-alignH="center"
+			text-alignV="center"
+			background-color="#ffbbbbbb"
+			border-color="#ff555555"
+			border-width="1px">
+		</class_style>
+	</class>
+
+	<class
+		name="btn-textOption">
+		<class_style
+			width="250px"
+			height="50px"
+			d3d-font="2"
+			text-alignV="center"
+			background-opacity="0">
+		</class_style>
+	</class>
+
+	<class
+		name="btn-textOption-pop">
+		<class_style
+			width="250px"
+			height="50px"
+			d3d-font="4"
+			text-alignV="center"
+			background-opacity="0">
+		</class_style>
+	</class>
+
+	<class
+		name="btn-textOptionSmall">
+		<class_style
+			width="200px"
+			height="30px"
+			d3d-font="3"
+			text-alignH="center"
+			text-alignV="center"
+			background-opacity="0">
+		</class_style>
+	</class>
+
+	<class
+		name="btn-textOptionSmall-pop">
+		<class_style
+			width="200px"
+			height="30px"
+			d3d-font="5"
+			text-alignH="center"
+			text-alignV="center"
+			background-opacity="0">
+		</class_style>
+	</class>
+
+	<class
+		name="btn-txt">
+		<class_style
+			d3d-font="5"
+			color="#ffffffff">
+		</class_style>
+	</class>
+
+	<class
+		name="btn-txt-pop">
+		<class_style
+			d3d-font="5"
+			color="#fffe9c00">
+		</class_style>
+	</class>
+
+</document>

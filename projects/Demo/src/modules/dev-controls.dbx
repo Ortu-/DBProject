@@ -1,0 +1,104 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	Developer Controls Module
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides handling for developer & debug control input.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+
+	*******************************************
+	Classes:
+
+
+
+		=========================================
+		Extends STATIC CLASS: Controls
+
+			------------------------
+			public functions:
+
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+
+
+			------------------------
+			private data:
+
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+dev_controls_module_init:
+	App_addUpdate("Controls_getDevInput", "", FALSE)
+return
+
+
+function Controls_getDevInput()
+
+	<?System_log("dev-controls.dbx", 2, "main", "Begin Update: Controls_getDevInput")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	tTimer = timer()
+
+	UI.status.mouseModeForced = ""
+	UI.status.keyModeForced = ""
+
+		if System_keyInput[			ENUM_KEY_F1			].isDown and System_keyInput[ENUM_KEY_F1].wasDown = FALSE
+			App.status.debugModeIsActive = 1 - App.status.debugModeIsActive
+		endif
+
+
+		if System_keyInput[			ENUM_KEY_F2			].isDown and System_keyInput[ENUM_KEY_F2].wasDown = FALSE
+			App.status.loadState = 5
+		endif
+
+		if System_keyInput[			ENUM_KEY_F3			].isDown and System_keyInput[ENUM_KEY_F3].wasDown = FALSE
+
+		endif
+
+		if System_keyInput[			ENUM_KEY_F4			].isDown and System_keyInput[ENUM_KEY_F4].wasDown = FALSE
+			System_log("dev-controls.dbx", 10, "error", " ----- !!! MARK LOG HERE !!! -----")
+		endif
+
+	<?System_log("dev-controls.dbx", 2, "main", "End Update: Controls_getDevInput," + str$(hitimer(1000000) - updateMark) + "us")?>
+endfunction

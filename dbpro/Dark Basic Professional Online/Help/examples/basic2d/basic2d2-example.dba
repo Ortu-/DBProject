@@ -1,0 +1,39 @@
+rem Basic2D Functionality
+
+rem Test loop
+do
+
+rem Produce random values
+X=mousex()
+Y=mousey()
+X1=rnd(320)
+Y1=rnd(240)
+X2=X1+1+rnd(320)
+Y2=Y1+1+rnd(240)
+RgbForeValue=RGB(rnd(255),rnd(255),rnd(255))
+RgbBackColor=RGB(rnd(255),rnd(255),rnd(255))
+RadiusValue=rnd(100)
+RadiusX=rnd(100)
+RadiusY=rnd(100)
+ComponentValue=rnd(255)
+
+rem Try each command at random
+if rnd(500)=1 then CLS RgbBackColor
+if rnd(5)=1 then INK RgbForeValue, RgbBackColor
+if rnd(5)=1 then DOT X1, Y2
+if rnd(5)=1 then BOX X1, Y1, X2, Y2
+if rnd(5)=1 then LINE X1, Y1, X2, Y2
+if rnd(5)=1 then CIRCLE X, Y, RadiusValue
+if rnd(5)=1 then ELLIPSE X, Y, RadiusX, RadiusY
+
+rem Display data
+set cursor 0,0
+print "BASIC2D EXPRESSION DATA"
+print
+print "point:";POINT(X, Y)
+print "rgb:";RGB(ComponentValue,ComponentValue,ComponentValue)
+print "rgbr:";RGBR(RgbBackColor)
+print "rgbg:";RGBG(RgbBackColor)
+print "rgbb:";RGBB(RgbBackColor)
+
+loop

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Advanced Lighting - AL_Directional</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    </head>
+    <body background="..\gfx\dbpro_bg.jpg">
+        <!--Title banner-->
+        <div>
+            <center><img src="..\gfx\dbph_head_1.jpg"></td></tr></center>
+            <center><h3>Advanced Lighting</h3></center>
+        </div><br>
+        
+        <!--Title heading-->
+        <h1>DirLight_SetAngle</h1><br>
+        
+        <!--Syntax block heading-->
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Syntax</b></font></td></tr>
+        </table><br>
+        
+        <!--Syntax block contents-->
+        <table>
+            <tr><td>
+                DirLight_SetAngle(float AngleX, float AngleY, float AngleZ)
+            </td></tr>
+        </table><br>
+       
+		<ul>
+			<li>[float AngleX] - X axis angle in the range of 0.0 - 360.0
+			<li>[float AngleY] - Y axis angle in the range of 0.0 - 360.0
+			<li>[float AngleZ] - Z axis angle in the range of 0.0 - 360.0
+		</ul><br/>
+		
+        <!--Description block heading-->
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Description</b></font></td></tr>
+        </table><br>
+        
+        <!--Description block contents-->
+        <table>
+            <tr><td>
+                <p>This command will set the direction of the directional light through its xyz angle components.
+				<p>These angle values are stored internally as the global variable: 
+				<br/>float AL_DirLightAngle.x
+				<br/>float AL_DirLightAngle.y
+				<br/>float AL_DirLightAngle.z
+				
+				<p>This change will also affect the internal global variable:
+				<br/>AL_DirLightDirection.x
+				<br/>AL_DirLightDirection.y
+				<br/>AL_DirLightDirection.z
+				
+                <p>This command will set the effect constant 'LightDirection' of the current .\Advanced Lighting\Shaders\Lighting\Directional\*.fx shader 
+				<br/>00.fx will be used if specular is disabled and ssao is disabled on the directional light.
+				<br/>01.fx will be used if specular is disabled and ssao is enabled on the directional light.				
+				<br/>10.fx will be used if specular is enabled and ssao is disabled on the directional light.
+				<br/>11.fx will be used if specular is enabled and ssao is enabled on the directional light.
+				<br/>The global variable AL_DirLightEffect provides a reference to the effect number of this shader.
+				
+				<p>This command will also set the effect constant 'LightDirection' in all effects registered to the AL_Effect() and AL_AlphaEffect() arrays.
+				<p>This command will set the effect constant 'LightDirection' in the scattering effect registered to AL_PostProcessingEffect(3)
+				<p>This command will set the effect constants 'LightDir1' and 'LightDir2' in the cloud effect registered to AL_CloudsEffect(1)
+				<p>This command will set the Water_AreaFog caustics direction.
+				<p>This command will set the effect constant 'SpecularColor' in all effects registered to the Water_Effect() array.
+            </td></tr>
+        </table><br>
+        
+        <!--Samples block heading-->
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Samples</b></font></td></tr>
+        </table><br>
+        
+        <!--Samples block contents-->
+        <table>
+            <tr><td>
+                <p>DirLight_SetAngle(35.0, 40.0, 0.0)
+            </td></tr>
+        </table><br>
+        
+        <!--Navigation block heading-->
+        <table width="100%">
+            <tr bgcolor="#0d4283"><td><font color="#ffffff" size="3"><b>Menu</b></font></td></tr>
+        </table><br>
+        
+        <!--Navigation block contents-->
+        <ul>
+            <li><a href="AL_Directional_index.html">AdvLighting AL_Directional Menu</a></li>
+            <li><a href="index.html">AdvLighting Index</a></li>
+            <li><a href="../main.htm">DBPro Main Menu</a></li>
+        </ul>
+        
+        <p align="center">Advanced Lighting - Copyright &copy; <a href="http://www.evolved-software.com">Evolved Software</a></p>
+        <p align="center">The documentation project is a public community effort. <a href="http://www.github.com/ortu-/ALdocs">Get involved on Github.</a></p>
+        <center><img src="../gfx/dbph_head_1.jpg" /></center>
+    </body>
+</html>
+

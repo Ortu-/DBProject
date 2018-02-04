@@ -1,0 +1,430 @@
+Rem Project: Text3D
+Rem Created: 12/04/2005 23:51:59
+
+Rem ***** Main Source File *****
+set display mode 1024,768,32:Set Window Layout 0,0,1:sync on:autocam off:backdrop on:color backdrop rgb(10,10,10)
+
+`Initialise the D3Dfunc dll
+D3D_Init
+
+set text font "Arial"
+set text size 15
+D3D_Font 2,"Arial",15,0,0,1
+do
+D3D_Color 255,255,255,255
+
+text 0,0,"D3D Extras dll - Demonstation"
+text 0,15,"(1) Antialiased text vs Normal text"
+text 0,30,"(2) Antialiased text vs Normal text using multiple fonts"
+text 0,45,"(3) 3D Text"
+text 0,60,"(4) 3D Line Drawing"
+text 0,75,"(5) Pyramid Creation"
+text 0,90,"(ESC) Quit Demo"
+
+text 0,105,"Press a key to select a demo"
+
+text 0,750,"Written By Jason Clogg (2005)"
+D3D_StartText
+   D3D_Text 2,512,200,1,"Example of AA text alignment"
+
+   D3D_Color 0,0,200,220
+   Width=D3D_GetTextWidth (2,"0=Left Aligned")
+   Height=D3D_GetTextHeight (2,"0=Left Aligned")
+   D3D_box 512,240,512+Width,240+Height,1
+   D3D_Color 255,255,255,255
+   D3D_Text 2,512,240,0,"0=Left Aligned"
+
+   D3D_Color 0,0,200,220
+   Width=D3D_GetTextWidth (2,"1=Centered")
+   Height=D3D_GetTextHeight (2,"1=Centered")
+   D3D_box 512-(Width/2),280,512+(Width/2),280+(Height),1
+   D3D_Color 255,255,255,255
+   D3D_Text 2,512,280,1,"1=Centered"
+
+   D3D_Color 0,0,200,220
+   Width=D3D_GetTextWidth (2,"2=Right Aligned")
+   Height=D3D_GetTextHeight (2,"2=Right Aligned")
+   D3D_box 512-Width,320,512,320+(Height),1
+   D3D_Color 255,255,255,255
+   D3D_Text 2,512,320,2,"2=Right Aligned"
+
+   D3D_Color 0,0,200,220
+   D3D_Box 412,400,612,600
+   D3D_Color 255,255,255,255
+   D3D_line 412,400,612,400
+   D3D_line 612,400,612,600
+   D3D_line 612,600,412,600
+   D3D_line 412,600,412,400
+   DisplayText$="This is text displayed by D3D_BoxText." +chr$(10)+chr$(10)
+   DisplayText$=DisplayText$+"It enables you to display text within a defined boundary."
+   d3d_BoxText 2,412,400,200,200,1,1,DisplayText$
+D3D_EndText
+
+   line 512,230,512,350
+
+
+if inkey$()="1" then gosub AntiVsText
+if inkey$()="2" then gosub AntiVsTextMulti
+if inkey$()="3" then gosub TextMesh
+if inkey$()="4" then gosub 3DLineDraw
+if inkey$()="5" then gosub PyramidCreation
+`if upper$(inkey$())="Q" then end
+
+sync
+
+loop
+
+AntiVsText:
+
+Rem D3D_Font for Antialiased Text and 3D Text commands - Format is Font number Font Name,size,bold(0 or 1),italic(0 or 1)
+D3D_Font 1,"Arial",9,0,0,1
+D3D_Font 2,"Arial",15,0,0,1
+set text font "Arial"
+set text size 15
+textmode=1
+
+do
+if textmode=1
+   text 0,0,"Normal Text Text - FPS="+str$(screen fps())
+   text 0,15,"Press space to toggle test, 'q' to quit to menu"
+   for i=1 to 200
+      text rnd(1000),rnd(600)+50,"Test Text String"
+   next i
+else
+  D3D_StartText
+   D3D_Text 1,0,0,0,"Antialiased Text Text - FPS="+str$(screen fps())
+   D3D_Text 1,0,15,0,"Press space to toggle test, 'q' to quit to menu,'i' toggle information"
+   if showinfo=1
+      D3D_Text 1,0,45,0,"To use the dll text commands you should do the following :-"
+      D3D_Text 1,0,75,0,"Set the font to use"
+      D3D_Text 1,0,105,0,"Set the draw colour"
+      D3D_Text 1,0,135,0,"Start text drawing mode"
+      D3D_Text 1,0,165,0,"draw the text"
+      D3D_Text 1,0,195,0,"End text drawing mode"
+      D3D_Color 255,0,0,255
+      D3D_Text 1,150,75,0,"D3D_Font "+chr$(34)+"Arial"+chr$(34)+",9,0,0"
+      D3D_Text 1,150,105,0,"D3D_Color 255,255,255,255"
+      D3D_Text 1,150,135,0,"D3D_StartText"
+      D3D_Text 1,150,165,0,"D3D_Text 1,0,0,0,"+chr$(34)+"Hello World"+chr$(34)
+      D3D_Text 1,150,195,0,"D3D_EndText"
+      D3D_Color 100,100,100,100
+      D3D_Text 1,150,90,0,"D3D_Font FontName$,height in pixels,bold(0-no,1-yes),italic(0-no,1-yes)"
+
+      D3D_Text 1,150,120,0,"D3D_Color Red(0-255),Green(0-255),Blue(0-255),Alpha(0-255)"
+      D3D_Text 1,150,180,0,"D3D_Text font number,x,y,alignment,text$"
+
+      D3D_Color 255,255,255,255
+
+      D3D_Text 1,0,225,0,"Always set your fonts up outside the main loop."
+      D3D_Text 1,0,240,0,"There can be multiple 'StartText' 'EndText' pairs"
+      D3D_Text 1,0,255,0,"in a loop but there must not be any image or sprite"
+      D3D_Text 1,0,270,0,"display commands between 'StartText' and 'EndText'."
+      D3D_Text 1,0,285,0,"The more of these pairs in your loop the slower it gets!"
+      xrnd=500:xmin=500
+   else
+      D3D_Color 255,255,255,255
+      xrnd=1000:xmin=0
+   endif
+
+    for i=1 to 200
+      D3D_Text 2,rnd(xrnd)+xmin,rnd(600)+50,0,"Test Text String"
+   next i
+
+   D3D_EndText
+endif
+rem Perform Text drawing to screen D3D_EndText dummyval. Not sure how to set up function
+rem with no parameters or return code
+if spacekey()=1
+   if spacepressed=0
+      spacepressed=1
+      if textmode=1 then textmode=0 else textmode=1
+   endif
+else
+   spacepressed=0
+endif
+
+if upper$(inkey$())="I"
+   if Ipressed=0
+      Ipressed=1
+      if showinfo=1 then showinfo=0 else showinfo=1
+   endif
+else
+   Ipressed=0
+endif
+
+if upper$(inkey$())="Q"
+   set text font "Arial"
+   set text size 15
+   ink rgb(255,255,255),0
+   return
+endif
+
+sync
+
+loop
+
+return
+
+AntiVsTextMulti:
+
+D3D_Font 1,"Arial",9,0,0,1
+D3D_Font 2,"Tahoma",15,0,0,1
+D3D_Font 3,"Comic Sans MS",25,0,0,1
+D3D_Color 255,0,0,255
+
+ink rgb(255,0,0),0
+textmode=1
+
+do
+if textmode=1
+   set text font "Arial"
+   set text size 15
+   text 0,0,"Normal Text Text - FPS="+str$(screen fps())
+   text 0,15,"Press space to toggle test, 'q' to quit to menu"
+   for i=1 to 5
+      set text font "Tahoma"
+      set text size 25
+      text rnd(1000),rnd(600)+50,"Test Text String"
+      set text font "Comic Sans MS"
+      set text size 42
+      text rnd(1000),rnd(600)+50,"Test Text String"
+   next i
+else
+   D3D_StartText
+   D3D_Text 1,0,0,0,"Antialiased Text Text - FPS="+str$(screen fps())
+   D3D_Text 1,0,15,0,"Press space to toggle test, 'q' to quit to menu"
+   for i=1 to 200
+      D3D_Text 2,rnd(1000),rnd(600)+50,0,"Test Text String"
+      D3D_Text 3,rnd(1000),rnd(600)+50,0,"Test Text String"
+   next i
+   D3D_EndText
+endif
+
+if spacekey()=1
+   if spacepressed=0
+      spacepressed=1
+      if textmode=1 then textmode=0 else textmode=1
+   endif
+else
+   spacepressed=0
+endif
+
+if upper$(inkey$())="Q"
+   set text font "Arial"
+   set text size 15
+   ink rgb(255,255,255),0
+   d3d_color 255,255,255,255
+   return
+endif
+
+sync
+
+loop
+
+return
+TextMesh:
+
+cls
+color backdrop rgb(10,10,10)
+set camera view 0,0,512,384
+make camera 1
+color backdrop 1,rgb(40,0,0)
+set camera view 1,512,0,1024,384
+make camera 2
+color backdrop 2,rgb(0,40,0)
+set camera view 2,0,384,512,768
+make camera 3
+color backdrop 3,rgb(0,0,40)
+set camera view 3,512,385,1024,768
+
+do
+   text$=InputText(0,0,"Enter text to be converted to a mesh : ","Text3D")
+   font$=InputText(0,0,"Enter font to use : ","Arial")
+   depth#=val(InputText(0,0,"Enter object depth : ",".1"))
+   quality=val(InputText(0,0,"Enter object quality(0-low,1-medium,2-high) : ","2"))
+   alignment=val(InputText(0,0,"Enter mesh alignment(0-left,1-center,2-right,3-font origin : ","1"))
+   D3D_Font 1,font$,15,0,0,1
+   D3D_Make_3DText 1, 1,text$,depth#,quality,alignment
+
+   position object 1,0,0,0
+   color object 1,rgb(255,0,0)
+   ca#=0
+   while spacekey()=0
+      text 0,0,"3D Text Demonstration - FPS="+str$(screen fps())+" - polygons="+str$(statistic(1))
+      text 0,15,"Press Space to create another object"
+      text 0,30,"Press 'q' to quit to menu"
+
+      cx#=cos(ca#)*5
+      cz#=sin(ca#)*5
+      position camera cx#,2,cz#
+      point camera 0,0,0
+      position camera 1,cx#*.5,2,cz#*.5
+      point camera 1,0,0,0
+      position camera 2,cx#*.75,-2,cz#*.75
+      point camera 2,0,0,0
+      position camera 3,cx#*1.25,3,cz#*1.25
+      point camera 3,0,0,0
+      ca#=ca#+.1
+
+      if upper$(inkey$())="Q"
+         set text font "Arial"
+         set text size 15
+         ink rgb(255,255,255),0
+         delete object 1
+         delete camera 1
+         delete camera 2
+         delete camera 3
+         set camera view 0,0,1024,768
+         return
+      endif
+
+      sync
+
+   endwhile
+   delete object 1
+loop
+return
+3DLineDraw:
+cls
+ca#=0
+for i=1 to 20
+   if object exist(i+100)=0 then  make object sphere i+100,.5
+   hide object i+100
+next i
+zpos#=50
+x=0
+y=0
+set text opaque
+color backdrop rgb(10,10,10)
+set camera view 0,0,512,384
+make camera 1
+color backdrop 1,rgb(40,0,0)
+set camera view 1,512,0,1024,384
+make camera 2
+color backdrop 2,rgb(0,40,0)
+set camera view 2,0,384,512,768
+make camera 3
+color backdrop 3,rgb(0,0,40)
+set camera view 3,512,385,1024,768
+do
+   text 0,0,"3D Line Demonstration - FPS="+str$(screen fps())
+   text 0,15,"Press 'q' to quit to menu"
+
+   cx#=cos(ca#)*zpos#
+   cz#=sin(ca#)*zpos#
+   position camera cx#,2,cz#
+   point camera 0,0,0
+   position camera 1, cx#,2,cz#
+   point camera 1,0,0,0
+   position camera 2, cx#,2,cz#
+   point camera 2,0,0,0
+   position camera 3, cx#,2,cz#
+   point camera 3,0,0,0
+   ca#=ca#+.1
+
+   randomize 0
+
+   x1#=rnd(20)-5
+   y1#=rnd(20)-5
+   z1#=rnd(20)-5
+
+   for i=1 to 20
+      x2#=rnd(20)-5
+      y2#=rnd(20)-5
+      z2#=rnd(20)-5
+      position object i+100,x1#,y1#,z1#
+      show object i+100
+      LineColor=D3D_RGBA(rnd(255),rnd(255),rnd(255),255)
+      D3D_Line3D x1#,y1#,z1#,x2#,y2#,z2#,LineColor,LineColor, 0
+      D3D_Line3D 1,x1#,y1#,z1#,x2#,y2#,z2#,LineColor,LineColor, 0
+      D3D_Line3D 2,x1#,y1#,z1#,x2#,y2#,z2#,LineColor,LineColor, 0
+      D3D_Line3D 3,x1#,y1#,z1#,x2#,y2#,z2#,LineColor,LineColor, 0
+      D3D_Dot3D x1#,y1#,z1#,5,LineColor, 0
+      D3D_Dot3D 1,x1#,y1#,z1#,5,LineColor, 0
+      D3D_Dot3D 2,x1#,y1#,z1#,5,LineColor, 0
+      D3D_Dot3D 3,x1#,y1#,z1#,5,LineColor, 0
+      x1#=x2#
+      y1#=y2#
+      z1#=z2#
+   next i
+
+   if zpos#=>50 then zmove#=-.01
+   if zpos#=<-50 then zmove#=.01
+   zpos#=zpos#+zmove#
+
+   if upper$(inkey$())="Q"
+      for i=1 to 20
+         hide object i+100
+      next i
+      set camera view 0,0,screen width(),screen height()
+      cls 0
+      set text font "Arial"
+      set text size 15
+      ink rgb(255,255,255),0
+      delete object 1
+      delete camera 1
+      delete camera 2
+      delete camera 3
+      set camera view 0,0,1024,768
+      return
+   endif
+   sync
+loop
+return
+
+function InputText(x,y,Message$,default$)
+
+text$=default$
+clear entry buffer
+do
+text x,y,Message$+text$
+buf$=entry$():clear entry buffer
+for i=1 to len(buf$)
+   select asc(mid$(buf$,i))
+      case 8
+         text$=left$(text$,len(text$)-1)
+      endcase
+      case 13
+         exitfunction text$
+      endcase
+      case default
+         text$=text$+mid$(buf$,i)
+      endcase
+   endselect
+next i
+sync
+
+loop
+endfunction ""
+
+PyramidCreation:
+cls
+
+Do
+  D3D_Make_Pyramid 1, 1 + Rnd(4), 1 + Rnd(4), 1 + Rnd(4)
+
+  While SpaceKey() = 0
+    text 0,0,"Pyramid Demonstration - FPS="+str$(screen fps())+" - polygons="+str$(statistic(1))
+    text 0,15,"Press Space to create another object"
+    text 0,30,"Press 'q' to quit to menu"
+
+    cx#=cos(ca#)*5
+    cz#=sin(ca#)*5
+    position camera cx#,2,cz#
+    point camera 0,0,0
+    ca#=ca#+.1
+
+    if upper$(inkey$())="Q"
+       set text font "Arial"
+       set text size 15
+       ink rgb(255,255,255),0
+       delete object 1
+       return
+    endif
+
+    sync
+  EndWhile
+
+  Delete Object 1
+Loop
+return    

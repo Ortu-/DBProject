@@ -1,0 +1,700 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	System Utility
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://githubn.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides various OS, hardware, timing and performance monitoring processes.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+
+	*******************************************
+	Classes:
+
+		=========================================
+		Defines STATIC CLASS: System
+
+			------------------------
+			public functions:
+
+				System_updateMetrics()
+					- Updates timing and performance metrics.
+
+				System_cpuSleep()
+					- Gives back time to the system to play nice with other processes.
+
+				System_log(sourceFile as string, logLevel as byte, channel as string, content as string)
+					- Writes to the log file.
+
+				System_getHardwareInput()
+					- Captures current mouse and keyboard input
+
+				System_setInterval(rCallback as string, rArgs as string, rTicks as integer, rInterval as integer)
+					+ Returns guid of new interval
+					- Registers a timer which will execute the given callback function at the given interval and number of ticks.
+
+				System_clearInterval(rID as integer)
+					- Removes a registered interval timer.
+
+				System_clearAllIntervals()
+					- Removes all registered interval timers.
+
+				System_updateIntervals()
+					- Processes callbacks for registered interval timers.
+
+				System_installFont(rFont as string, rPath as string)
+					- Yep, installs the font.
+
+				System_removeFont(rPath as string)
+					- Uninstalls the font.
+
+			------------------------
+			public data:
+
+
+
+			-------------------------
+			private functions:
+
+				_System_init()
+					- Module initialization
+
+			-------------------------
+			private data:
+
+				_System_timedIntervals[]
+					- Holding list for registered timers.
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+`==================================================================================================================================
+
+system_module_init:
+
+	if SYSTEM_MODULE_LOADED = FALSE
+
+		`Declare System -----------------------------------------------------------
+
+		type System_type_dllData
+			gdi32 as integer
+			urlmon as integer
+			user32 as integer
+			comdlg32 as integer
+		endtype
+
+		type System_type_resourceData
+			dll as System_type_dllData
+			hwnd as dword
+		endtype
+
+		type System_type_timingDetail
+			last as integer
+			total as integer
+			avg as integer
+		endtype
+
+		type System_type_timingData
+			started as integer
+			timer as integer
+			syncMark as dword
+			loopMark as dword
+			perSecondMark as integer
+			delta as integer
+			loopCount as integer
+			loopsPerSec as integer
+			msPerLoop as integer
+			updateMark as dword
+			pauseElapsed as integer
+			pauseMark as integer
+			pauseHold as byte //0 no pause, 1 System hold, 2 UI hold
+			pauseHoldIdSystem as byte
+			pauseHoldIdUI as byte
+			<?
+			aiUpdate as System_type_timingDetail
+			charUpdate as System_type_timingDetail
+			guiUpdate as System_type_timingDetail
+			alUpdate as System_type_timingDetail
+			animUpdate as System_type_timingDetail
+			?>
+		endtype
+
+		type System_type_statusData
+			gamePauseState as byte //TODO: rename pauseState >> move to timingData with pauseMark and pauseElapsed
+			sysTotalMemory as integer
+			sysUsedMemory as integer
+			gpuTotalMemory as integer
+			gpuUsedMemory as integer
+		endtype
+
+		type System_Type_logData
+			fileNumber as byte
+			includeLevel as byte
+			includeChannels as string
+		endtype
+
+		type System_type_inputData
+			isDown as boolean
+			wasDown as boolean
+		endtype
+
+		type System_type_mouseInputData
+			leftBtn as System_type_inputData
+			rightBtn as System_type_inputData
+			moveX as float
+			moveY as float
+			moveZ as float
+			posX as integer
+			posY as integer
+		endtype
+
+		type System_type_intervalData
+			id as string
+			mark as integer
+			interval as integer
+			doneTicks as integer
+			maxTicks as integer
+			callback as string
+			args as string
+		endtype
+
+		type STATIC_CLASS_System
+			_log as System_Type_logData
+			resource as System_type_resourceData
+			timing as System_type_timingData
+			status as System_type_statusData
+			mouseInput as System_type_mouseInputData
+			appRoot as string
+		endtype
+
+		`private data -----------------------------------------------------------------
+
+		dim _System_timedIntervals[] as System_type_intervalData
+
+		`public data ------------------------------------------------------------------
+
+		dim System_keyInput[117] as System_type_inputData
+
+		`Init -------------------------------------------------------------------------
+
+		`==================================
+
+		GLOBAL System as STATIC_CLASS_System
+
+		`==================================
+
+		_System_init()
+
+		SYSTEM_MODULE_LOADED = TRUE
+
+		<?System_log("system.dbx", 2, "main", "End module load: system.")?>
+
+	endif
+return
+
+`==================================================================================================================================
+
+function _System_init()
+
+	<?System_log("system.dbx", 2, "main", "Begin module load: system.")?>
+
+	System.appRoot = dir exe()
+
+	System.timing.started = timer()
+	System.timing.pauseHoldIdSystem = 1
+	System.timing.pauseHoldIdUI = 2
+
+	`load system dlls
+	System.resource.dll.user32 = find free dll()
+	load dll "user32", System.resource.dll.user32
+
+	System.resource.dll.gdi32 = find free dll()
+	load dll "gdi32", System.resource.dll.gdi32
+
+	System.resource.dll.urlmon = find free dll()
+	load dll "urlmon", System.resource.dll.urlmon
+
+	System.resource.dll.comdlg32 = find free dll()
+	load dll "comdlg32", System.resource.dll.comdlg32
+
+	System.resource.hwnd = call dll(System.resource.dll.user32, "GetActiveWindow")
+
+	`install fonts
+	//TODO: system module should be abstracted away from any specific project.
+	//	create a fontList[] in App, iterate list for needed installs.
+	//TEMP: hard code desired fonts.
+	System_installFont("OpenSans-Regular", "media/ui/fonts/open-sans/OpenSans-Regular.ttf")
+
+
+
+
+	`init log file
+
+	//================================================================================================================================================================================
+	//================================================================================================================================================================================
+
+
+	//System._log.includeChannels = "*"
+	System._log.includeChannels = ",error,"
+
+
+	//================================================================================================================================================================================
+	//================================================================================================================================================================================
+
+
+
+	System._log.includeLevel = App.config.logLevel
+	System._log.fileNumber = find free file()
+	if file exist("log/log.txt") then delete file "log/log.txt"
+	open to write System._log.fileNumber, "log/log.txt"
+	write string System._log.fileNumber, "Runtime   | Timestamp | File            | Level | Channel    | Log"
+	write string System._log.fileNumber, "=================================================================="
+
+	//init timing marks
+	System.timing.perSecondMark = timer()
+	System.timing.syncMark = hitimer()
+
+	`register updates
+	App_addUpdate("System_updateIntervals", "", FALSE)
+	App_addUpdate("System_updateMetrics", "", TRUE)
+
+endfunction
+
+
+function System_updateMetrics()
+	<?System_log("system.dbx", 2, "main", "Begin Update: System_updateMetrics")?>
+
+	updateMark as dword
+	updateMark = hitimer()
+
+	`update timing metrics
+	if abs(timer() - System.timing.perSecondMark) > 1000
+		<?System_log("system.dbx", 1, "main", "update per second data")?>
+
+		System.timing.loopsPerSec = System.timing.loopCount
+		System.timing.msPerLoop = System.timing.delta
+
+		<?
+		if System.timing.loopCount > 0
+			System.timing.aiUpdate.avg = System.timing.aiUpdate.total / System.timing.loopCount
+			System.timing.aiUpdate.total = 0
+			System.timing.alUpdate.avg = System.timing.alUpdate.total / System.timing.loopCount
+			System.timing.alUpdate.total = 0
+			System.timing.animUpdate.avg = System.timing.animUpdate.total / System.timing.loopCount
+			System.timing.animUpdate.total = 0
+			System.timing.charUpdate.avg = System.timing.charUpdate.total / System.timing.loopCount
+			System.timing.charUpdate.total = 0
+			System.timing.guiUpdate.avg = System.timing.guiUpdate.total / System.timing.loopCount
+			System.timing.guiUpdate.total = 0
+		endif
+		?>
+
+		System.timing.loopCount = 0
+		System.timing.perSecondMark = timer()
+
+		System.status.sysTotalMemory = system tmem available()
+		System.status.sysUsedMemory = System.status.sysTotalMemory - system smem available()
+
+	endif
+
+	`update pause timing
+	oldPauseState = System.status.gamePauseState
+
+	<?System_log("system.dbx", 1, "main", "gamePauseState: " + str$(System.status.gamePauseState))?>
+	<?System_log("system.dbx", 1, "main", "pauseHold: " + str$(System.timing.pauseHold))?>
+
+	if System.timing.pauseHold = 0
+		System.status.gamePauseState = 0
+	else
+		System.status.gamePauseState = 1
+		if oldPauseState = 0
+			`new pause - get start stamp
+			System.timing.pauseMark = timer()
+		else
+			`continued pause - get elapsed
+			System.timing.pauseElapsed = abs(timer() - System.timing.pauseMark)
+		endif
+	endif
+
+	if oldPauseState = 2
+		`pause ended and elapsed time has been applied, clear down
+		System.status.gamePauseState = 0
+		System.timing.pauseMark = 0
+		System.timing.pauseElapsed = 0
+	endif
+
+	if System.status.gamePauseState = 0 and oldPauseState = 1
+		`pause ended, resume all updates but keep the elapsed time available for paused updates to adjust against elapsed times.
+		System.status.gamePauseState = 2
+		System.mouseInput.moveX = 0.0
+		System.mouseInput.moveY = 0.0
+		System.mouseInput.moveZ = 0.0
+	endif
+
+	<?System_log("system.dbx", 2, "main", "End Update: System_updateMetrics," + str$(hitimer() - updateMark))?>
+endfunction
+
+
+function System_cpuSleep()
+	<?System_log("system.dbx", 2, "main", "Begin Update: System_performanceSleep")?>
+
+	updateMark as dword
+	updateMark = hitimer()
+
+	nice sleep 10
+
+	<?System_log("system.dbx", 2, "main", "End Update: System_performanceSleep," + str$(hitimer() - updateMark))?>
+endfunction
+
+
+function System_log(sourceFile as string, logLevel as byte, channel as string, content as string)
+	if logLevel >= System._log.includeLevel and file open(System._log.fileNumber)
+		if System._log.includeChannels = "*" or instr(System._log.includeChannels, "," + channel + ",") > 0
+			write string System._log.fileNumber, padright$(System_getRuntime(), 9) + " | " + padright$(""/*str$(timer())*/, 9) + " | " + padright$(fast left$(sourceFile, 15), 15) + " | " + padright$(str$(logLevel), 5) + " | " + padright$(fast left$(channel, 10), 10) + " | " + content
+		endif
+	endif
+endfunction
+
+
+function System_getRuntime()
+	e$ = ""
+	h = 0
+	m = 0
+	s = 0
+	t = timer() - System.timing.started
+	//STUB:
+
+	//TEMP:
+	e$ = str$(t)
+endfunction e$
+
+
+function System_getHardwareInput()
+
+	<?System_log("system.dbx", 2, "main", "Begin Update: System_getHardwareInput")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	`get keyboard
+	for i = 1 to 115
+		System_keyInput[i].wasDown = System_keyInput[i].isDown
+		System_keyInput[i].isDown = keystate(i)
+	next i
+
+	System_keyInput[ENUM_KEY_PRINT].isDown = get key state(0x2C) < 0
+	System_keyInput[ENUM_KEY_PAUSE].isDown = get key state(0x13) < 0
+	System_keyInput[ENUM_KEY_ALTR].isDown = get key state(0xA5) < 0
+	System_keyInput[ENUM_KEY_CTRLR].isDown = get key state(0xA3) < 0
+	System_keyInput[ENUM_KEY_INSERT].isDown = get key state(0x2D) < 0
+	System_keyInput[ENUM_KEY_DELETE].isDown = get key state(0x2E) < 0
+	System_keyInput[ENUM_KEY_HOME].isDown = get key state(0x24) < 0
+	System_keyInput[ENUM_KEY_END].isDown = get key state(0x23) < 0
+	System_keyInput[ENUM_KEY_PAGEUP].isDown = get key state(0x21) < 0
+	System_keyInput[ENUM_KEY_PAGEDOWN].isDown = get key state(0x22) < 0
+	System_keyInput[ENUM_KEY_ARROWUP].isDown = get key state(0x26) < 0
+	System_keyInput[ENUM_KEY_ARROWDOWN].isDown = get key state(0x28) < 0
+	System_keyInput[ENUM_KEY_ARROWLEFT].isDown = get key state(0x25) < 0
+	System_keyInput[ENUM_KEY_ARROWRIGHT].isDown = get key state(0x27) < 0
+	System_keyInput[ENUM_KEY_NUMDIV].isDown = get key state(0x6F) < 0
+	//System_key[ENUM_KEY_NUMENTER].isDown = get key state(0x??)
+
+	`get mouse
+	System.mouseInput.leftBtn.wasDown = System.mouseInput.leftBtn.isDown
+	System.mouseInput.leftBtn.isDown = 0
+	System_keyInput[ENUM_KEY_MOUSEL].wasDown = System.mouseInput.leftBtn.wasDown
+
+	System.mouseInput.rightBtn.wasDown = System.mouseInput.rightBtn.isDown
+	System.mouseInput.rightBtn.isDown = 0
+	System_keyInput[ENUM_KEY_MOUSER].wasDown = System.mouseInput.rightBtn.wasDown
+
+	tMouseClick = mouseclick()
+	if tMouseClick = 1 or tMouseClick = 3 then System.mouseInput.leftBtn.isDown = 1
+	if tMouseClick = 2 or tMouseClick = 3 then System.mouseInput.rightBtn.isDown = 1
+
+	System_keyInput[ENUM_KEY_MOUSEL].isDown = System.mouseInput.leftBtn.isDown
+	System_keyInput[ENUM_KEY_MOUSER].isDown = System.mouseInput.rightBtn.isDown
+
+	System.mouseInput.moveX = mouseMoveX()
+	System.mouseInput.moveY = mouseMoveY()
+	System.mouseInput.moveZ = mouseMoveZ()
+
+	System.mouseInput.posX = mouseX()
+	System.mouseInput.posY = mouseY()
+
+	<?System_log("system.dbx", 2, "main", "End Update: System_getHardwareInput," + str$(hitimer(1000000) - updateMark) + "us")?>
+
+endfunction
+
+
+function System_setInterval(rCallback as string, rArgs as string, rTicks as integer, rInterval as integer)
+	array insert at bottom _System_timedIntervals[]
+	_System_timedIntervals[].id = generate guid$()
+	_System_timedIntervals[].mark = timer()
+	_System_timedIntervals[].interval = rInterval
+	_System_timedIntervals[].doneTicks = 0
+	_System_timedIntervals[].maxTicks = rTicks
+	_System_timedIntervals[].callback = rCallback
+	_System_timedIntervals[].args = rArgs
+	tID$ = _System_timedIntervals().id
+endfunction tID$
+
+
+function System_clearInterval(rID as string)
+	for i = 0 to array count(_System_timedIntervals[])
+		if _System_timedIntervals[i].id = rID
+			array delete element _System_timedIntervals[], i
+			exitfunction
+		endif
+	next i
+endfunction
+
+function System_clearAllIntervals()
+	empty array _System_timedIntervals[]
+endfunction
+
+function System_getIntervalByCallback(rCallback as string)
+	for i = 0 to array count(_System_timedIntervals[])
+		if _System_timedIntervals[i].callback = rCallback
+			exitfunction i
+		endif
+	next i
+endfunction -1
+
+
+function System_updateIntervals()
+
+	<?System_log("system.dbx", 2, "main", "Begin Update: System_updateIntervals")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	GCcount = 0
+	GCindex = -1
+
+	`process ticks
+	tArrCount = array count(_System_timedIntervals[])
+	if tArrCount > -1
+		for i = 0 to tArrCount
+			now = timer()
+			if now - (_System_timedIntervals[i].mark + System.timing.pauseElapsed) >= _System_timedIntervals[i].interval
+				_System_timedIntervals[i].mark = now
+				<?System_log("system.dbx", 1, "main", "Execute Interval: " + _System_timedIntervals[i].callback)?>
+				App_callFunction(_System_timedIntervals[i].callback, _System_timedIntervals[i].args)
+				if _System_timedIntervals[i].maxTicks > -1
+					inc _System_timedIntervals[i].doneTicks
+					if _System_timedIntervals[i].doneTicks >= _System_timedIntervals[i].maxTicks
+						_System_timedIntervals[i].id = "GC_THIS"
+						inc GCcount
+						GCindex = i
+					endif
+				endif
+			endif
+		next i
+
+		`garbage collect
+		if GCcount > 0
+			if GCcount > 1
+				for c = 1 to GCcount
+					for i = 0 to array count(_System_timedIntervals[])
+						if _System_timedIntervals[i].id = "GC_THIS"
+							array delete element _System_timedIntervals[], i
+							exit
+						endif
+					next i
+				next c
+			else
+				array delete element _System_timedIntervals[], GCindex
+			endif
+		endif
+	endif
+
+	<?System_log("system.dbx", 2, "main", "End Update: System_updateTimedIntervals," + str$(hitimer(1000000) - updateMark) + "us")?>
+
+endfunction
+
+
+function System_installFont(rFont as string, rPath as string)
+	perform checklist for fonts
+	for i = 1 to checklist quantity()
+		if fast lower$(checklist string$(i)) = fast lower$(rFont)
+			exitfunction
+		endif
+	next i
+	null = call dll(System.resource.dll.gdi32, "AddFontResourceA", rPath)
+endfunction
+
+
+function System_removeFont(rPath as string)
+	null = call dll(System.resource.dll.gdi32, "RemoveFontResourceA", rPath)
+endfunction
+
+
+function System_getFileFromDialog(rArgs as string)
+	/*
+		This function is based on the 'File Open Dlg.dba' found here:
+		https://forum.thegamecreators.com/thread/169585
+		By Stab in the Dark Software
+	*/
+
+	show mouse
+	System.status.gamePauseState = 1
+	System.timing.pauseHold = System.timing.pauseHold || System.timing.pauseHoldIdSystem
+
+	split string rArgs, ","
+
+	rDir as string
+	rTitle as string
+	rExtension as string
+	rMode as string
+	rDir = get split word$(1)
+	rTitle = get split word$(2)
+	rExtension = get split word$(3)
+	rMode = get split word$(4)
+
+	filenameBlock as integer
+	filenameBlock = find free memblock()
+	make memblock filenameBlock, 76
+
+	filenamePtr as dword
+	filenamePtr = get memblock ptr(filenameBlock)
+
+	tFilter as string
+	tSize as integer
+	tFileBuffer as string
+	tFileBufferPtr as dword
+	tFlags as dword
+
+	//tFilter = "All Files|*.*||"
+	tFilter = "Files|*"+ rExtension +"||"
+	rDir = rDir + "|"
+	rTitle = rTitle + "|"
+	rExtension = rExtension + "|"
+	tFileBuffer = "|" + space$(255) + "|"
+	tFileBufferPtr = System_getStringPtr(tFileBuffer)
+	tFlags = 0x00001000 || 0x00000004 || 0x00000002
+	tSize = 0
+
+	write memblock dword filenameBlock, 0, 76
+	write memblock dword filenameBlock, 4, System.resource.hwnd
+	write memblock dword filenameBlock, 12, System_getStringPtr(tFilter)
+	write memblock dword filenameBlock, 24, 1
+	write memblock dword filenameBlock, 28, tFileBufferPtr
+	write memblock dword filenameBlock, 32, 256
+	write memblock dword filenameBlock, 44, System_getStringPtr(rDir)
+	write memblock dword filenameBlock, 48, System_getStringPtr(rTitle)
+	write memblock dword filenameBlock, 52, tFlags
+	write memblock dword filenameBlock, 60, System_getStringPtr(rExtension)
+
+	res as dword
+	res = call dll (System.resource.dll.comdlg32, "Get" + rMode + "FileNameA", filenamePtr)
+
+	if res <> 0
+		res$ = trim$(System_getString(tFileBufferPtr, 256))
+	else
+		res$ = call dll(System.resource.dll.comdlg32, "CommDlgExtendedError")
+		select res
+			case 0xFFFF : res$ = "Error: The dialog box could not be created. The common dialog box function's call to the DialogBox function failed. For example, this error occurs if the common dialog box call specifies an invalid window handle." : endcase
+			case 0x0006 : res$ = "Error: The common dialog box function failed to find a specified resource." : endcase
+			case 0x0004 : res$ = "Error: The ENABLETEMPLATE flag was set in the Flags member of the initialization structure for the corresponding common dialog box, but you failed to provide a corresponding instance handle." : endcase
+			case 0x0002 : res$ = "Error: The common dialog box function failed during initialization. This error often occurs when sufficient memory is not available." : endcase
+			case 0x000B : res$ = "Error: The ENABLEHOOK flag was set in the Flags member of the initialization structure for the corresponding common dialog box, but you failed to provide a pointer to a corresponding hook procedure." : endcase
+			case 0x0008 : res$ = "Error: The common dialog box function failed to lock a specified resource." : endcase
+			case 0x0003 : res$ = "Error: The ENABLETEMPLATE flag was set in the Flags member of the initialization structure for the corresponding common dialog box, but you failed to provide a corresponding template." : endcase
+			case 0x0007 : res$ = "Error: The common dialog box function failed to load a specified string." : endcase
+			case 0x0001 : res$ = "Error: The lStructSize member of the initialization structure for the corresponding common dialog box is invalid." : endcase
+			case 0x0005 : res$ = "Error: The common dialog box function failed to load a specified string." : endcase
+			case 0x3003 : res$ = "Error: The buffer pointed to by the lpstrFile member of the OPENFILENAME structure is too small for the file name specified by the user. The first two bytes of the lpstrFile buffer contain an integer value specifying the size, in TCHARs, required to receive the full name." : endcase
+			case 0x0009 : res$ = "Error: The common dialog box function was unable to allocate memory for internal structures." : endcase
+			case 0x3002 : res$ = "Error: A file name is invalid." : endcase
+			case 0x000A : res$ = "Error: The common dialog box function was unable to lock the memory associated with a handle." : endcase
+			case 0x3001 : res$ = "Error: An attempt to subclass a list box failed because sufficient memory was not available." : endcase
+			case default : res$ = "Error: An unknown error occured." : endcase
+		endselect
+	endif
+
+	delete memblock filenameBlock
+
+	res$ = replace all$(res$, "\", "/")
+
+	System.timing.pauseHold = System.timing.pauseHold ~~ System.timing.pauseHoldIdSystem
+
+endfunction res$
+
+
+function System_getStringPtr(rString as string)
+	/*
+		This function is based on the 'File Open Dlg.dba' found here:
+		https://forum.thegamecreators.com/thread/169585
+		By Stab in the Dark Software
+	*/
+
+	tBlock as integer
+	tBlockPtr as dword
+
+	tBlock = find free memblock()
+	tLen = fast len(rString)
+	make memblock tBlock, tLen
+
+	tChar as byte
+	for i = 1 to tLen
+		if mid$(rString, i) = "|"
+			tChar = 0
+		else
+			tChar = asc(mid$(rString, i))
+		endif
+		write memblock byte tBlock, (i - 1), tChar
+	next i
+
+	tBlockPtr = get memblock ptr(tBlock)
+	resPtr as dword
+	resPtr = make memory(tLen)
+
+	copy memory resPtr, tBlockPtr, tLen
+
+	delete memblock tBlock
+
+endfunction resPtr
+
+
+function System_getString(rPtr as dword, rSize as integer)
+	/*
+		This function is based on the 'File Open Dlg.dba' found here:
+		https://forum.thegamecreators.com/thread/169585
+		By Stab in the Dark Software
+	*/
+
+	tBlock as integer
+	tBlockPtr as dword
+
+	tBlock = find free memblock()
+	make memblock tBlock, rSize
+	tBlockPtr = get memblock ptr(tBlock)
+
+	copy memory tBlockPtr, rPtr, rSize
+
+	res as string
+	for i = 1 to rSize
+		res$ = res$ + Chr$(memblock byte(tBlock, i - 1))
+	next i
+
+	delete memblock tBlock
+
+endfunction res$

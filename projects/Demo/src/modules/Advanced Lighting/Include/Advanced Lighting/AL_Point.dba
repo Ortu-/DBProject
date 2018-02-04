@@ -1,0 +1,865 @@
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+type AL_PointShadowMapData
+   InUse as boolean
+   Number as integer
+   ShadowMap1 as integer
+   ShadowMap2 as integer
+   ShadowMap3 as integer
+   ShadowSize as float
+   UpdateTimer as float
+   DynamicTimer as integer
+   Position as AL_Vec3Integer
+   Positionf as AL_Vec3Float
+   Angle as AL_Vec3Integer
+   Range as integer
+   Rangef as float
+   UpdateFromTerrainP as AL_Vec2Float
+   UpdateFromTerrainN as AL_Vec2Float
+endtype
+
+type AL_PointShadowSideData
+   Object as integer
+   Static as integer
+   Update as integer
+   UpdateSide as boolean
+   Format as integer
+   LastUpdate as integer
+   UpdateMode as integer
+   Angle as AL_Vec3Integer
+endtype
+
+`--------------
+` Create Point Light
+`--------------
+function PointLight_Create(iSpecular as boolean,iSubSurface as boolean,iShadow as integer,iSize as integer)
+   local tLight as integer
+   tLight=-1
+   if AL_Enabled=1
+      for l=0 to AL_PointLightCount
+         if AL_PointLight(l).InUse=0 then tLight=l
+      next l
+      if tLight=-1
+         array insert at bottom AL_PointLight()
+         inc AL_PointLightCount
+         tLight=AL_PointLightCount
+      endif
+      AL_PointLight(tLight).InUse=1
+      AL_PointLight(tLight).Object=find free object()
+      AL_PointLight(tLight).Effect=find free effect()
+      AL_PointLight(tLight).Lensflare=-1
+      load object AL_Directory+"Resources/Point.dbo",AL_PointLight(tLight).Object
+      if iShadow=0
+         load effect AL_Directory+"Lighting/Point/"+str$(iSpecular)+str$(iSubSurface)+".fx",AL_PointLight(tLight).Effect,0,1
+         AL_PointLight(tLight).Shadowed=0
+      else
+         load effect AL_Directory+"Lighting/Point Shadow/"+str$(iSpecular)+str$(iSubSurface)+".fx",AL_PointLight(tLight).Effect,0,1
+         AL_PointLight(tLight).Shadowed=1
+      endif
+      set object effect AL_PointLight(tLight).Object,AL_PointLight(tLight).Effect
+      texture object AL_PointLight(tLight).Object,0,AL_Image(1)
+      texture object AL_PointLight(tLight).Object,1,AL_Image(2)
+      texture object AL_PointLight(tLight).Object,2,AL_Image(0)
+      set object mask AL_PointLight(tLight).Object,2^AL_Camera(7)
+      set vector4 AL_Vector4(1),0.5/AL_ViewVec.x,0.5/AL_ViewVec.y,1,1
+      set effect constant vector AL_PointLight(tLight).Effect,"ViewSize",AL_Vector4(1)
+      set vector4 AL_Vector4(1),AL_Fog(1),AL_Fog(12),AL_Fog(2),AL_Fog(13)
+      set effect constant vector AL_PointLight(tLight).Effect,"FogRange",AL_Vector4(1)
+      set vector4 AL_Vector4(1),AL_Fog(9),AL_Fog(10),AL_Fog(11),0
+      set vector4 AL_Vector4(2),AL_Fog(14)/255,AL_Fog(15)/255,AL_Fog(16)/255,AL_Fog(17)/255
+      set effect constant vector AL_PointLight(tLight).Effect,"HeightFog",AL_Vector4(1)
+      set effect constant vector AL_PointLight(tLight).Effect,"HeightFogColor",AL_Vector4(2)
+      PointLight_SetVisible(tLight,1)
+      PointLight_SetPosition(tLight,0,0,0)
+      PointLight_SetAngle(tLight,0,0,0)
+      PointLight_SetColor(tLight,255,255,255)
+      PointLight_SetRange(tLight,500)
+      PointLight_SetAttenuation(tLight,2)
+      PointLight_SetSpecularPower(tLight,128)
+      PointLight_SetShadow(tLight,iShadow,iSize,0)
+   endif
+endfunction tLight
+
+`--------------
+` Create Point Light Cube
+`--------------
+function PointLight_CreateCubeLight(iSpecular as boolean,iSubSurface as boolean,iShadow as integer,iSize as integer)
+   local tLight as integer
+   tLight=-1
+   if AL_Enabled=1
+      for l=0 to AL_PointLightCount
+         if AL_PointLight(l).InUse=0 then tLight=l
+      next l
+      if tLight=-1
+         array insert at bottom AL_PointLight()
+         inc AL_PointLightCount
+         tLight=AL_PointLightCount
+      endif
+      AL_PointLight(tLight).InUse=1
+      AL_PointLight(tLight).Object=find free object()
+      AL_PointLight(tLight).Effect=find free effect()
+      AL_PointLight(tLight).Lensflare=-1
+      load object AL_Directory+"Resources/Point.dbo",AL_PointLight(tLight).Object
+      if iShadow=0
+         load effect AL_Directory+"Lighting/Cube/"+str$(iSpecular)+str$(iSubSurface)+".fx",AL_PointLight(tLight).Effect,0,1
+         AL_PointLight(tLight).Shadowed=0
+      else
+         load effect AL_Directory+"Lighting/Cube Shadow/"+str$(iSpecular)+str$(iSubSurface)+".fx",AL_PointLight(tLight).Effect,0,1
+         AL_PointLight(tLight).Shadowed=1
+      endif
+      set object effect AL_PointLight(tLight).Object,AL_PointLight(tLight).Effect
+      texture object AL_PointLight(tLight).Object,0,AL_Image(1)
+      texture object AL_PointLight(tLight).Object,1,AL_Image(2)
+      texture object AL_PointLight(tLight).Object,2,AL_Image(0)
+      set object mask AL_PointLight(tLight).Object,2^AL_Camera(7)
+      set vector4 AL_Vector4(1),0.5/AL_ViewVec.x,0.5/AL_ViewVec.y,1,1
+      set effect constant vector AL_PointLight(tLight).Effect,"ViewSize",AL_Vector4(1)
+      set vector4 AL_Vector4(1),AL_Fog(1),AL_Fog(12),AL_Fog(2),AL_Fog(13)
+      set effect constant vector AL_PointLight(tLight).Effect,"FogRange",AL_Vector4(1)
+      set vector4 AL_Vector4(1),AL_Fog(9),AL_Fog(10),AL_Fog(11),0
+      set vector4 AL_Vector4(2),AL_Fog(14)/255,AL_Fog(15)/255,AL_Fog(16)/255,AL_Fog(17)/255
+      set effect constant vector AL_PointLight(tLight).Effect,"HeightFog",AL_Vector4(1)
+      set effect constant vector AL_PointLight(tLight).Effect,"HeightFogColor",AL_Vector4(2)
+      PointLight_SetVisible(tLight,1)
+      PointLight_SetPosition(tLight,0,0,0)
+      PointLight_SetAngle(tLight,0,0,0)
+      PointLight_SetColor(tLight,255,255,255)
+      PointLight_SetRange(tLight,500)
+      PointLight_SetAttenuation(tLight,4)
+      PointLight_SetSpecularPower(tLight,40)
+      PointLight_SetShadow(tLight,iShadow,iSize,0)
+   endif
+endfunction tLight
+
+`--------------
+` Delete Point Light
+`--------------
+function PointLight_Delete(iLight as integer)
+   if AL_PointLightInUse(iLight)=1
+      PointLight_SetVisible(iLight,0)
+      delete effect AL_PointLight(iLight).Effect
+      delete object AL_PointLight(iLight).Object
+      AL_PointLight(iLight).InUse=0
+      AL_PointLight(iLight).Effect=0
+      AL_PointLight(iLight).Object=0
+   endif
+endfunction
+
+`--------------
+` Set Point Light Visible
+`--------------
+function PointLight_SetVisible(iLight as integer,iVisible as boolean)
+   if AL_PointLightInUse(iLight)=1
+      if AL_PointLight(iLight).Visible=1 and iVisible<>1
+         AL_PointLight(iLight).Visible=0
+         for l=0 to AL_PointLightVisibleCount
+             if AL_PointLightVisible(l)=iLight+1
+                array delete element AL_PointLightVisible(),l
+                dec AL_PointLightVisibleCount
+                exit
+             endif
+         next l
+         exclude object on  AL_PointLight(iLight).Object
+         hide object  AL_PointLight(iLight).Object
+         if AL_PointLight(iLight).ShadowMap>0
+            set effect technique AL_PointLight(iLight).Effect,"Point"
+            AL_PointShadowMap(AL_PointLight(iLight).ShadowMap).InUse=0
+            AL_PointShadowMap(AL_PointLight(iLight).ShadowMap).Number=0
+            AL_PointLight(iLight).ShadowMap=0
+         endif
+         if AL_PointLight(iLight).LensFlare>-1 then LensFlare_SetVisible(AL_PointLight(iLight).LensFlare,0)
+      endif
+      if AL_PointLight(iLight).Visible=0 and iVisible<>0
+         AL_PointLight(iLight).Visible=1
+         tAddVisible as integer
+         tAddVisible=0
+         for l=0 to AL_PointLightVisibleCount
+             if AL_PointLightVisible(l)=iLight+1
+                tAddVisible=1
+                exit
+             endif
+         next l
+         if tAddVisible=0
+            array insert at bottom AL_PointLightVisible()
+            inc AL_PointLightVisibleCount
+            AL_PointLightVisible(AL_PointLightVisibleCount)=iLight+1
+         endif
+         exclude object off AL_PointLight(iLight).Object
+         show object AL_PointLight(iLight).Object
+         if AL_PointLight(iLight).LensFlare>-1 then LensFlare_SetVisible(AL_PointLight(iLight).LensFlare,1)
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Point Light Cube Texture
+`--------------
+function PointLight_SetCubeTexture(iLight as integer,iTexture as integer)
+   if AL_PointLightInUse(iLight)=1
+      if iTexture>0
+         if image exist(iTexture)=1
+            AL_PointLight(iLight).Texture=iTexture
+            texture object AL_PointLight(iLight).Object,6,AL_PointLight(iLight).Texture
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Point Light Position
+`--------------
+function PointLight_SetPosition(iLight as integer,iPosX as float,iPosY as float,iPosZ as float)
+   if AL_PointLightInUse(iLight)=1
+      AL_PointLight(iLight).Position.x=iPosX
+      AL_PointLight(iLight).Position.y=iPosY
+      AL_PointLight(iLight).Position.z=iPosZ
+      set vector4 AL_Vector4(1),AL_PointLight(iLight).Position.x,AL_PointLight(iLight).Position.y,AL_PointLight(iLight).Position.z,0
+      set effect constant vector AL_PointLight(iLight).Effect,"LightPosition",AL_Vector4(1)
+      position object AL_PointLight(iLight).Object,AL_PointLight(iLight).Position.x,AL_PointLight(iLight).Position.y,AL_PointLight(iLight).Position.z
+      if AL_PointLight(iLight).LensFlare>-1 then LensFlare_SetPosition(AL_PointLight(iLight).LensFlare,AL_PointLight(iLight).Position.x,AL_PointLight(iLight).Position.y,AL_PointLight(iLight).Position.z)
+   endif
+endfunction
+
+`--------------
+` Set Point Light Angle
+`--------------
+function PointLight_SetAngle(iLight as integer,iAngleX as float,iAngleY as float,iAngleZ as float)
+   if AL_PointLightInUse(iLight)=1
+      AL_PointLight(iLight).Angle.x=wrapvalue(iAngleX)
+      AL_PointLight(iLight).Angle.y=wrapvalue(iAngleY)
+      AL_PointLight(iLight).Angle.z=wrapvalue(iAngleZ)
+      rotate x matrix4 AL_Matrix(1),wrapvalue(AL_PointLight(iLight).Angle.x)/57.295
+      rotate y matrix4 AL_Matrix(2),wrapvalue(AL_PointLight(iLight).Angle.y)/57.295
+      rotate z matrix4 AL_Matrix(3),wrapvalue(AL_PointLight(iLight).Angle.z)/57.295
+      multiply matrix4 AL_Matrix(4),AL_Matrix(1),AL_Matrix(2)
+      multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(3)
+      set effect constant matrix AL_PointLight(iLight).Effect,"LightAngle",AL_Matrix(4)
+   endif
+endfunction
+
+`--------------
+` Color Point Light
+`--------------
+function PointLight_SetColor(iLight as integer,iRed as float,iGreen as float,iBlue as float)
+   if AL_PointLightInUse(iLight)=1
+      AL_PointLight(iLight).Color.x=iRed
+      AL_PointLight(iLight).Color.y=iGreen
+      AL_PointLight(iLight).Color.z=iBlue
+      set vector4 AL_Vector4(1),(AL_PointLight(iLight).Color.x/255)*AL_Ambient(5),(AL_PointLight(iLight).Color.y/255)*AL_Ambient(6),(AL_PointLight(iLight).Color.z/255)*AL_Ambient(7),0
+      set effect constant vector AL_PointLight(iLight).Effect,"LightColor",AL_Vector4(1)
+      if AL_PointLight(iLight).LensFlare>-1 then LensFlare_SetColor(AL_PointLight(iLight).LensFlare,AL_PointLight(iLight).Color.x,AL_PointLight(iLight).Color.y,AL_PointLight(iLight).Color.z)
+   endif
+endfunction
+
+`--------------
+` Set point Light Range
+`--------------
+function PointLight_SetRange(iLight as integer,iRange as float)
+   if AL_PointLightInUse(iLight)=1
+      AL_PointLight(iLight).Range=iRange
+      scale object AL_PointLight(iLight).Object,AL_PointLight(iLight).Range,AL_PointLight(iLight).Range,AL_PointLight(iLight).Range
+      set effect constant float AL_PointLight(iLight).Effect,"LightRange",AL_PointLight(iLight).Range
+   endif
+endfunction
+
+`--------------
+` Set Point Light Attenuation
+`--------------
+function PointLight_SetAttenuation(iLight as integer,iAttenuation as float)
+   if AL_PointLightInUse(iLight)=1
+      AL_PointLight(iLight).Attenuation=iAttenuation
+      set effect constant float AL_PointLight(iLight).Effect,"AttenuationPower",AL_PointLight(iLight).Attenuation
+   endif
+endfunction
+
+`--------------
+` Set Point Light Specular Power
+`--------------
+function PointLight_SetSpecularPower(iLight as integer,iSpecular as float)
+   if AL_PointLightInUse(iLight)=1
+      set effect constant float AL_PointLight(iLight).Effect,"SpecularPower",iSpecular
+   endif
+endfunction
+
+`--------------
+` Set Point Light Shadow
+`--------------
+function PointLight_SetShadow(iLight as integer,iShadow as integer,iSize as float,iShadowRange as float)
+   if AL_PointLightInUse(iLight)=1
+      if AL_PointLight(iLight).Shadowed=1
+         if AL_PointLight(iLight).ShadowQuality<>iShadow or AL_PointLight(iLight).ShadowSize<>iSize
+            AL_PointLight(iLight).ShadowQuality=iShadow
+            AL_PointLight(iLight).ShadowSize=iSize
+            AL_PointLight(iLight).ShadowRange=AL_ShadowRange
+            if iShadowRange>0 then AL_PointLight(iLight).ShadowRange=iShadowRange
+            if AL_PointLight(iLight).ShadowMap>0
+               set effect technique AL_PointLight(iLight).Effect,"Point"
+               AL_PointShadowMap(AL_PointLight(iLight).ShadowMap).InUse=0
+               AL_PointShadowMap(AL_PointLight(iLight).ShadowMap).Number=0
+               AL_PointLight(iLight).ShadowMap=0
+            endif
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Get Point Light Visible
+`--------------
+function PointLight_GetVisible(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Visible
+endfunction tReturn
+
+`--------------
+` Get Point Light Position  X
+`--------------
+function PointLight_GetPositionX(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Position.x
+endfunction tReturn
+
+`--------------
+` Get Point Light Position  Y
+`--------------
+function PointLight_GetPositionY(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Position.y
+endfunction tReturn
+
+`--------------
+` Get Point Light Position  Z
+`--------------
+function PointLight_GetPositionZ(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Position.z
+endfunction tReturn
+
+`--------------
+` Get Point Light Angle X
+`--------------
+function PointLight_GetAngleX(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Angle.x
+endfunction tReturn
+
+`--------------
+` Get Point Light Angle Y
+`--------------
+function PointLight_GetAngleY(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Angle.y
+endfunction tReturn
+
+`--------------
+` Get Point Light Angle Z
+`--------------
+function PointLight_GetAngleZ(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Angle.z
+endfunction tReturn
+
+`--------------
+` Get Point Light Color Red
+`--------------
+function PointLight_GetColorRed(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Color.x
+endfunction tReturn
+
+`--------------
+` Get Point Light Color Green
+`--------------
+function PointLight_GetColorGreen(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Color.y
+endfunction tReturn
+
+`--------------
+` Get Point Light Color Blue
+`--------------
+function PointLight_GetColorBlue(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Color.z
+endfunction tReturn
+
+`--------------
+` Get Point Light Range
+`--------------
+function PointLight_GetRange(iLight as integer)
+   local tReturn as float
+   if AL_PointLightInUse(iLight)=1 then tReturn=AL_PointLight(iLight).Range
+endfunction tReturn
+
+`--------------
+` Update Shadowed Point Lights
+`--------------
+function PointLight_Update()
+   if AL_Enabled=1
+      local tLightNum as integer
+      local tFarDist as integer
+      local tShadowMap as integer
+      local tShadowMapSide as integer
+      tCull as integer
+      tFarDist=0
+      tShadowMap=0
+      for d=1 to AL_PointShadowMapCount
+         if AL_PointShadowMap(d).InUse=1
+            tLightNum=AL_PointShadowMap(d).Number
+            set vector3 AL_Vector3(1),AL_CameraPos.x-AL_PointLight(tLightNum).Position.x,AL_CameraPos.y-AL_PointLight(tLightNum).Position.y,AL_CameraPos.z-AL_PointLight(tLightNum).Position.z
+            if length vector3(AL_Vector3(1))>tFarDist
+               tFarDist=length vector3(AL_Vector3(1))
+               tShadowMap=d
+            endif
+         else
+            tFarDist=9999999
+            tShadowMap=d
+            exit
+         endif
+      next d
+      for d=1 to AL_PointShadowMapCount
+         if AL_PointShadowMap(d).DynamicTimer>0
+            dec AL_PointShadowMap(d).DynamicTimer
+         endif
+      next d
+      for l=0 to AL_PointLightVisibleCount
+          tLightNum=AL_PointLightVisible(l)-1
+          if AL_PointLight(tLightNum).ShadowQuality>0
+             tCull=2
+             AL_LdX(3)=AL_PointLight(tLightNum).Position.x
+             AL_LdY(3)=AL_PointLight(tLightNum).Position.y
+             AL_LdZ(3)=AL_PointLight(tLightNum).Position.z
+             set vector3 AL_Vector3(1),AL_CameraPos.x-AL_LdX(3),AL_CameraPos.y-AL_LdY(3),AL_CameraPos.z-AL_LdZ(3)
+             AL_PointLight(tLightNum).Distance=length vector3(AL_Vector3(1))
+             if AL_PointLight(tLightNum).Distance<AL_PointLight(tLightNum).ShadowRange+AL_PointLight(tLightNum).Range
+                tCull=AL_GetSphereInFrustum(0,AL_Ldx(3),AL_Ldy(3),AL_Ldz(3),AL_PointLight(tLightNum).Range)
+             endif
+             if tCull<>AL_PointLight(tLightNum).CullMode
+                AL_PointLight(tLightNum).CullMode=tCull
+                if tCull=1 or tCull=2
+                   exclude object off AL_PointLight(tLightNum).Object
+                else
+                  exclude object on AL_PointLight(tLightNum).Object
+                endif
+                if tCull=0 or tCull=2
+                   if AL_PointLight(tLightNum).ShadowMap>0
+                     set effect technique AL_PointLight(tLightNum).Effect,"Point"
+                      AL_PointShadowMap(AL_PointLight(tLightNum).ShadowMap).InUse=0
+                      AL_PointShadowMap(AL_PointLight(tLightNum).ShadowMap).Number=0
+                      AL_PointLight(tLightNum).ShadowMap=0
+                   endif
+                endif
+             endif
+             if tCull=1
+               if AL_PointLight(tLightNum).Distance<tFarDist and AL_PointLight(tLightNum).ShadowMap=0
+                  if AL_PointShadowMap(tShadowMap).InUse>0
+                     set effect technique AL_PointLight(AL_PointShadowMap(tShadowMap).Number).Effect,"Point"
+                     AL_PointLight(AL_PointShadowMap(tShadowMap).Number).ShadowMap=0
+                  endif
+                  AL_PointLight(tLightNum).ShadowMap=tShadowMap
+                  AL_PointShadowMap(tShadowMap).InUse=1
+                  AL_PointShadowMap(tShadowMap).Number=tLightNum
+                  AL_PointShadowMap(tShadowMap).UpdateTimer=0
+                  tShadowMapSide=tShadowMap*6
+                  for s=0 to 5
+                     AL_PointShadowSide(tShadowMapSide+s).Update=1
+                  next s
+                  exit
+               endif
+            endif
+         endif
+      next l
+   endif
+endfunction
+
+`--------------
+` Render Point Light Shadow Maps
+`--------------
+function PointLight_Render()
+   if AL_Enabled=1
+      local tLightNum as integer
+      local tObjectNum as integer
+      local tShadowMap as integer
+      local tShadowMapSide as integer
+      local tIndex as integer
+      local tDifference as integer
+      local tShadowLod as integer
+      local tShadowFormat as integer
+      local tSyncMask as integer
+      local tShadowCamera as integer
+      local tShadowOffset as float
+      local tFov as float
+      local dim tSideUpdated(2) as integer
+      if AL_PointShadowMapCount>0
+         AL_ShadowMapNum=0
+         AL_ShadowMapUpdate=0
+         repeat
+         if AL_PointShadowUpdate>AL_PointShadowMapCount then AL_PointShadowUpdate=1
+            if AL_PointShadowMap(AL_PointShadowUpdate).InUse=1
+               tLightNum=AL_PointShadowMap(AL_PointShadowUpdate).Number
+               tShadowMapSide=AL_PointShadowUpdate*6
+               tShadowLod=4
+               if AL_PointLight(tLightNum).Distance<AL_PointLight(tLightNum).Range*6 then tShadowLod=2
+               if AL_PointLight(tLightNum).Distance<AL_PointLight(tLightNum).Range*3 then tShadowLod=1
+               tShadowFormat=113
+               if tShadowLod=4 then tShadowFormat=34
+               tDifference=0
+               if AL_PointShadowMap(AL_PointShadowUpdate).Position.x<>int(AL_PointLight(tLightNum).Position.x/AL_WorldSize) then tDifference=1
+               if AL_PointShadowMap(AL_PointShadowUpdate).Position.y<>int(AL_PointLight(tLightNum).Position.y/AL_WorldSize) then tDifference=1
+               if AL_PointShadowMap(AL_PointShadowUpdate).Position.z<>int(AL_PointLight(tLightNum).Position.z/AL_WorldSize) then tDifference=1
+               if AL_PointShadowMap(AL_PointShadowUpdate).Range<>int(AL_PointLight(tLightNum).Range/AL_WorldSize) then tDifference=1
+               if AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize<>int(AL_PointLight(tLightNum).ShadowSize/tShadowLod) then tDifference=1
+               if tDifference=1
+                  AL_PointShadowMap(AL_PointShadowUpdate).Position.x=int(AL_PointLight(tLightNum).Position.x/AL_WorldSize)
+                  AL_PointShadowMap(AL_PointShadowUpdate).Position.y=int(AL_PointLight(tLightNum).Position.y/AL_WorldSize)
+                  AL_PointShadowMap(AL_PointShadowUpdate).Position.z=int(AL_PointLight(tLightNum).Position.z/AL_WorldSize)
+                  AL_PointShadowMap(AL_PointShadowUpdate).Range=int(AL_PointLight(tLightNum).Range/AL_WorldSize)
+                  AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize=int(AL_PointLight(tLightNum).ShadowSize/tShadowLod)
+                  AL_PointShadowMap(AL_PointShadowUpdate).Positionf.x=AL_PointLight(tLightNum).Position.x
+                  AL_PointShadowMap(AL_PointShadowUpdate).Positionf.y=AL_PointLight(tLightNum).Position.y
+                  AL_PointShadowMap(AL_PointShadowUpdate).Positionf.z=AL_PointLight(tLightNum).Position.z
+                  AL_PointShadowMap(AL_PointShadowUpdate).Rangef=AL_PointLight(tLightNum).Range
+                  AL_PointShadowMap(AL_PointShadowUpdate).DynamicTimer=AL_PointDynamicTimer
+                  for s=0 to 5
+                     AL_PointShadowSide(tShadowMapSide+s).Update=1
+                  next s
+               endif
+               Terrain_LightPointUpdate(AL_PointShadowUpdate)
+               if AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer>0
+                  dec AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer
+                  if AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer<0 then AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer=0
+               endif
+               if AL_PointShadowSide(tShadowMapSide+0).Update>0 or AL_PointShadowSide(tShadowMapSide+1).Update>0 or AL_PointShadowSide(tShadowMapSide+2).Update>0 or AL_PointShadowSide(tShadowMapSide+3).Update>0 or AL_PointShadowSide(tShadowMapSide+4).Update>0 or AL_PointShadowSide(tShadowMapSide+5).Update>0
+                  if AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer=0
+                     AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer=AL_PointLight(tLightNum).Distance-AL_PointLight(tLightNum).Range
+                     if AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer<0 then AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer=0
+                     AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer=(AL_PointShadowMap(AL_PointShadowUpdate).UpdateTimer/AL_ShadowRange)*10.0
+                     inc AL_ShadowMapUpdate
+                     Terrain_LightCull(AL_PointLight(tLightNum).Position.x,AL_PointLight(tLightNum).Position.y,AL_PointLight(tLightNum).Position.z,AL_PointLight(tLightNum).Range*2)
+                     tShadowOffset=1-(14.0/AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize)
+                     tFov=90+(55.0-(55.0*tShadowOffset))
+                     set vector4 AL_Vector4(1),tShadowOffset*0.5,tShadowOffset,0,0
+                     set effect constant vector AL_PointLight(tLightNum).Effect,"ShadowSize",AL_Vector4(1)
+                     set vector4 AL_Vector4(1),(0.25-(0.25*tShadowOffset))+(0.5/(AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2)),(0.5-(0.5*tShadowOffset))+(0.5/AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize),0.5+(0.25-(0.25*tShadowOffset))+(0.5/(AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2)),(0.5-(0.5*tShadowOffset))+(0.5/AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize)
+                     set effect constant vector AL_PointLight(tLightNum).Effect,"ShadowOffset",AL_Vector4(1)
+                     set vector4 AL_Vector4(1),AL_PointShadowMap(AL_PointShadowUpdate).Positionf.x,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.y,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.z,0
+                     set vector4 AL_Vector4(2),AL_ShadowBias,-AL_ShadowBias,0,0
+                     set effect constant vector AL_PointLight(tLightNum).Effect,"ShadowPosition",AL_Vector4(1)
+                     if tShadowLod=4
+                        set effect technique AL_PointLight(tLightNum).Effect,"PointVsm"
+                     else
+                        set effect technique AL_PointLight(tLightNum).Effect,"PointEvsm"
+                     endif
+                     for e=0 to AL_EffectCount
+                        set effect constant vector AL_Effect(e).Number,"ShadowPosition",AL_Vector4(1)
+                        set effect constant float AL_Effect(e).Number,"LightRange",AL_PointLight(tLightNum).Range
+                        set effect constant vector AL_Effect(e).Number,"ShadowBias",AL_Vector4(2)
+                        if tShadowLod=4
+                           set effect technique AL_Effect(e).Number,"DepthMapVsm"
+                        else
+                           set effect technique AL_Effect(e).Number,"DepthMapEvsm"
+                        endif
+                     next e
+                     set vector4 AL_Vector4(1),0.5/(AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2),0.5/AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,0,0
+                     set effect constant vector AL_ShadowMapEffect(2),"ViewSize",AL_Vector4(1)
+                     set effect constant vector AL_ShadowMapEffect(3),"ViewSize",AL_Vector4(1)
+                     set effect constant vector AL_ShadowMapEffect(5),"ViewSize",AL_Vector4(1)
+                     set effect constant vector AL_ShadowMapEffect(6),"ViewSize",AL_Vector4(1)
+                     set vector4 AL_Vector4(1),AL_ShadowOffset/(AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2),AL_ShadowOffset/(AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize),0,0
+                     set effect constant vector AL_ShadowMapEffect(4),"BlurOffset",AL_Vector4(1)
+                     set effect constant vector AL_ShadowMapEffect(5),"BlurOffset",AL_Vector4(1)
+                     set effect constant vector AL_ShadowMapEffect(6),"BlurOffset",AL_Vector4(1)
+                     for s=0 to 5
+                        if AL_PointShadowMap(AL_PointShadowUpdate).DynamicTimer>0
+                           AL_PointShadowSide(tShadowMapSide+s).Update=1
+                        endif
+                        if AL_PointShadowSide(tShadowMapSide+s).Object=0
+                           AL_PointShadowSide(tShadowMapSide+s).Object=find free object()
+                           make object plain AL_PointShadowSide(tShadowMapSide+s).Object,2,2,1
+                           if s=0 or s=2 or s=4 then set object effect AL_PointShadowSide(tShadowMapSide+s).Object,AL_ShadowMapEffect(2)
+                           if s=1 or s=3 or s=5 then set object effect AL_PointShadowSide(tShadowMapSide+s).Object,AL_ShadowMapEffect(3)
+                           hide object AL_PointShadowSide(tShadowMapSide+s).Object
+                           exclude object on AL_PointShadowSide(tShadowMapSide+s).Object
+                        endif
+                        AL_PointShadowSide(tShadowMapSide+s).UpdateSide=0
+                        if AL_PointShadowSide(tShadowMapSide+s).Update>0 then AL_PointShadowSide(tShadowMapSide+s).UpdateSide=1
+                     next s
+                     tSideUpdated(0)=0
+                     tSideUpdated(1)=2
+                     tSideUpdated(2)=4
+                     if AL_PointShadowSide(tShadowMapSide+1).Update>0 then tSideUpdated(0)=1
+                     if AL_PointShadowSide(tShadowMapSide+3).Update>0 then tSideUpdated(1)=3
+                     if AL_PointShadowSide(tShadowMapSide+5).Update>0 then tSideUpdated(2)=5
+                     for s=0 to 5
+                        tIndex=floor(s/2)
+                        if AL_PointShadowSide(tShadowMapSide+s).Update=1
+                           AL_PointShadowSide(tShadowMapSide+s).UpdateMode=1
+                           AL_PointShadowSide(tShadowMapSide+s).LastUpdate=1
+                           if tIndex=0
+                              if AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap1=0 then AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap1=find free image()
+                              tShadowMap=AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap1
+                           endif
+                           if tIndex=1
+                              if AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap2=0 then AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap2=find free image()
+                              tShadowMap=AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap2
+                           endif
+                           if tIndex=2
+                              if AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap3=0 then AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap3=find free image()
+                              tShadowMap=AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap3
+                           endif
+                           if AL_PointLight(tLightNum).ShadowQuality=1
+                              if AL_CurrentShadowMapImage(1)<>tShadowMap or AL_CurrentShadowMapSize(1)<>AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize or AL_CurrentShadowMapFormat(1)<>tShadowFormat
+                                 delete camera AL_ShadowMapCamera(1)
+                                 AL_CreateCamera(AL_ShadowMapCamera(1),tShadowMap,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,tShadowFormat)
+                                 set camera aspect AL_ShadowMapCamera(1),1
+                                 texture object AL_PointLight(tLightNum).Object,tIndex+3,tShadowMap
+                                 AL_CurrentShadowMapImage(1)=tShadowMap
+                                 AL_CurrentShadowMapSize(1)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize
+                                 AL_CurrentShadowMapFormat(1)=tShadowFormat
+                              endif
+                          else
+                              if AL_CurrentShadowMapImage(5)<>tShadowMap or AL_CurrentShadowMapSize(5)<>AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize or AL_CurrentShadowMapFormat(5)<>tShadowFormat
+                                 delete camera AL_ShadowMapCamera(5)
+                                 AL_CreateCamera(AL_ShadowMapCamera(5),tShadowMap,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,tShadowFormat)
+                                 set camera aspect AL_ShadowMapCamera(5),1
+                                 set camera range AL_ShadowMapCamera(5),1,2
+                                 texture object AL_PointLight(tLightNum).Object,tIndex+3,tShadowMap
+                                 AL_CurrentShadowMapImage(5)=tShadowMap
+                                 AL_CurrentShadowMapSize(5)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize
+                                 AL_CurrentShadowMapFormat(5)=tShadowFormat
+                              endif
+                              if AL_CurrentShadowMapImage(1)<>AL_ShadowMapTexture(1) or AL_CurrentShadowMapSize(1)<>AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize or AL_CurrentShadowMapFormat(1)<>tShadowFormat
+                                 if AL_ShadowMapTexture(1)=0 then AL_ShadowMapTexture(1)=find free image()
+                                 delete camera AL_ShadowMapCamera(1)
+                                 AL_CreateCamera(AL_ShadowMapCamera(1),AL_ShadowMapTexture(1),AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,tShadowFormat)
+                                 set camera aspect AL_ShadowMapCamera(1),1
+                                 AL_CurrentShadowMapImage(1)=AL_ShadowMapTexture(1)
+                                 AL_CurrentShadowMapSize(1)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize
+                                 AL_CurrentShadowMapFormat(1)=tShadowFormat
+                                 AL_ShadowMapObjectTexture(1)=-1
+                              endif
+                              if AL_ShadowMapObjectTexture(1)<>AL_ShadowMapTexture(1)
+                                 AL_ShadowMapObjectTexture(1)=AL_ShadowMapTexture(1)
+                                 texture object AL_ShadowMapObject(1),0,AL_ShadowMapTexture(1)
+                              endif
+                              show object AL_ShadowMapObject(1):exclude object off AL_ShadowMapObject(1)
+                           endif
+                           set current camera AL_ShadowMapCamera(1)
+                           position camera AL_ShadowMapCamera(1),AL_PointShadowMap(AL_PointShadowUpdate).Positionf.x,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.y,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.z
+                           Rotate camera AL_ShadowMapCamera(1),AL_PointShadowSide(tShadowMapSide+s).Angle.x,AL_PointShadowSide(tShadowMapSide+s).Angle.y,0
+                           set camera range AL_ShadowMapCamera(1),(AL_PointShadowMap(AL_PointShadowUpdate).Rangef*0.005),AL_PointShadowMap(AL_PointShadowUpdate).Rangef
+                           set camera fov AL_ShadowMapCamera(1),tFov
+                           if s=0 or s=2 or s=4
+                              set camera view AL_ShadowMapCamera(1),0,0,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize
+                           else
+                              set camera view AL_ShadowMapCamera(1),AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,0,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize
+                           endif
+                           position object AL_ShadowMapObject(0),AL_PointShadowMap(AL_PointShadowUpdate).Positionf.x,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.y,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.z
+                           Rotate object AL_ShadowMapObject(0),AL_PointShadowSide(tShadowMapSide+s).Angle.x,AL_PointShadowSide(tShadowMapSide+s).Angle.y,0
+                           if tShadowLod=4
+                              set effect technique AL_ShadowMapEffect(0),"Vsm"
+                              set effect technique AL_ShadowMapEffect(4),"Vsm"
+                           else
+                              set effect technique AL_ShadowMapEffect(0),"Evsm"
+                              set effect technique AL_ShadowMapEffect(4),"Evsm"
+                           endif
+                           if AL_PointLight(tLightNum).ShadowQuality=1
+                              sync mask 2^AL_ShadowMapCamera(1)
+                           else
+                              if s=0 or s=2 or s=4
+                                 sync mask 2^AL_ShadowMapCamera(1)
+                              else
+                                 sync mask (2^AL_ShadowMapCamera(1))+(2^AL_ShadowMapCamera(5))
+                              endif
+                           endif
+                           fastsync
+                           if AL_PointLight(tLightNum).ShadowQuality=2 then hide object AL_ShadowMapObject(1):exclude object on AL_ShadowMapObject(1)
+                        endif
+                        if AL_PointShadowSide(tShadowMapSide+s).Update=2
+                           AL_PointShadowSide(tShadowMapSide+s).UpdateMode=2
+                           if s=tSideUpdated(tIndex)
+                              if tIndex=0
+                                 tTexture=AL_ShadowMapTexture(5)
+                                 AL_ShadowMapTexture(5)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap1
+                                 AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap1=tTexture
+                                 if AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap1=0 then AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap1=find free image()
+                                 tShadowMap=AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap1
+                              endif
+                              if tIndex=1
+                                 tTexture=AL_ShadowMapTexture(5)
+                                 AL_ShadowMapTexture(5)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap2
+                                 AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap2=tTexture
+                                 if AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap2=0 then AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap2=find free image()
+                                 tShadowMap=AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap2
+                              endif
+                              if tIndex=2
+                                 tTexture=AL_ShadowMapTexture(5)
+                                 AL_ShadowMapTexture(5)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap3
+                                 AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap3=tTexture
+                                 if AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap3=0 then AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap3=find free image()
+                                 tShadowMap=AL_PointShadowMap(AL_PointShadowUpdate).ShadowMap3
+                              endif
+                              if AL_CurrentShadowMapImage(5)<>tShadowMap or AL_CurrentShadowMapSize(5)<>AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize or AL_CurrentShadowMapFormat(5)<>tShadowFormat*2
+                                 delete camera AL_ShadowMapCamera(5)
+                                 AL_CreateCamera(AL_ShadowMapCamera(5),tShadowMap,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,tShadowFormat)
+                                 set camera aspect AL_ShadowMapCamera(5),1
+                                 set camera range AL_ShadowMapCamera(5),1,2
+                                 texture object AL_PointLight(tLightNum).Object,tIndex+3,tShadowMap
+                                 AL_CurrentShadowMapImage(5)=tShadowMap
+                                 AL_CurrentShadowMapSize(5)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize
+                                 AL_CurrentShadowMapFormat(5)=tShadowFormat*2
+                              endif
+                              if AL_PointLight(tLightNum).ShadowQuality=2
+                                 if AL_CurrentShadowMapImage(4)<>AL_ShadowMapTexture(4) or AL_CurrentShadowMapSize(4)<>AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize or AL_CurrentShadowMapFormat(4)<>tShadowFormat*2
+                                    if AL_ShadowMapTexture(4)=0 then AL_ShadowMapTexture(4)=find free image()
+                                    delete camera AL_ShadowMapCamera(4)
+                                    AL_CreateCamera(AL_ShadowMapCamera(4),AL_ShadowMapTexture(4),AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*2,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,tShadowFormat)
+                                    set camera aspect AL_ShadowMapCamera(4),1
+                                    set camera range AL_ShadowMapCamera(4),1,2
+                                    texture object AL_ShadowMapObject(2),0,AL_ShadowMapTexture(4)
+                                    texture object AL_ShadowMapObject(3),0,AL_ShadowMapTexture(4)
+                                    AL_CurrentShadowMapImage(4)=AL_ShadowMapTexture(4)
+                                    AL_CurrentShadowMapSize(4)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize
+                                    AL_CurrentShadowMapFormat(4)=tShadowFormat*2
+                                 endif
+                              endif
+                           endif
+                           tShadowCamera=2
+                           if s=1 or s=3 or s=5 then tShadowCamera=3
+                           if AL_CurrentShadowMapImage(tShadowCamera)<>AL_ShadowMapTexture(tShadowCamera) or AL_CurrentShadowMapSize(tShadowCamera)<>AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize or AL_CurrentShadowMapFormat(tShadowCamera)<>tShadowFormat*2
+                              if AL_ShadowMapTexture(tShadowCamera)=0 then AL_ShadowMapTexture(tShadowCamera)=find free image()
+                              delete camera AL_ShadowMapCamera(tShadowCamera)
+                              AL_CreateCamera(AL_ShadowMapCamera(tShadowCamera),AL_ShadowMapTexture(tShadowCamera),AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,tShadowFormat)
+                              set camera aspect AL_ShadowMapCamera(tShadowCamera),1
+                              AL_CurrentShadowMapImage(tShadowCamera)=AL_ShadowMapTexture(tShadowCamera)
+                              AL_CurrentShadowMapSize(tShadowCamera)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize
+                              AL_CurrentShadowMapFormat(tShadowCamera)=tShadowFormat*2
+                           endif
+                           tSyncMask=0
+                           if AL_PointShadowSide(tShadowMapSide+s).LastUpdate=1
+                              AL_PointShadowSide(tShadowMapSide+s).UpdateMode=3
+                              AL_PointShadowSide(tShadowMapSide+s).LastUpdate=0
+                              if AL_CurrentShadowMapImage(1)<>AL_PointShadowSide(tShadowMapSide+s).Static or AL_CurrentShadowMapSize(1)<>AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize or AL_CurrentShadowMapFormat(1)<>tShadowFormat*2
+                                 if AL_PointShadowSide(tShadowMapSide+s).Static=0 then AL_PointShadowSide(tShadowMapSide+s).Static=find free image()
+                                 delete camera AL_ShadowMapCamera(1)
+                                 AL_CreateCamera(AL_ShadowMapCamera(1),AL_PointShadowSide(tShadowMapSide+s).Static,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize,tShadowFormat)
+                                 set camera aspect AL_ShadowMapCamera(1),1
+                                 texture object AL_PointShadowSide(tShadowMapSide+s).Object,0,AL_PointShadowSide(tShadowMapSide+s).Static
+                                 AL_CurrentShadowMapImage(1)=AL_PointShadowSide(tShadowMapSide+s).Static
+                                 AL_CurrentShadowMapSize(1)=AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize*AL_PointShadowMap(AL_PointShadowUpdate).ShadowSize
+                                 AL_CurrentShadowMapFormat(1)=tShadowFormat*2
+                                 AL_ShadowMapObjectTexture(1)=-1
+                              endif
+                              position camera AL_ShadowMapCamera(1),AL_PointShadowMap(AL_PointShadowUpdate).Positionf.x,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.y,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.z
+                              Rotate camera AL_ShadowMapCamera(1),AL_PointShadowSide(tShadowMapSide+s).Angle.x,AL_PointShadowSide(tShadowMapSide+s).Angle.y,0
+                              set camera range AL_ShadowMapCamera(1),(AL_PointShadowMap(AL_PointShadowUpdate).Rangef*0.005),AL_PointShadowMap(AL_PointShadowUpdate).Rangef
+                              set camera fov AL_ShadowMapCamera(1),tFov
+                              tSyncMask=2^AL_ShadowMapCamera(1)
+                           endif
+                           set current camera AL_ShadowMapCamera(tShadowCamera)
+                           position camera AL_ShadowMapCamera(tShadowCamera),AL_PointShadowMap(AL_PointShadowUpdate).Positionf.x,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.y,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.z
+                           Rotate camera AL_ShadowMapCamera(tShadowCamera),AL_PointShadowSide(tShadowMapSide+s).Angle.x,AL_PointShadowSide(tShadowMapSide+s).Angle.y,0
+                           set camera range AL_ShadowMapCamera(tShadowCamera),(AL_PointShadowMap(AL_PointShadowUpdate).Rangef*0.005),AL_PointShadowMap(AL_PointShadowUpdate).Rangef
+                           set camera fov AL_ShadowMapCamera(tShadowCamera),tFov
+                           position object AL_ShadowMapObject(0),AL_PointShadowMap(AL_PointShadowUpdate).Positionf.x,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.y,AL_PointShadowMap(AL_PointShadowUpdate).Positionf.z
+                           Rotate object AL_ShadowMapObject(0),AL_PointShadowSide(tShadowMapSide+s).Angle.x,AL_PointShadowSide(tShadowMapSide+s).Angle.y,0
+                           if tShadowLod=4
+                              set effect technique AL_ShadowMapEffect(0),"Vsm"
+                              set effect technique AL_ShadowMapEffect(2),"Vsm"
+                              set effect technique AL_ShadowMapEffect(3),"Vsm"
+                           else
+                              set effect technique AL_ShadowMapEffect(0),"Evsm"
+                              set effect technique AL_ShadowMapEffect(2),"Evsm"
+                              set effect technique AL_ShadowMapEffect(3),"Evsm"
+                           endif
+                           for o=0 to AL_ObjectAutoUpdateCount
+                              tObjectNum=AL_ObjectAutoUpdate(o)-1
+                              if AL_Object(tObjectNum).MaskShadow>0 and AL_Object(tObjectNum).DynamicTimer>0
+                                 set object mask AL_Object(tObjectNum).Number,(2^AL_ShadowMapCamera(tShadowCamera))
+                              endif
+                           next o
+                           if s=tSideUpdated(tIndex)
+                              if AL_PointShadowSide(tShadowMapSide+(tIndex*2)).UpdateSide=1
+                                 show object AL_PointShadowSide(tShadowMapSide+(tIndex*2)).Object
+                                 exclude object off AL_PointShadowSide(tShadowMapSide+(tIndex*2)).Object
+                                 texture object AL_PointShadowSide(tShadowMapSide+(tIndex*2)).Object,1,AL_ShadowMapTexture(2)
+                                 if AL_PointLight(tLightNum).ShadowQuality=1
+                                    set object mask AL_PointShadowSide(tShadowMapSide+(tIndex*2)).Object,2^AL_ShadowMapCamera(5)
+                                 else
+                                    set object mask AL_PointShadowSide(tShadowMapSide+(tIndex*2)).Object,2^AL_ShadowMapCamera(4)
+                                    show object AL_ShadowMapObject(2)
+                                    exclude object off AL_ShadowMapObject(2)
+                                    set effect technique AL_ShadowMapEffect(5),"Evsm"
+                                 endif
+                              else
+                                 show object AL_ShadowMapObject(2)
+                                 exclude object off AL_ShadowMapObject(2)
+                                 texture object AL_ShadowMapObject(2),1,AL_ShadowMapTexture(5)
+                                 set effect technique AL_ShadowMapEffect(5),"DepthMap"
+                              endif
+                              if AL_PointShadowSide(tShadowMapSide+(tIndex*2)+1).UpdateSide=1
+                                 show object AL_PointShadowSide(tShadowMapSide+(tIndex*2)+1).Object
+                                 exclude object off AL_PointShadowSide(tShadowMapSide+(tIndex*2)+1).Object
+                                 texture object AL_PointShadowSide(tShadowMapSide+(tIndex*2)+1).Object,1,AL_ShadowMapTexture(3)
+                                 if AL_PointLight(tLightNum).ShadowQuality=1
+                                    set object mask AL_PointShadowSide(tShadowMapSide+(tIndex*2)+1).Object,2^AL_ShadowMapCamera(5)
+                                 else
+                                    set object mask AL_PointShadowSide(tShadowMapSide+(tIndex*2)+1).Object,2^AL_ShadowMapCamera(4)
+                                    show object AL_ShadowMapObject(3)
+                                    exclude object off AL_ShadowMapObject(3)
+                                    set effect technique AL_ShadowMapEffect(6),"Evsm"
+                                 endif
+                              else
+                                 show object AL_ShadowMapObject(3)
+                                 exclude object off AL_ShadowMapObject(3)
+                                 texture object AL_ShadowMapObject(3),1,AL_ShadowMapTexture(5)
+                                 set effect technique AL_ShadowMapEffect(6),"DepthMap"
+                              endif
+                              if AL_PointLight(tLightNum).ShadowQuality=1
+                                 sync mask tSyncMask+(2^AL_ShadowMapCamera(tShadowCamera))+(2^AL_ShadowMapCamera(5))
+                              else
+                                 sync mask tSyncMask+(2^AL_ShadowMapCamera(tShadowCamera))+(2^AL_ShadowMapCamera(4))+(2^AL_ShadowMapCamera(5))
+                              endif
+                           else
+                              sync mask tSyncMask+(2^AL_ShadowMapCamera(tShadowCamera))
+                           endif
+                           fastsync
+                           for o=0 to AL_ObjectAutoUpdateCount
+                               tObjectNum=AL_ObjectAutoUpdate(o)-1
+                               if AL_Object(tObjectNum).MaskShadow>0 and AL_Object(tObjectNum).DynamicTimer>0
+                                  set object mask AL_Object(tObjectNum).Number,AL_Object(tObjectNum).Mask
+                               endif
+                           next o
+                           if s=tSideUpdated(tIndex)
+                              hide object AL_PointShadowSide(tShadowMapSide+(tIndex*2)).Object:exclude object on AL_PointShadowSide(tShadowMapSide+(tIndex*2)).Object
+                              hide object AL_PointShadowSide(tShadowMapSide+(tIndex*2)+1).Object:exclude object on AL_PointShadowSide(tShadowMapSide+(tIndex*2)+1).Object
+                              hide object AL_ShadowMapObject(2):exclude object on AL_ShadowMapObject(2)
+                              hide object AL_ShadowMapObject(3):exclude object on AL_ShadowMapObject(3)
+                           endif
+                        endif
+                        AL_PointShadowSide(tShadowMapSide+s).Update=0
+                     next s
+                  endif
+               endif
+            endif
+            inc AL_PointShadowUpdate
+            inc AL_ShadowMapNum
+         until AL_ShadowMapNum>AL_PointShadowMapCount-1 or AL_ShadowMapUpdate>AL_MaxPointShadowUpdate-1
+      endif
+   endif
+   undim tSideUpdated()
+endfunction
+
+`--------------
+` Point Light In Use
+`--------------
+function AL_PointLightInUse(iLight)
+   if AL_Enabled=1 and iLight>-1 and iLight<AL_PointLightCount+1
+      if AL_PointLight(iLight).InUse=1
+         Exitfunction 1
+      endif
+   endif
+endfunction 0

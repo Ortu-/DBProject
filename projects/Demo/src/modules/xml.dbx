@@ -1,0 +1,438 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	XML Reader
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides basic parsing/reading of xml files.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+
+	*******************************************
+	Classes:
+
+		Requires System
+
+		=========================================
+		Defines STATIC CLASS: XML
+
+			------------------------
+			public functions:
+
+				XML_loadFile(rFilename as string)
+					-
+
+				XML_unload()
+					-
+
+				XML_getAttributeValue(rElementIndex as integer, rAttributeName as string)
+					-
+
+				XML_getAttributeCount(rElementIndex as integer)
+					-
+
+				XML_getAttributeByIndex(rElementIndex as integer, rAttributeNum as integer)
+					-
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+				_XML_init()
+					-
+
+
+
+			------------------------
+			private data:
+
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+xml_module_init:
+
+	if XML_MODULE_LOADED = FALSE
+
+		<?System_log("xml.dbx", 2, "main", "Begin module load: xml.")?>
+
+		`Declare XML -----------------------------------------------------------
+
+		type XML_elementData
+			tagName as string
+			value as string
+			isOpen as boolean
+			parent as integer
+		endtype
+
+		type XML_attributeData
+			elementIndex as integer
+			attribute as string
+			value as string
+		endtype
+/*
+		type STATIC_CLASS_XML
+
+		endtype
+*/
+		`private data -------------------------------------------------------------
+
+		dim _XML_attributes[] as XML_attributeData
+
+		`public data --------------------------------------------------------------
+
+		dim XML_elements[] as XML_elementData
+
+
+
+		`Init ---------------------------------------------------------------------
+
+		`==================================
+
+//		GLOBAL XML as STATIC_CLASS_XML
+
+		`==================================
+
+		_XML_init()
+
+		XML_MODULE_LOADED = TRUE
+
+		<?System_log("xml.dbx", 2, "main", "End module load: xml.")?>
+
+	endif
+return
+
+
+function _XML_init()
+
+endfunction
+
+
+function XML_loadFile(rFilename as string)
+
+	empty array XML_elements[]
+	empty array _XML_attributes[]
+
+	if file exist(rFilename)
+
+		<?System_log("xml.dbx", 2, "xml", "Loading file: " + rFilename)?>
+
+		tFileNum = find free file()
+		open to read tFileNum, rFilename
+
+		parseMode as string
+		parseMode = "get tag"
+
+		while file end(tFileNum) = FALSE
+
+			`get a line
+			tLine as string
+			read string tFileNum, tLine
+			tLine = trim$(tLine)
+
+			<?System_log("xml.dbx", 1, "xml", "Parsing data: " + tLine)?>
+
+			startPos = 1
+			cPos = 0
+			EOL = FALSE
+
+			`parse the line
+			while EOL = FALSE
+				select parseMode
+
+					case "get tag":
+
+						<?System_log("xml.dbx", 1, "xml", "Look for tag open bracket")?>
+						<?System_log("xml.dbx", 1, "xml", "startPos: " + str$(startPos))?>
+
+						`tag opener may be at start of line, or mid line
+						`tag me be start of a new element or may close an element
+						tagName as string
+						startPos = instr(tLine, "<", startPos)
+
+						if startPos > 0
+							<?System_log("xml.dbx", 1, "xml", "bracket found - startPos: " + str$(startPos)) ?>
+
+							if mid$(tLine, startPos + 1, 1) = "?"
+								<? System_log("xml.dbx", 1, "xml", "found doc header - skip") ?>
+								EOL = TRUE
+							else
+								if mid$(tLine, startPos + 1, 1) = "/"
+									<? System_log("xml.dbx", 1, "xml", "found element close tag") ?>
+									startPos = instr(tLine, ">", startPos)
+
+									`set last open tag to closed
+									ii = array count(XML_elements[])
+									while ii > -1
+										if XML_elements[ii].isOpen = TRUE
+											XML_elements[ii].isOpen = FALSE
+											exit
+										endif
+										dec ii
+									endwhile
+
+									<? System_log("xml.dbx", 1, "xml", "bracket found - startPos: " + str$(startPos)) ?>
+								else
+									`begin new element, check for space to delimit attribute parsing
+									cPos = instr(tLine, " ", startPos)
+									if cPos > 0
+										<? System_log("xml.dbx", 1, "xml", "found an attribute") ?>
+										span = cPos - (startPos + 1)
+										tagName as string
+										tagName = mid$(tLine, startPos + 1, span)
+										parseMode = "get attributes"
+										<? System_log("xml.dbx", 1, "xml", "tagName = " + tagName) ?>
+									else
+										`no attributes on this line, check for closing bracket
+										cPos = instr(tLine, ">", startPos)
+										if cPos > 0
+											<? System_log("xml.dbx", 1, "xml", "no attributes, found close bracket, get tag name") ?>
+											span = cPos - (startP + 1)
+											parseMode = "get content"
+											<? System_log("xml.dbx", 1, "xml", "tagName = " + tagName) ?>
+										else
+											<? System_log("xml.dbx", 1, "xml", "no attributes, no closing bracket, get tag name through EOL") ?>
+											tagName = mid$(tLine, startPos + 1, 0)
+											parseMode = "get attributes"
+											EOL = true
+											<? System_log("xml.dbx", 1, "xml", "tagName = " + tagName) ?>
+										endif
+									endif
+								endif
+							endif
+						else
+							<? System_log("xml.dbx", 1, "xml", "no tag found through EOL") ?>
+							EOL = true
+						endif
+
+						`if element opener tag was found, add to element list, set as open
+						if tagName <> ""
+							`set parent as last index in open status
+							p = -1
+							ii = array count(XML_elements[])
+							while ii > -1
+								if XML_elements[ii].isOpen = TRUE
+									<? System_log("xml.dbx", 1, "xml", "parent element found: " + str$(ii) + XML_elements[ii].tagName + XML_getAttributeValue(ii, "id")) ?>
+									p = ii
+									exit
+								else
+									dec ii
+								endif
+							endwhile
+
+							`add the new element
+							array insert at bottom XML_elements[]
+							XML_elements[].tagName = tagName
+							XML_elements[].isOpen = TRUE
+							XML_elements[].parent = p
+							tElement = array count(XML_elements[])
+							<? System_log("xml.dbx", 1, "xml", "added element " + tagName) ?>
+						endif
+					endcase
+
+					case "get attributes":
+						<? System_log("xml.dbx", 1, "xml", "looking for attribute assignments") ?>
+						`attributes may be inline with tag opener space delimited, or span multiple lines. continue until a closing bracket is found
+						if cPos > 0
+							startPos = cPos
+						endif
+
+						if fast len(tLine) <= startPos
+							`no more text on this line, check next line
+							EOL = TRUE
+							<? System_log("xml.dbx", 1, "xml", "reached EOL, continue to next line for attribtues") ?>
+						else
+							cPos = instr(tLine, "=", startPos)
+							if cPos > 0
+								<? System_log("xml.dbx", 1, "xml", "attribute assignement found at " + str$(cPos)) ?>
+
+								attributeName as string
+								if startPos = 1
+									span = cPos - startPos
+									attributeName = mid$(tLine, startPos, span)
+								else
+									span = cPos - (startPos + 1)
+									attributeName = mid$(tLine, startPos + 1, span)
+								endif
+
+								<? System_log("xml.dbx", 1, "xml", "attribute name: " + attributeName) ?>
+
+								`get attribute value
+								attributeVal as string
+								startPos = cPos
+								cPos = instr(tLine, chr$(34), startPos + 2)
+								if cPos > 0
+									span = cPos - startPos - 2
+									attributeVal = mid$(tLine, startPos + 2, span)
+									<? System_log("xml.dbx", 1, "xml", "attribute val: " + attributeVal) ?>
+
+									`add to attribute list then contine checking this line
+									attributeName = trim$(attributeName)
+									array insert at bottom _XML_attributes[]
+									_XML_attributes[].elementIndex = tElement
+									_XML_attributes[].attribute = attributeName
+									_XML_attributes[].value = attributeVal
+									<? System_log("xml.dbx", 1, "xml", "added attribute " + attributeName + ":" + attributeVal) ?>
+
+									if fast len(tLine) <= cPos
+										`no more on this line, continue next
+										<? System_log("xml.dbx", 1, "xml", "reached EOL") ?>
+										EOL = TRUE
+									else
+										<? System_log("xml.dbx", 1, "xml", "continue to next line") ?>
+									endif
+								endif
+							else
+								`no more attributes this line, check for closing bracket
+								cPos = instr(tLine, ">", startPos)
+								if cPos > 0
+									<? System_log("xml.dbx", 1, "xml", "closing bracket found no more attributes - continue line for content") ?>
+									parseMode = "get content"
+								else
+									<? System_log("xml.dbx", 1, "xml", "reached EOL continue next for attributes") ?>
+									EOL = TRUE
+								endif
+							endif
+						endif
+					endcase
+
+					case "get content":
+						<? System_log("xml.dbx", 1, "xml", "looking for content") ?>
+
+						content as string
+						if cPos > 0
+							startPos = cPos
+						endif
+
+						if fast len(tLine) <= startPos
+							`no more content on this line, check next
+							<? System_log("xml.dbx", 1, "xml", "reached EOL, continue next for content") ?>
+							EOL = TRUE
+						else
+							`element content is on this line, check for closing tag.
+							cPos = instr(tLine, "<", startPos)
+							if cPos > 0
+								<? System_log("xml.dbx", 1, "xml", "found tag open bracket") ?>
+
+								`found a tag is it closer or nested opener?
+								if mid$(tLine, startPos + 1, 1) = "/"
+									<? System_log("xml.dbx", 1, "xml", "tag is closer") ?>
+									`grag content then continue to check for tags
+									span = cPos - (startPos + 1)
+									if span >= 0
+										content = mid$(tLine, startPos + 1, span)
+									endif
+									<? System_log("xml.dbx", 1, "xml", "content: " + content) ?>
+								else
+									<? System_log("xml.dbx", 1, "xml", "tag is element opener proceed to get tag") ?>
+								endif
+								parseMode = "get tag"
+							else
+								<? System_log("xml.dbx", 1, "xml", "no tag through EOL grab content to EOL") ?>
+								content = mid$(tLine, startPos + 1, 0)
+								parseMode = "get tag"
+								EOL = TRUE
+							endif
+						endif
+
+						`if content found, add to element list
+						if content <> ""
+							content = unquote$(content)
+							XML_elements[tElement].value = content
+							<? System_log("xml.dbx", 1, "xml", "set element " + str$(tElement) + " content to: " + content) ?>
+						endif
+
+					endcase
+
+				endselect
+			endwhile
+		endwhile
+
+		close file tFileNum
+		total = array count(XML_elements[])
+		<? System_log("xml.dbx", 1, "xml", "XML document loaded. total elements parsed: " + str$(total)) ?>
+	else
+		<? System_log("xml.dbx", 4, "error", "ERROR: file not found. XML load file failed on requested file: " + rFilename) ?>
+		App_closeGame(TRUE)
+	endif
+
+endfunction
+
+
+function XML_unload()
+	empty array XML_elements[]
+	empty array _XML_attributes[]
+endfunction
+
+
+function XML_getAttributeValue(rElementIndex as integer, rAttributeName as string)
+	<?System_log("xml.dbx", 1, "xml", "Get value for requested attribute: " + rAttributeName + " for xml element: " + str$(rElementIndex))?>
+	returnVal as string
+	for i = 0 to array count(_XML_attributes[])
+		if _XML_attributes[i].elementIndex = rElementIndex and _XML_attributes[i].attribute = rAttributeName
+			returnVal = _XML_attributes[i].value
+			<?System_log("xml.dbx", 1, "xml", "Returning attribute value: " + returnVal)?>
+			exitfunction returnVal
+		endif
+	next i
+	<?System_log("xml.dbx", 2, "xml", "INFO: could not locate attribute: " + rAttributeName + " : Return empty string")?>
+endfunction returnVal
+
+
+function XML_getAttributeCount(rElementIndex as integer)
+	res = -1
+	for i = 0 to array count(_XML_attributes[])
+		if _XML_attributes[i].elementIndex = rElementIndex
+			inc res
+		endif
+	next i
+endfunction res
+
+
+function XML_getAttributeByIndex(rElementIndex as integer, rAttributeNum as integer)
+	tAttribute as string
+	tAttributeCount = -1
+	for i = 0 to array count(_XML_attributes[])
+		if _XML_attributes[i].elementIndex = rElementIndex
+			inc tAttributeCount
+			if tAttributeCount = rAttributeNum
+				tAttribute = _XML_attributes[i].attribute
+				exitfunction tAttribute
+			endif
+		endif
+	next i
+endfunction tAttribute

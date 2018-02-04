@@ -1,0 +1,40 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+
+SC_multipleRayCast
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    return integer=SC_multipleRayCast ( objNum, oldx, oldy, oldz, x, y, z, excludeObj )
+
+<BR><BR>
+
+        <u>-objNum</u>:        the object you want to check for collision use 0 for all objects<br>
+        <u>-oldx...z</u>:      the start and end points of the ray to check.<br>
+        <u>-excludeObj</u>:    an object to exclude from the collision check<br><br>
+
+        <u>returns</u>:        the number of collisions that occured along the ray.<br>
+<br>
+	-similar to 'SC_rayCast' but will record all <br>
+	 collisions along the ray and return the amount.<br>
+	-These collision points can be accessed, for example, by <br>
+	 calling getStaticCollisionX(2) will get the x co-ordinate <br>
+	 of the second collision point. see 'multiple intersect demo' for usage example.<br>
+	-all the collision points are ordered by distance, so (1) is the closest point.<br>
+	-if the number of collisions is greater than the maximum, say 50, then only 50 <br>
+	 collision points will be returned and it is unknown which points will be returned, <br>
+	 in which case collision(1) may not be the definate closest point.<br>
+	-the maximum number of returned collisions is set to 50 by default but can be <br>
+	 changed using 'setMaximumCollisions' up to a maximum of 500.<br>
+
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

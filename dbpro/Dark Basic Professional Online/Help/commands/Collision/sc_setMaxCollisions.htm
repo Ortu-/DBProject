@@ -1,0 +1,33 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+
+SC_setMaxCollisions
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    SC_setMaxCollisions maximum
+
+<BR><BR>
+      
+	<u>-maximum</u>:   the maximum number of collision points you want recorded.<br>
+<br>
+
+	sets the maximum number of collision points for use with commands that store multiple collision points.<br>
+	Value should be between 4 and 500 (at least 3 are required for sliding collision)<br>
+	if the number of collisions exceeds the value you set then only the maximum number of<br>
+	points will be returned, but in this case it is unknown which points will be returned.<br>
+	In either case all points will be ordered by distance, but if the maximum is exceeded<br>
+	the actual closest point may not have been included.<br>
+      The default number of points is 50.<br>
+
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

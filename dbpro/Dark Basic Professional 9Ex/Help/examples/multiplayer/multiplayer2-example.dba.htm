@@ -1,0 +1,292 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem Multiplayer Functionality
+
+gosub _findconnections : gosub _waitkey
+gosub _findsessions : gosub _waitkey
+gosub _createagame : gosub _waitkey
+gosub _findplayers : gosub _waitkey
+gosub _handlenetgame : gosub _waitkey
+gosub _handlesimplemessages : gosub _waitkey
+gosub _handlecomplexmessages : gosub _waitkey
+gosub _destroyagame
+
+rem End of Program
+end
+
+_findconnections:
+
+rem Set Network Connection
+perform checklist for net connections
+cls : print "CONNECTIONS (Can Occur In Any Order)"
+print
+for c=1 to checklist quantity()
+ print c;". ";checklist string$(c)
+next c
+
+rem Have User Select a Connection
+SelectionIndex=0
+if checklist quantity()=0
+ print "No Connections Found"
+else
+ while SelectionIndex<1 or SelectionIndex>checklist quantity()
+  print  : input "Select A Number>";SelectionIndex
+  input "Enter Additional Data ( IP Address or PhoneNumber )>";data$
+ endwhile
+endif
+
+rem Set Connection
+if data$="" then set net connection SelectionIndex
+if data$<>"" then set net connection SelectionIndex,data$
+
+rem Prompt connection
+print : print "SELECTED ";checklist string$(SelectionIndex)
+
+return
+
+_findsessions:
+
+rem Set Network Session (Game On Selected Network Connection)
+perform checklist for net sessions
+cls : print "SESSIONS (Found on the Selected Connection)"
+print
+for c=1 to checklist quantity()
+ print c;". ";checklist string$(c)
+next c
+
+rem Have User Select a Session
+SessionIndex=0
+if checklist quantity()=0
+ print "No Sessions Found"
+else
+ while SessionIndex<1 or SessionIndex>checklist quantity()
+  print  : input "Select A Number>";SessionIndex
+ endwhile
+endif
+
+return
+
+_createagame:
+
+rem Create or Join a game
+if SessionIndex=0
+ PlayerMax=4 : KindOfGame=1
+ create net game "gamename", "playername", PlayerMax, KindOfGame
+else
+ join net game SessionIndex, "playername"
+endif
+
+rem Was game created successfully
+if net game exists()=1
+ print : print "GAME SESSION STARTED"
+else
+ print "COULD NOT CREATE A SESSION"
+ print "PRESS ANY KEY"
+ wait key : end
+endif
+
+return
+
+_findplayers:
+
+rem Create an EXTRA Player (used rarely)
+cls : print : print "EXTRA PLAYER CREATION"
+PlayerNumber = create net player("NPC Player")
+
+rem Find all current players in game
+perform checklist for net players
+print : print "PLAYERS (At Time Of Call)"
+print
+for c=1 to checklist quantity()
+ print c;". ";checklist string$(c);" ID:";checklist value a(c);" UNIQUE:";checklist value b(c);" ";
+ if checklist value c(c)=1 then print "(me) ";
+ if checklist value d(c)=1 then print "(host) ";
+ print
+next c
+
+rem Delete the EXTRA Player (used rarely)
+print : print "EXTRA PLAYER DESTRUCTION"
+free net player PlayerNumber
+
+return
+
+_handlenetgame:
+
+rem Network game can change during session
+while mouseclick()<>2
+ cls : print "HANDLE NET GAME (Right Mouse Button To Continue)" : print
+ if net game now hosting()=1 then Hosting=1
+ if Hosting=1 then PRINT "THIS PLAYER IS NOW HOSTING THE GAME"
+ if net game lost()=1 then LostGame=1
+ if LostGame=1 then PRINT "THE GAME SESSION WAS LOST"
+ returnvalue=net player created()
+ if returnvalue>0 then PlayerIn=returnvalue
+ if PlayerIn>0 then PRINT "A NEW PLAYER HAS JOINED THE GAME (";PlayerIn; ")"
+ returnvalue=net player destroyed()
+ if returnvalue>0 then PlayerOut=returnvalue
+ if PlayerOut>0 then PRINT "A PLAYER HAS LEFT THE GAME (";PlayerOut; ")"
+ sync
+endwhile
+
+return
+
+_handlesimplemessages:
+
+rem Network game can communicate numbers and strings
+while inkey$()<>"x"
+ cls : print "HANDLE NET MESSAGES (Press X To Continue)"
+
+ rem Show Latest Return Values
+ print
+ print "TO: ";ReturnTo
+ print "FROM: ";ReturnFrom
+ print "INTEGER: ";ReturnInteger
+ print "FLOAT: ";ReturnFloat#
+ print "STRING: ";ReturnString$
+ print
+
+ rem Send Part
+ if mouseclick()=1
+  print "SENDING..."
+  send net message integer 0,mousex()
+  send net message float 0,mousey()*1.0
+  send net message string 0,"hello world"
+ endif
+
+ rem Receive Part (from all other players)
+ get net message
+ if net message exists()=1 then print "RECEIVING..."
+ while net message exists()=1
+  ReturnTo=net message player to()
+  ReturnFrom=net message player from()
+  if net message type()=1 then ReturnInteger=net message integer()
+  if net message type()=2 then ReturnFloat#=net message float()
+  if net message type()=3 then ReturnString$=net message string$()
+  get net message
+ endwhile
+
+ sync
+
+endwhile
+
+return
+
+_handlecomplexmessages:
+
+rem Network game can communicate sounds, images and 3D data
+while inkey$()<>"z"
+
+ rem User Prompt
+ cls : print "HANDLE ADVANCED NET MESSAGES (Press Z To Continue)"
+ print "PRESS [1] through [5] to SEND RESOURCE"
+
+ rem Show Latest Return Values
+ print
+ print "TO: ";ReturnTo
+ print "FROM: ";ReturnFrom
+ print "MEMBLOCK: ";ReturnMemblockIndex
+ print "IMAGE: ";ReturnImageIndex
+ print "BITMAP: ";ReturnBitmapIndex
+ print "SOUND: ";ReturnSoundIndex
+ print "MESH: ";ReturnMeshIndex
+ print
+
+ rem Send Part
+ k$=inkey$()
+ if k$>="1" and k$<="5"
+  print "SENDING..."
+  GuarenteePacket=1
+  if k$="1"
+   MemblockIndex=1
+   make memblock MemblockIndex, 1024
+   send net message memblock 0, MemblockIndex, GuarenteePacket
+   delete memblock MemblockIndex
+  endif
+  if k$="2"
+   ImageIndex=1
+   get image ImageIndex, 0, 0, 64, 64
+   send net message image 0, ImageIndex, GuarenteePacket
+   delete image ImageIndex
+  endif
+  if k$="3"
+   BitmapIndex=1
+   load bitmap "face.bmp", BitmapIndex
+   send net message bitmap 0, BitmapIndex, GuarenteePacket
+   delete bitmap BitmapIndex
+  endif
+  if k$="4"
+   SoundIndex=1
+   load sound "gun.wav", SoundIndex
+   send net message sound 0, SoundIndex, GuarenteePacket
+   delete sound SoundIndex
+  endif
+  if k$="5"
+   MeshIndex=1
+   load mesh "mesh.x", MeshIndex
+   send net message mesh 0, MeshIndex, GuarenteePacket
+   delete mesh MeshIndex
+  endif
+ endif
+
+ rem Receive Part (from all other players)
+ get net message
+ if net message exists()=1 then print "RECEIVING..."
+ while net message exists()=1
+  ReturnTo=net message player to()
+  ReturnFrom=net message player from()
+  if net message type()=4
+   ReturnMemblockIndex=1
+   net message memblock ReturnMemblockIndex
+   print "MEMBLOCK SIZE:";get memblock size(ReturnMemblockIndex)
+   sync
+   delete memblock ReturnMemblockIndex
+  endif
+  if net message type()=5
+   ReturnImageIndex=1
+   net message image ReturnImageIndex
+   paste image ReturnImageIndex,50,50
+   sync
+   delete image ReturnImageIndex
+  endif
+  if net message type()=6
+   ReturnBitmapIndex=1
+   net message bitmap ReturnBitmapIndex
+   copy bitmap ReturnBitmapIndex,0
+   sync
+   delete bitmap ReturnBitmapIndex
+  endif
+  if net message type()=7
+   ReturnSoundIndex=1
+   net message sound ReturnSoundIndex
+   play sound ReturnSoundIndex
+   sync
+   delete sound ReturnSoundIndex
+  endif
+  if net message type()=8
+   ReturnMeshIndex=1
+   net message mesh ReturnMeshIndex
+   backdrop off
+   make object 1,ReturnMeshIndex,0
+   sync
+   delete object 1
+   delete mesh ReturnMeshIndex
+  endif
+  get net message
+ endwhile
+
+ rem Update screen
+ sync
+
+endwhile
+return
+
+_destroyagame:
+
+rem Free the current game session
+free net game
+
+return
+
+_waitkey:
+ print : print "Press Any Key"
+ wait key
+return
+</pre></FONT></BODY>

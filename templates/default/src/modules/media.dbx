@@ -1,0 +1,700 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	3D Media Handler Module
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+	Description:
+
+		Provides handling of media resources for 3d based applications in DarkBasic Pro.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+		SC_Collision.dll (Sparky) - object collision
+		Advanced Lighting (Evolved) - effects/shaders
+
+	*******************************************
+	Classes:
+
+		Requires System
+
+		=========================================
+		Defines STATIC CLASS: Media
+
+			------------------------
+			public functions:
+
+				Media_getImageNumber(rFilename as string, rTextureMode as byte, rTextureDivide as byte)
+
+					+ Returns image number as integer
+					- This function will return the image number of a previously loaded image, or load the image using the settings specified if it has not previously been loaded.
+					- If a previously loaded image is no longer valid in memory, it will attempt to reload the image from disk.
+
+
+				Media_loadObject(rFilename as string, canInstance as boolean)
+
+					+ Populates GLOBAL Media.objectResult as return data.
+					+ Media.objectResult.text will indicate the type of object created: source, clone, or instance.
+					- This function will create a new object from the specified file.
+					- If the file has previously been loaded and canInstance is false, the new object will be cloned from the original.
+					- If the file has previously been loaded and canInstance is true, the new object will be created as an instance of the original.
+					- If a previously loaded source object is no longer valid in memory, it will attempt to reload the source from disk.
+
+
+				Media_unloadObjectByNumber(rObjNum as integer)
+
+					- This function will delete the specified object and remove it from the _Media_objects[] array.
+
+
+				Media_replaceObject(rObjID as string, rFilename as string, canInstance as boolean)
+
+					+ Populates GLOBAL Media.objectResult as return data.
+					+ Media.objectResult.text will indicate the type of object created: source, clone, or instance.
+					- This function will unload the specified object number, then load a new object using the specified filename under the old object's index and guid.
+
+
+				Media_getObjectRefByID(rObjID as string)
+
+					+ Populates GLOBAL Media.objectResult as return data.
+					+ Media.objectResult.text will indicate the filename the object was loaded from.
+					- This function will provide data about a loaded object matched against the specified guid
+
+
+				Media_getObjectRefByNumber(rObjNum as integer)
+
+					+ Populates GLOBAL Media.objectResult as return data.
+					+ Media.objectResult.text will indicate the filename the object was loaded from.
+					- This function will provide data about a loaded object matched against the specified object number
+
+
+				Media_bindObject(rChildObj as integer, rParentObj as integer, rMode as integer)
+
+					-
+
+
+				Media_unbindObject(rObjNum as integer)
+
+					-
+
+
+				Media_getBoundObjectNumbersByParent(rParentObj as integer)
+
+					-
+
+
+				Media_updateBoundObjects()
+
+					-
+
+
+				Media_getEffectNumber(rFilename as string, rDataMode as integer)
+
+					+ Returns effect number as integer
+					- This function will return the effect number of a previously loaded .fx file, or load the effect using the settings specified if it has not previously been loaded.
+					- If a previously loaded effect is no longer valid in memory, it will attempt to reload the effect from disk.
+
+			------------------------
+			public data
+
+				Media.objectResult as Media_type_assetResultData
+
+					- This holds the return data for the 'Media_getObject...' type functions.
+
+			------------------------
+			private functions
+
+				_Media_init()
+
+					- Module initialization, this is called once when the module is first loaded to set configuration, defaults and to register automated updates.
+
+
+				_Media_getSourceObjectIndex(rFilename as string)
+
+					+ Returns the index in _Media_objects[] of the originally loaded source object for the specified filename.
+					- This is used internally by the Media module for cloning and instancing objects.
+
+			------------------------
+			private data:
+
+				_Media_images[] as Media_type_imageAssetData
+
+					- This array holds data about the currently loaded images.
+
+
+				_Media_objects[] as Media_type_objectAssetData
+
+					- This array holds data about the currently loaded objects.
+
+
+				_Media_sounds[] as Media_type_assetData
+
+					- This array holds data about the currently loaded sounds and music.
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+media_module_init:
+
+	if MEDIA3D_MODULE_LOADED = FALSE
+
+		<?System_log("media.dbx", 2, "main", "Begin module load: media.")?>
+
+		//Declare Media -----------------------------------------------------------
+
+		type Media_type_assetData
+			number as integer
+			file as string
+		endtype
+
+		type Media_type_imageAssetData
+			//id as string
+			number as integer
+			file as string
+			mode as byte
+			divide as byte
+		endtype
+
+		type Media_type_objectAssetData
+			id as string
+			number as integer
+			file as string
+			isInstance as boolean
+			//hasCollision as boolean
+		endtype
+
+		type Media_type_assetResultData
+			id as string
+			number as integer
+			text as string
+		endtype
+
+		type Media_type_objectBindingData
+			objNum as integer
+			parentObjNum as integer
+			mode as integer //from MEDIA_ENUM_BIND_*
+		endtype
+
+		type STATIC_CLASS_Media
+			objectResult as Media_type_assetResultData
+		endtype
+
+		//private data -------------------------------------------------------------
+
+		dim _Media_images[] as Media_type_imageAssetData
+		dim _Media_objects[] as Media_type_objectAssetData
+		dim _Media_sounds[] as Media_type_assetData
+		dim _Media_effects[] as Media_type_assetData
+		dim _Media_objectBindings[] as Media_type_objectBindingData
+
+		//public data --------------------------------------------------------------
+
+		dim Media_boundObjectsResult[] as integer
+
+		//Init ---------------------------------------------------------------------
+
+		//==================================
+
+		GLOBAL Media as STATIC_CLASS_Media
+
+		//==================================
+
+		#CONSTANT MEDIA_ENUM_BIND_LOC 1 //match parent position
+		#CONSTANT MEDIA_ENUM_BIND_ROT 2 //match parent rotation
+		#CONSTANT MEDIA_ENUM_BIND_SCL 4 //match parent scale
+		#CONSTANT MEDIA_ENUM_BIND_FRM 8 //match parent frame
+		#CONSTANT MEDIA_ENUM_BIND_COL 16 //child is a collision object and requires sc_update
+
+		_Media_init()
+
+		MEDIA3D_MODULE_LOADED = TRUE
+
+		<?System_log("media.dbx", 2, "main", "End module load: media.")?>
+
+	endif
+return
+
+
+function _Media_init()
+	App_addUpdate("Media_updateBoundObjects", "", FALSE)
+endfunction
+
+
+function Media_getImageNumber(rFilename as string, rTextureMode as byte, rTextureDivide as byte)
+
+	<?System_log("media.dbx", 1, "media", "Requested image number for file: " + rFilename + " in mode: " + str$(rTextureMode))?>
+
+	tImg = -1
+
+	for i = 0 to array count(_Media_images[])
+		if _Media_images[i].file = rFilename
+			if _Media_images[i].mode = rTextureMode and _Media_images[i].divide = rTextureDivide
+				tImg = _Media_images[i].number
+				<?System_log("media.dbx", 1, "media", "Located previously loaded image at _media_Images() index: " + str$(i) + "; number: " + str$(tImg))?>
+				//verify resource is still valid
+				if image exist(tImg)
+					exitfunction tImg
+				else
+					//image no longer valid, verify file and reload
+					if file exist(rFilename)
+						tImg = find free image()
+						load image rFilename, tImg, rTextureMode, rTextureDivide
+						_Media_images[i].number = tImg
+						exitfunction tImg
+					endif
+				endif
+			endif
+		endif
+	next i
+
+	//image not yet loaded, verify file and load
+	if file exist(rFilename)
+		tImg = find free image()
+		load image rFilename, tImg, rTextureMode, rTextureDivide
+		array insert at bottom _Media_images[]
+		_Media_images[].number = tImg
+		_Media_images[].file = rFilename
+		_Media_images[].mode = rTextureMode
+		_Media_images[].divide = rTextureDivide
+		<?System_log("media.dbx", 1, "media", "Image had not previously been loaded, loaded to new index: " + str$(array count(_Media_images[])) + "; number: " + str$(tImg))?>
+		exitfunction 	tImg
+	else
+		System_log("media.dbx", 4, "error", "ERROR: File not found: " + rFilename + " on Media_getImageNumber.")
+		App_closeGame(TRUE)
+	endif
+endfunction tImg
+
+
+function Media_unloadImage(rImageNumber as integer, rFilename as string, rTextureMode as byte, rTextureDivide as byte)
+	if rImageNumber > 0
+		for i = 0 to array count(_Media_images[])
+			if _Media_images[i].number = rImageNumber
+				delete image rImageNumber
+				array delete element _Media_images[], i
+				exitfunction
+			endif
+		next i
+	else
+		for i = 0 to array count(_Media_images[])
+			if _Media_images[i].file = rFilename
+				if _Media_images[i].mode = rTextureMode and _Media_images[i].divide = rTextureDivide
+					//remove it
+					delete image _Media_images[i].number
+					array delete element _Media_images[], i
+					exitfunction
+				endif
+			endif
+		next i
+	endif
+endfunction
+
+
+function Media_loadObject(rFilename as string, canInstance as boolean, rID as string)
+	Media.objectResult.id = ""
+	Media.objectResult.number = -1
+	Media.objectResult.text = ""
+
+	if file exist(rFilename + ".dbo")
+		rFilename = rFilename + ".dbo"
+	else
+		rFilename = rFilename + ".x"
+	endif
+
+	<?System_log("media.dbx", 1, "media", "Requested load object for file: " + rFilename + "; allow instancing: " + str$(canInstance))?>
+
+	if file exist(rFilename)
+		tObj = find free object()
+		sourceIndex = _Media_getSourceObjectIndex(rFilename)
+		if sourceIndex > -1
+			sourceObjNum = _Media_objects[sourceIndex].number
+		else
+			sourceObjNum = -1
+		endif
+		isInstance = FALSE
+		<?System_log("media.dbx", 1, "media", "Source object for requested file: " + str$(sourceObjNum))?>
+
+		if sourceObjNum > -1
+			//file is loaded, verify existing object is still valid
+			if object exist(sourceObjNum) = TRUE
+				if canInstance = FALSE
+					<?System_log("media.dbx", 1, "media", "Source object is valid. instancing not allowed. make cloned object " + str$(tObj))?>
+					clone object tObj, sourceObjNum
+					Media.objectResult.text = "cloned"
+				else
+					<?System_log("media.dbx", 1, "media", "Source object is valid. instancing is allowed. make instance object " + str$(tObj))?>
+					instance object tObj, sourceObjNum
+					isInstance = TRUE
+					Media.objectResult.text = "instanced"
+				endif
+			else
+				//object no longer valid, reload
+				<?System_log("media.dbx", 1, "media", "Source object is not valid. load a new source object to existing source number" + str$(sourceObjNum))?>
+				load object rFilename, sourceObjNum
+				Media.objectResult.id = _Media_objects[sourceIndex].id
+				Media.objectResult.number = sourceObjNum
+				Media.objectResult.text = "source"
+				exitfunction
+			endif
+		else
+			//file not loaded, load new
+			<?System_log("media.dbx", 1, "media", "No source object found for requested file. load a new source object" + str$(tObj))?>
+			load object rFilename, tObj
+			Media.objectResult.text = "source"
+		endif
+
+		array insert at bottom _Media_objects[]
+		//_Media_objects[].id = generate guid$()
+		_Media_objects[].id = rID
+		_Media_objects[].number = tObj
+		_Media_objects[].file = rFilename
+		_Media_objects[].isInstance = isInstance
+
+		Media.objectResult.id = _Media_objects[].id
+		Media.objectResult.number = tObj
+	else
+		System_log("media.dbx", 4, "error", "ERROR: File not found: " + rFilename + " during Media_loadObject. Current Dir: " + get dir$())
+		App_closeGame(TRUE)
+	endif
+endfunction
+
+
+function Media_unloadObjectByNumber(rObjNum as integer)
+	for i = 0 to array count(_Media_objects[])
+		if _Media_objects[i].number = rObjNum
+			if object exist(rObjNum)
+				set pixel shader off rObjNum
+				set vertex shader off rObjNum
+				//set object effect rObjNum, 0
+				//TODO: texture memory leak?
+				Object_Remove(rObjNum)
+				//if _Media_objects[i].hasCollision then sc_removeObject rObjNum
+				sc_setupObject rObjNum, 1, 0
+				sc_removeObject rObjNum
+				delete object rObjNum
+			endif
+			array delete element _Media_objects[], i
+			exitfunction
+		endif
+	next i
+endfunction
+
+
+function Media_unloadAllObjects()
+	for i = 0 to array count(_Media_objects[])
+		rObjNum = _Media_objects[i].number
+		if object exist(rObjNum)
+			set pixel shader off rObjNum
+			set vertex shader off rObjNum
+			//set object effect rObjNum, 0
+			//TODO: texture memory leak?
+			Object_Remove(rObjNum)
+			//if _Media_objects[i].hasCollision then sc_removeObject rObjNum
+			sc_setupObject rObjNum, 1, 0
+			sc_removeObject rObjNum
+			delete object rObjNum
+		endif
+		//array delete element _Media_objects[], i
+	next i
+	empty array _Media_objects[]
+	empty array _Media_objectBindings[]
+endfunction
+
+
+function Media_replaceObject(rObjID as string, rFilename as string, canInstance as boolean)
+	Media.objectResult.id = ""
+	Media.objectResult.number = -1
+	Media.objectResult.text = ""
+
+	if file exist(rFilename + ".dbo")
+		rFilename = rFilename + ".dbo"
+	else
+		rFilename = rFilename + ".x"
+	endif
+
+	<?System_log("media.dbx", 1, "media", "Requested replace object using file: " + rFilename + "; allow instancing: " + str$(canInstance))?>
+
+	//TODO: handle object update in sparky's collision
+
+	if file exist(rFilename)
+		//check if req file has prev loaded source
+		sourceIndex = _Media_getSourceObjectIndex(rFilename)
+		if sourceIndex > -1
+			sourceObjNum = _Media_objects[sourceIndex].number
+		else
+			sourceObjNum = -1
+		endif
+		isInstance = FALSE
+		<?System_log("media.dbx", 1, "media", "Source object for requested file: " + str$(sourceObjNum))?>
+
+		//locate existing object to replace
+		for i = 0 to array count(_Media_objects[])
+			if _Media_objects[i].id = rObjID
+				tObj = _Media_objects[i].number
+				<?System_log("media.dbx", 1, "media", "object to replace: " + str$(tObj))?>
+
+				//delete existing object if still valid
+				if object exist(tObj)
+					//TODO: if tObj is a source object, handle affected instances
+					set pixel shader off tObj
+					set vertex shader off tObj
+					//TODO: texture memory leak?
+					Object_Remove(tObj)
+					delete object tObj
+				endif
+
+				//load the new object
+				if sourceObjNum > -1
+					//file is loaded, verify existing object is still valid
+					if object exist(sourceObjNum) = TRUE
+						if canInstance = FALSE
+							<?System_log("media.dbx", 1, "media", "Source object is valid. instancing not allowed. make cloned object " + str$(tObj))?>
+							clone object tObj, sourceObjNum
+							_Media_objects[i].file = rFilename
+							_Media_objects[i].isInstance = FALSE
+							Media.objectResult.text = "cloned"
+						else
+							<?System_log("media.dbx", 1, "media", "Source object is valid. instancing is allowed. make instance object " + str$(tObj))?>
+							instance object tObj, sourceObjNum
+							_Media_objects[i].file = rFilename
+							_Media_objects[i].isInstance = TRUE
+							Media.objectResult.text = "instanced"
+						endif
+					else
+						//object no longer valid, reload
+						<?System_log("media.dbx", 1, "media", "Source object is not valid. load a new source object and remove existing source number" + str$(sourceObjNum))?>
+						load object rFilename, tObj
+						_Media_objects[i].file = rFilename
+						_Media_objects[i].isInstance = FALSE
+						Media.objectResult.text = "source"
+						removeInvalidSource = TRUE
+					endif
+				else
+					//file not loaded, load new
+					<?System_log("media.dbx", 1, "media", "No source object found for requested file. load a new source object" + str$(tObj))?>
+					load object rFilename, tObj
+					_Media_objects[i].file = rFilename
+					_Media_objects[i].isInstance = FALSE
+					Media.objectResult.text = "source"
+				endif
+
+				Media.objectResult.id = rObjID
+				Media.objectResult.number = tObj
+
+				if removeInvalidSource
+					array delete element _Media_objects[], sourceIndex
+				endif
+
+				exitfunction
+
+			endif
+		next i
+	else
+		System_log("media.dbx", 4, "error", "ERROR: File not found: " + rFilename + " on Media_replaceObject.")
+		App_closeGame(TRUE)
+	endif
+endfunction
+
+/*
+function Media_setObjectCollisionStatus(rObjNum as integer, rStatus as boolean)
+	for i = 0 to array count(_Media_objects[])
+		if _Media_objects[i].number = rObjNum
+			_Media_objects[i].hasCollision = rStatus
+			exitfunction
+		endif
+	next i
+endfunction
+*/
+
+function Media_getObjectRefByID(rObjID as string)
+	Media.objectResult.id = ""
+	Media.objectResult.number = -1
+	Media.objectResult.text = ""
+	for i = 0 to array count(_Media_objects[])
+		if _Media_objects[i].id = rObjID
+			Media.objectResult.id = _Media_objects[i].id
+			Media.objectResult.number = _Media_objects[i].number
+			Media.objectResult.text = _Media_objects[i].file
+			exitfunction
+		endif
+	next i
+endfunction
+
+
+function Media_getObjectRefByNumber(rObjNum as integer)
+	Media.objectResult.id = ""
+	Media.objectResult.number = -1
+	Media.objectResult.text = ""
+	<?System_log("media.dbx", 1, "media", "Requested object data for number " + str$(rObjNum))?>
+	for i = 0 to array count(_Media_objects[])
+		<?System_log("media.dbx", 1, "media", "  check against " + str$(_Media_objects[i].number))?>
+		if _Media_objects[i].number = rObjNum
+			<?System_log("media.dbx", 1, "media", "    matched. file is: " + _Media_objects[i].file)?>
+			Media.objectResult.id = _Media_objects[i].id
+			Media.objectResult.number = _Media_objects[i].number
+			Media.objectResult.text = _Media_objects[i].file
+			exitfunction
+		endif
+	next i
+endfunction
+
+
+function _Media_getSourceObjectIndex(rFilename as string)
+	for i = o to array count(_Media_objects[])
+		if _Media_objects[i].file = rFilename and _Media_objects[i].isInstance = 0
+			exitfunction i
+		endif
+	next i
+endfunction -1
+
+
+function Media_getEffectNumber(rFilename as string, rDataMode as integer) //default data mode should be 0
+
+	<?System_log("media.dbx", 1, "media", "Requested load effect for file: " + rFilename + "; data mode: " + str$(rDataMode))?>
+
+	tEff = -1
+	for i = 0 to array count(_Media_effects[])
+		if _Media_effects[i].file = rFilename
+			tEff = _Media_effects[i].number
+			//located effect, verify resource is still valid
+			<?System_log("media.dbx", 1, "media", "Located previously loaded effect at _Media_effects() index: " + str$(i) + "; number: " + str$(tEff))?>
+			if effect exist(tEff)
+				exitfunction tEff
+			else
+				//effect is no longer valid, verify file and reload
+				if file exist(rFilename)
+					tEff = find free effect()
+					load effect rFilename, tEff, 0, rDataMode
+					_Media_effects[i].number = tEff
+					Effect_Add(tEff)
+					exitfunction tEff
+				endif
+			endif
+		endif
+	next i
+
+	//effect has not been loaded, verify file and load it
+	if file exist(rFilename)
+		tEff = find free effect()
+		load effect rFilename, tEff, 0, rDataMode
+		array insert at bottom _Media_effects[]
+		_Media_effects[].file = rFilename
+		_Media_effects[].number = tEff
+		Effect_Add(tEff)
+		exitfunction tEff
+	else
+		System_log("media.dbx", 4, "error", "ERROR: File not found: " + rFilename + " on Media_getEffectNumber.")
+		App_closeGame(TRUE)
+	endif
+endfunction tEff
+
+
+function Media_bindObject(rChildObj as integer, rParentObj as integer, rMode as integer)
+	array insert at bottom _Media_objectBindings[]
+	_Media_objectBindings[].objNum = rChildObj
+	_Media_objectBindings[].parentObjNum = rParentObj
+	_Media_objectBindings[].mode = rMode
+	<?System_log("media.dbx", 1, "media", " > Bound object " + str$(rChildObj) + " to " + str$(rParentObj) + " : " + str$(rMode))?>
+endfunction
+
+
+
+function Media_unbindObject(rObjNum as integer)
+	GCcount = 0
+	GCindex = -1
+	for i = 0 to array count(_Media_objectBindings[])
+		if _Media_objectBindings[i].objNum = rObjNum
+			_Media_objectBindings[i].objNum = -1
+			GCindex = i
+			inc GCcount
+		endif
+	next i
+	`garbage collect
+	if GCcount > 0
+		if GCcount > 1
+			for c = 1 to GCcount
+				for i = 0 to array count(_Media_objectBindings[])
+					if _Media_objectBindings[i].objNum = -1
+						array delete element _Media_objectBindings[], i
+						exit
+					endif
+				next i
+			next c
+		else
+			array delete element _Media_objectBindings[], GCindex
+		endif
+	endif
+endfunction
+
+
+function Media_getBoundObjectNumbersByParent(rParentObj as integer)
+	empty array Media_boundObjectsResult[]
+	for i = 0 to array count(_Media_objectBindings[])
+		if _Media_objectBindings[i].parentObjNum = rParentObj
+			array insert at bottom Media_boundObjectsResult[]
+			Media_boundObjectsResult[] = _Media_objectBindings[i].objNum
+		endif
+	next i
+endfunction
+
+
+function Media_updateBoundObjects()
+	<?System_log("media.dbx", 2, "main", "Begin Update: Media_updateBoundObjects")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	for i = 0 to array count(_Media_objectBindings[])
+
+		if _Media_objectBindings[i].mode && MEDIA_ENUM_BIND_LOC
+			position object _Media_objectBindings[i].objNum, object position x(_Media_objectBindings[i].parentObjNum), object position y(_Media_objectBindings[i].parentObjNum), object position z(_Media_objectBindings[i].parentObjNum)
+		endif
+
+		if _Media_objectBindings[i].mode && MEDIA_ENUM_BIND_ROT
+			rotate object _Media_objectBindings[i].objNum, object angle x(_Media_objectBindings[i].parentObjNum), object angle y(_Media_objectBindings[i].parentObjNum), object angle z(_Media_objectBindings[i].parentObjNum)
+		endif
+
+		/*
+		if _Media_objectBindings[i].mode && MEDIA_ENUM_BIND_SCL
+			if _Media_objectBindings[i].mode && MEDIA_ENUM_BIND_COL
+				sc_setupObject _Media_objectBindings[i].objNum, 1, 0
+				sc_allowObjectScaling _Media_objectBindings[i].objNum
+			endif
+			scale object _Media_objectBindings[i].objNum, object scale x(_Media_objectBindings[i].parentObjNum), object scale y(_Media_objectBindings[i].parentObjNum), object scale z(_Media_objectBindings[i].parentObjNum)
+		endif
+		*/
+
+		if _Media_objectBindings[i].mode && MEDIA_ENUM_BIND_COL
+			sc_updateObject _Media_objectBindings[i].objNum
+		endif
+
+		if _Media_objectBindings[i].mode && MEDIA_ENUM_BIND_FRM
+			set object frame _Media_objectBindings[i].objNum, object frame(_Media_objectBindings[i].parentObjNum)
+		endif
+
+	next i
+
+	<?System_log("media.dbx", 2, "main", "End Update: Media_updateBoundObjects," + str$(hitimer(1000000) - updateMark) + "us")?>
+endfunction

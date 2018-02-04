@@ -1,0 +1,254 @@
+Rem Globals for Line3d Demo
+
+Global scale# = 1.0
+Global CX#, CZ#
+
+Gosub InitialiseDemo
+
+Rem This first section of code is just showing the main menu
+
+do
+
+   gosub DrawTitle
+
+   D3D_StartText
+      D3D_Text 1,sw/2,250,1,"1. Dot3d Batch Demo"
+      D3D_Text 1,sw/2,350,1,"2. Line3d Batch Demo"
+   D3D_EndText
+   
+   If inkey$()="1" then gosub Dot3d
+   If inkey$()="2" then gosub Line3d
+
+   sync
+
+loop
+
+Rem Dot3d Demonstration - Written By Jason Clogg 2008
+
+Dot3d:
+
+   DemoState$="Dot3d"
+
+   res=Make Vector3(1)
+
+   Rem Tell the dll the maximum number of dots we want to draw
+   
+   D3D_Batch_Set_Dot3D 5000
+
+   Rem Create 3 different size spheres in different colours
+   Rem a random scaled vector is used to put each dot on the edge
+   Rem of the sphere. We only need to add all 5000 points once
+   Rem as they are then held in memory until you clear them.
+   
+   for i=1 to 5000
+      set vector3 1,rnd(200)-100,rnd(200)-100,rnd(200)-100
+      Normalize Vector3 1,1
+      col=rnd(3)
+      select col
+         case 1
+            color=rgb(255,0,0)
+            endcase
+         case 2
+            color=rgb(255,100,0)
+            endcase
+         case 3
+            color=rgb(196,20,16)
+            endcase
+      endselect
+
+      Scale Vector3 1,1,col
+
+      Rem Add the dot to the batch to be drawn
+      D3D_Batch_Add_Dot3D x Vector3(1),y Vector3(1),z Vector3(1),color
+   next i
+
+   ca#=0
+
+   Do
+      tmrSize=timer()
+
+      Rem Vary the size of each point. Just for effect
+      
+      D3D_Batch_Set_Dot3D_Size (cos((tmrSize mod 3600)/10.0)+1.5)*2.0
+
+      Rem Now render the batch to screen. The first parameter tells
+      Rem it to use camera 1, the second enable zBuffering, and the
+      Rem 3rd keeps the batch in memory after drawing.
+      
+      D3D_Batch_Draw_Dot3D 0,1,0
+
+      gosub DrawTitle
+
+      Rem Rotate the camera around the sphere based on the timer
+      
+      position camera sin(ca#)*10,0,cos(ca#)*10
+      point camera 0,0,0
+
+      ca#=(tmrSize mod 3600)/10.0
+      sync
+
+      If upper$(Inkey$())="Q"
+         DemoState$="Menu"
+         res=Delete Vector3(1)
+         return
+      EndIf
+   Loop
+
+   return
+
+Line3d:
+
+Rem This Demonstration was originally written by Scylnt
+Rem and can be found at in this thread
+Rem http://forum.thegamecreators.com/?m=forum_view&t=77286&b=6
+
+   DemoState$="Line3d"
+
+
+   Rem Select the initial object to display
+   iCurrentType = 1 : ChangeObject(iCurrentType)
+
+   Do
+
+      Rem Update camera position based on mouse movement
+      MX = MouseMoveX() : NX# = Wrapvalue(NX# + MX) : NZ# = Wrapvalue(NZ# + MX)
+      Position Camera NewXValue(0, NX#, CX#), Camera Position Y(), NewZValue(0, NZ#, CZ#)
+      Point Camera 0, 0, 0
+
+      Rem Change object with spacekey
+      If Spacekey() = 0 And SpaceHit = 1
+         Inc iCurrentType
+         If iCurrentType > 9 Then iCurrentType = 1
+         ChangeObject(iCurrentType)
+         Rem Reset view rotation
+         NX# = 0 : NZ# = 0
+      EndIf
+      SpaceHit = Spacekey()
+
+      Rem Draw batch Lines to show Normals
+      D3D_Batch_Draw_Line3D 0, 1, 0
+
+      gosub DrawTitle
+
+      If upper$(Inkey$())="Q"
+         DemoState$="Menu"
+         Delete Object 1
+         return
+      EndIf
+
+      Sync
+   Loop
+
+DrawNormals:
+
+
+return
+
+Function ChangeObject(iType)
+   Rem Delete last object if it exists
+   If Object Exist(1) Then Delete Object 1
+
+   Rem Create new object
+   Select iType
+      Case 1 : Make Object Cube 1, 5 : scale# = 1.0 : CX# = 15 : CZ# = 15 : EndCase
+      Case 2 : Make Object Sphere 1, 5 : scale# = 1.0 : CX# = 15 : CZ# = 15 : EndCase
+      Case 3 : Make Object Cone 1, 5 : scale# = 1.0 : CX# = 15 : CZ# = 15 : EndCase
+      Case 4 : Make Object Cylinder 1, 5 : scale# = 1.0 : CX# = 15 : CZ# = 15 : EndCase
+      Case 5 : D3D_Make_Teapot 1 : scale# = 0.2 : CX# = 5 : CZ# = 5 : EndCase
+      Case 6 : Make Object Sphere 1, 5, 32, 32 : scale# = 1.0 : CX# = 15 : CZ# = 15 : EndCase
+      Case 7 : D3D_Make_Polygon 1, 12 : scale# = 0.2 : CX# = 5 : CZ# = 5 : EndCase
+      Case 8 : D3D_Make_Torus 1, 0.45, 1, 32, 32 : scale# = 0.2 : CX# = 5 : CZ# = 5 : EndCase
+      Case 9 : D3D_Make_Pyramid 1, 2, 2, 2 : scale# = 0.2 : CX# = 5 : CZ# = 5 : EndCase
+   EndSelect
+   
+   Rem Lock Mesh
+   Lock VertexData For Limb 1, 0
+
+   Rem Vertex count
+   vCount = Get VertexData Vertex Count() - 1
+
+   Rem Setup batch
+   D3D_Batch_Set_Line3D (vCount + 1)
+
+   For i = 0 To vCount
+      Rem Read current vertex position
+      vX# = Get VertexData Position X(i)
+      vY# = Get VertexData Position Y(i)
+      vZ# = Get VertexData Position Z(i)
+      Rem Read current vertex normals (and scale)
+      vNX# = Get VertexData Normals X(i) * scale#
+      vNY# = Get VertexData Normals Y(i) * scale#
+      vNZ# = Get VertexData Normals Z(i) * scale#
+      Rem Add to batch
+      D3D_Batch_Add_Line3D vX#, vY#, vZ#, vX# + vNX#, vY# + vNY#, vZ# + vNZ#, 0xFF00FF00, 0xFFFF0000
+   Next i
+
+   Rem Unlock mesh
+   Unlock VertexData
+
+EndFunction
+
+
+InitialiseDemo:
+
+   D3D_init 3
+   
+   sync on:autocam off:backdrop on:color backdrop rgb(10,10,10)
+
+   sh=screen height()
+   sw=screen width()
+   crlf$=chr$(13)+chr$(10)
+   DemoState$="Menu"
+
+   D3D_Font 1,"Arial",20,0,0,1
+   D3D_Font 2,"Arial",15,0,0,1
+   D3D_Font 3,"Arial",9,0,0,1
+
+   gosub CenterWindow
+
+   return
+
+DrawTitle:
+
+   D3D_Box 0,5,sw/2,70,d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255)
+   D3D_Box sw/2,5,sw,70,d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50)
+   D3D_Line 0,5,sw,5,rgb(128,128,128)
+   D3D_Line 0,70,sw,70,rgb(128,128,128)
+   
+   D3D_Box 0,sh-50,sw/2,sh-5,d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255)
+   D3D_Box sw/2,sh-50,sw,sh-5,d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50)
+   D3D_Line 0,sh-5,sw,sh-5,rgb(128,128,128)
+   D3D_Line 0,sh-50,sw,sh-50,rgb(128,128,128)
+
+   D3D_StartText
+      D3D_Text 1,sw/2,10,1,"D3DFunc - Batch Commands"
+      D3D_Text 2,sw/2,40,1,"Jason Clogg - 2008"
+
+      Select DemoState$
+         Case "Menu"
+            D3D_Rounded_Box sw/2-150,125,sw/2+150,sh-105,10,1,rgb(0,0,128)
+            D3D_Rounded_Box sw/2-150,125,sw/2+150,sh-105,10,0,rgb(128,128,128)
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"Select an Example"
+         EndCase
+         Case "Dot3d"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"Dot3d Batch Demo - Press 'Q' to return to Menu"
+         EndCase
+         Case "Line3d"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"Line3d Batch Demo - Press 'Q' to return to Menu"+crlf$+"Move mouse to rotate view, Change object with spacebar."
+        EndCase
+      EndSelect
+   D3D_EndText
+
+   return
+   
+CenterWindow:
+
+   Rem Get Desktop Size
+
+   DW=D3D_Get_Desktop_Width()
+   DH=D3D_Get_Desktop_Height()
+
+   Rem Not completely accurate but should be good enough
+   set window position DW/2-SW/2,DH/2-SH/2-32
+
+return

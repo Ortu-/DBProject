@@ -1,0 +1,9 @@
+List of fixes for Upgrade 5.6 -
+
+Text
+	* Resolved possible crash on first token command
+	* Resolved possible crash on next token command
+
+X Model Loading
+
+	* Data left over from previous loads caused crashing - now fixed

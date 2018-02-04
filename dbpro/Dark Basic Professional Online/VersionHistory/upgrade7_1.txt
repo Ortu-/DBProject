@@ -1,0 +1,148 @@
+Upgrade 7.1
+===========
+
+TGC CONVENTION 2008 Credits
+---------------------------
+
+ * Thanks to IANM for his suggestion to add USER TYPE DATA into the EXECUTABLE,
+   adding Scientific Notation and the GET ARRAY TYPE and GET TYPE PATTERN commands
+ * Thanks to GREENGANDALF for his suggestion of LOAD IMAGE for volume textures
+   and fixing the MAKE SOUND FROM MEMBLOCK so many more 'larger' WAVs can be used
+ * Thanks to SCRAGGLE for his ideas resulting in MEMBLOCKS being added to DBOs
+ * Thanks to DIGGORY for his help in developing a new external debugger, and the
+   arm-twisting that allowed any DBPro application to expose its internal pointers
+ * And thanks to everyone else who combined their ideas into a great DBPro push!
+
+Help
+----
+
+ * Added extra info for LOAD IMAGE and SAVE IMAGE
+ * Added help pages for ADD MEMBLOCK TO OBJECT, GET MEMBLOCK FROM OBJECT, DELETE MEMBLOCK FROM OBJECT (only adds a memblock to the object, does not represent the object!)
+ * Added DBO to the file formats supported in the LOAD OBJECT help page
+ * Added help page for GET TYPE PATTERN$() and GET ARRAY TYPE()
+ * Added extra information to SET OBJECT FRAME command page
+ * updated GLOBSTRUCT and DBO files in Technical Documents folder
+ * Added update to FASTSYNC command help
+ * Added command help for post process shading in CORE and DISPLAY
+ * 241 instances of Arbitarychanged to Arbitrary in GameFX help
+ * SEPARATETEXTUREMEMORIES AVAILABLE corrected in command and help system
+ * INCLUDE and CONSTANT in CORE subcategory help menu links to help page now (#=%23)
+ * Above fix also applied to generation of the new KEYWORDS file after each rebuild
+ * Fixed EXAMPLE in BREAK command
+ * Updated KEYSTATE help page with user contributed example (thanks pcRaider)
+ * Added GameFX commands to the INDEX in the main help system
+ * Corrected help system to correctly choose MAKE OBJECT PLANE for KEYWORDS
+ * Updated OFFSETLIMB command with description of bounds and a new example
+ * SET OBJECT TO OBJECT ORIENTATION help page improved with flag and example
+ * Added more description and new example for SET LIGHT MAPPING ON command
+ * Added help for the ignore mode in MAKE MESH FROM OBJECT
+ * Added help for new values 2 and 3 for SET GLOBAL OBJECT CREATION and DELETE OBJECTS
+ * Updated the help to SET MUSIC VOLUME to reflect true maximum volume of 100
+ * Updated help for LOAD SOUND and LOAD3DSOUND
+ * Updated PRINCIPALS section on BOOLEAN OPERATORS
+ * OPEN TO READ updated
+ * LOAD IMAGE, SCALE LIMB TEXTURE and SCALE OBJECT TEXTURE help page updated
+ * SCROLL LIMB TEXTURE and SCROLL OBJECT TEXTURE help page updated
+ * Added ZWRITE and ZREAD to BASIC3D sub category of commands
+ * SET DIR and CD help pages updated
+ * Updated the SET SCREEN EFFECT and TEXTURE SCREEN commands
+ * Added new SNIPPET example showing how to use XBOX 360 controller input device
+ * Added help for SET DISPLAY MODE to include VSYNC, ANTIALIAS and MULTIMONITOR
+ * Reduced description in SCALE SPRITE command so second parameter is not clipped
+ * Removed ALWAYS ACTIVE ON/OFF from Help Index, these are obsolete commands
+ * Updated help generator to correct CONSTANT and INCLUDE help links
+ * Removed APPEND OBJECT ANIMATION from help index
+ * Updated AUTOMATIC OBJECT COLLISIOn with additional info on sliding collision mode
+ * Updated ATAN to reflect ARCTANGENT in description and correct range
+ * Updated SET CAMERA FOV to correct default description of 61.9621391296
+ * Updated the SET OBJECT SPEED command with more accurate info on speed value
+ * Added array name description for core array commands and updated some examples
+ * Added extra help in principals for Power symbol and integer/real division
+ * Added extra example for LOCAL and GLOBAL variable declarations
+ * Updated getting started to offer dual help for the old(default) and new(DGS) interfaces
+ * Added additional new commands to the INDEX page
+ * Added more example and help to FTP CONNECT page
+ * Added more help to the LOAD EFFECT command
+
+Compiler and EXE
+----------------
+ 
+ * Added support for Scientific Notation as literal (i.e. 1.0E + 38 or 1E20, etc)
+ * Compiler now exports internal type structure pattern data (obtain via GET TYPE PATTERN$)
+ * If application executable does not use Basic3D, then do not check for DirectX (GDI)
+ * Core can obtain DirectX version with GET DX VERSION$() even in GDI mode (no Basic3D)
+ * Added new support for external debuggers using a MUTEX just before code executed
+ * Above code creates a mutex and filemap called Appname.exe(Mutex) & Appname.exe(FileMap) [case sensitive], using "debugme" in filemap to pause app
+ * New GLOBSTRUCT edited to support above (no data structure changes, just a rename)
+ * Removed FILL X with X from DBM export to aid in creation of external debugger
+ * Usurped use of the EXEPATH string in GLOBSTRUCT to carry extra runtime error info
+ * Above will produce a new single error message box containing 'any' extra error text
+ * Fixed bug caused by removing FillX in DBM (restored ability to calculate local variable offsets)
+ * Fixed line number issue in DBM to help external debuggers trace correct progress
+ * A single GameFX command in an empty program no longer crashes the compiler
+ * Added DLL support for new as yet unreleased product, GreenEAR, to be announced shortly
+ * Fixed string corruption leak caused by new datatype pattern string system
+ * Fixed bug causing left side operand not casting if array type (i.e. INT * FLOAT = INT bug)
+ * Forced safety code for subsciptless array calls ( i.e. A() ) to avoid crash when safe arrays off
+
+Core
+----
+
+ * New command called pattern$=GET TYPE PATTERN$(typename$,index) to get type format
+ * New command called GET ARRAY TYPE to return internal type index of the array
+ * Fixed bug causing array delete element to leak memory if string in user type used
+ * Modified application executable so window does not minimise before closing window
+ * Set CHANGE MOUSE to value of 32 will cease to use SetCursor in WM_MOUSEMOVE
+ * Added DRAW TO CAMERA and DRAW TO SCREEN to support quicker post process shaders
+ * Removed assumption that Basic3D is loaded in for post process quad rendering
+
+Display
+-------
+
+ * Added TEXTURE SCREEN and SET SCREEN EFFECT to support quicker post process shaders
+ * Removed some hack code from DarkGDK merging causing Vista users to get Multisamping X2 no matter what
+
+Image
+-----
+
+ * Added support in LOAD IMAGE for mode 3 which now loads a volume texture
+ * Fixed bug in GET IMAGE mode 3 which used color-key when it should not have
+
+Memblock
+--------
+
+ * Fixed bug that caused SOUND FROM MEMBLOCK to cast DWORD data to WORD (sound crash)
+
+Basic3D
+-------
+
+ * Special case allowance for instances to cast shadows if shader flag set to one
+ * New commands added; ADD MEMBLOCK TO OBJECT, GET MEMBLOCK FROM OBJECT, DELETE MEMBLOCK FROM OBJECT (only adds a memblock to the object, does not represent the object!)
+ * Fixed bug causing any reflection views to be overridden by code in UpdateInitOnce
+ * Added new mode 3 to SET OBJECT FRAME to cause bounds to recreate without frame zero shift
+ * If SET REFLECTION SHADING ON command used, all frustrum culling is disabled
+ * Added error information to a mesh load failure (includes ID and filename)
+ * Objects excluded cause the object render order to refresh (keeps 3D up to date)
+ * SET OBJECT TO OBJECT ORIENTATION has also been fixed no longer crashes if flag used
+ * Removed EXCLUDE code from TEXTURE SORT code (to regain SYNC speed from U69)
+ * Added two new parameter values to SET GLOBAL OBJECT CREATION (2 and 3) with help
+ * LOAD OBJECT can now detect model texture files in absolute paths, relative within model file
+ * Fixed bug causing trianglelist meshes and trianglestrip meshes not to combine in one object
+ * Added new parameter to LOAD EFFECT which allows secondary UV data to be stripped from a shaded object
+
+Sound
+-----
+
+ * Fixed bug causing sound to crash if try to delete an unloaded OGG during the load
+ * Added new parameter to LOAD SOUND and LOAD3DSOUND for Global Sound Flag
+ * String table updated to hold new Global Sound Flag parameter for command
+
+Animation
+---------
+
+ * Fixed bug introduced when GDK code copied over to DBP source code (IFDEF WINKLE)
+
+gameFX
+------
+
+ * Improved ADD LOD TO OBJECT slightly to introduce automated alpha blending

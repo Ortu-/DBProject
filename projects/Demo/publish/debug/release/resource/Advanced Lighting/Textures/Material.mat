@@ -1,0 +1,37 @@
+texturename=stone wall.dds
+{
+shader=shaders\surface\object\parallax occlusion.fx
+detailmapping=1
+stage0=textures\Wall\brick wall.dds
+stage1=textures\Wall\brick wall_n.dds
+stage2=textures\Wall\brick wall_s.dds
+stage3=textures\detail\detail.dds
+}
+texturename=metal.dds
+{
+shader=shaders\surface\object\environment bumpmap.fx
+detailmapping=1
+stage0=textures\metal\metal.dds
+stage1cube=textures\cube\cube1.dds
+stage2=textures\metal\metal_n.dds
+stage3=textures\metal\metal_s.dds
+stage4=textures\detail\detail.dds
+}
+texturename=concretefloor01.dds
+{
+shader=shaders\surface\object\normalmap.fx
+detailmapping=1
+stage0=textures\floor\concretefloor01.dds
+stage1=textures\floor\concretefloor01_n.dds
+stage2=textures\floor\concretefloor01_s.dds
+stage3=textures\detail\detail.dds
+}
+texturename=cement.dds
+{
+shader=shaders\surface\object\normalmap.fx
+detailmapping=1
+stage0=textures\floor\cement.dds
+stage1=textures\floor\cement_n.dds
+stage2=textures\floor\cement_s.dds
+stage3=textures\detail\detail.dds
+}

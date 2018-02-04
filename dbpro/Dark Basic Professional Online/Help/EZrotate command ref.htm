@@ -1,0 +1,269 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 9">
+<meta name=Originator content="Microsoft Word 9">
+<link rel=File-List href="./EZrotate%20command%20ref_files/filelist.xml">
+<title>Simulator Commands</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>rerickson</o:Author>
+  <o:LastAuthor>rerickson</o:LastAuthor>
+  <o:Revision>5</o:Revision>
+  <o:TotalTime>99</o:TotalTime>
+  <o:Created>2004-03-02T15:31:00Z</o:Created>
+  <o:LastSaved>2004-03-08T16:13:00Z</o:LastSaved>
+  <o:Pages>4</o:Pages>
+  <o:Words>302</o:Words>
+  <o:Characters>1726</o:Characters>
+  <o:Company>Industrial Automation Services N.A., Inc.</o:Company>
+  <o:Lines>14</o:Lines>
+  <o:Paragraphs>3</o:Paragraphs>
+  <o:CharactersWithSpaces>2119</o:CharactersWithSpaces>
+  <o:Version>9.4402</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>90</w:Zoom>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+h1
+	{mso-style-next:Normal;
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-font-kerning:0pt;}
+p.MsoTitle, li.MsoTitle, div.MsoTitle
+	{margin:0in;
+	margin-bottom:.0001pt;
+	text-align:center;
+	mso-pagination:widow-orphan;
+	font-size:16.0pt;
+	mso-bidi-font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+</head>
+
+<body lang=EN-US style='tab-interval:.5in'>
+
+<div class=Section1>
+
+<p class=MsoTitle><span style='font-size:20.0pt;mso-bidi-font-size:12.0pt'>EZ
+Rotate command reference <o:p></o:p></span></p>
+
+<p class=MsoTitle><span style='font-size:20.0pt;mso-bidi-font-size:12.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal align=center style='text-align:center'><span
+style='font-size:16.0pt;mso-bidi-font-size:12.0pt;color:black'>Core:<o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='color:blue'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_Set</span></b><span
+style='color:blue'> <i>EulerX#, EulerY#, EulerZ#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Sets up EZrotate with Euler X, Y, Z angles</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetX()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns the Euler X angle from EZrotate</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetY()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns the Euler Y angle from EZrotate</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetZ()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns the Euler Z angle from EZrotate</p>
+
+<p class=MsoNormal><b><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></b></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GX</span></b><span
+style='color:blue'> <i>angle#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Performs a global rotation of the angle specified on the X
+axis.</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GY</span></b><span
+style='color:blue'> <i>angle#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Performs a global rotation of the angle specified rotation
+on the Y axis</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GZ</span></b><span
+style='color:blue'> <i>angle#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Performs a global rotation of the angle specified rotation
+on the Z axis</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_LX</span></b><span
+style='color:blue'> <i>angle#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Performs a local rotation of the angle specified on the X
+axis</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_LY</span></b><span
+style='color:blue'> <i>angle#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Performs a local rotation of the angle specified on the Y
+axis</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_LZ</span></b><span
+style='color:blue'> <i>angle#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Performs a local rotation of the angle specified on the Z
+axis</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal align=center style='text-align:center'><span
+style='font-size:16.0pt;mso-bidi-font-size:12.0pt;color:black'>Rotation Matrix:<o:p></o:p></span></p>
+
+<p class=MsoNormal align=center style='text-align:center'><span
+style='font-size:16.0pt;mso-bidi-font-size:12.0pt;color:black'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_SetMatRowX</span></b><span
+style='color:blue'> <i>MatrixXX#, MatrixXY#, MatrixXZ#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Sets up EZrotate by using rotation Matrix information. This is
+to be used with “<span style='color:black'>EZro_SetMatRowY” and </span>“<span
+style='color:black'>EZro_SetMatRowZ”</span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal><b><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></b></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_SetMatRowY</span></b><span
+style='color:blue'> <i>MatrixYX#, MatrixYY#, MatrixYZ#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Sets up EZrotate by using rotation Matrix information. This is
+to be used with “<span style='color:black'>EZro_SetMatRowX” and </span>“<span
+style='color:black'>EZro_SetMatRowZ”<o:p></o:p></span></p>
+
+<p class=MsoNormal><span style='color:black'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_SetMatRowZ</span></b><span
+style='color:blue'> <i>MatrixZX#, MatrixZY#, MatrixZZ#<o:p></o:p></i></span></p>
+
+<p class=MsoNormal>Sets up EZrotate by using rotation Matrix information. This is
+to be used with “<span style='color:black'>EZro_SetMatRowX” and </span>“<span
+style='color:black'>EZro_SetMatRowY”<o:p></o:p></span></p>
+
+<p class=MsoNormal><span style='color:black'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetMatXX()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns rotation matrix information for the X coordinate of
+the X axis.<span style='color:black'><o:p></o:p></span></p>
+
+<p class=MsoNormal><span style='color:black'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetMatXY()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns rotation matrix information for the Y coordinate of
+the X axis.</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetMatXZ()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns rotation matrix information for the Z coordinate of
+the X axis.</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetMatYX()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns rotation matrix information for the X coordinate of
+the Y axis.</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetMatYY()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns rotation matrix information for the Y coordinate of
+the Y axis.</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetMatYZ()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns rotation matrix information for the Z coordinate of
+the Y axis.</p>
+
+<span style='font-size:12.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"Times New Roman";mso-ansi-language:EN-US;mso-fareast-language:EN-US;
+mso-bidi-language:AR-SA'><br clear=all style='page-break-before:always'>
+</span>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetMatZX()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns rotation matrix information for the X coordinate of
+the Z axis.</p>
+
+<span style='font-size:12.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"Times New Roman";mso-ansi-language:EN-US;mso-fareast-language:EN-US;
+mso-bidi-language:AR-SA'><br clear=all style='page-break-before:always'>
+</span>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetMatZY()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns rotation matrix information for the Y coordinate of
+the Z axis.</p>
+
+<p class=MsoNormal><b><span style='color:blue'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='color:blue'>EZro_GetMatZZ()<i><o:p></o:p></i></span></b></p>
+
+<p class=MsoNormal>Returns rotation matrix information for the Z coordinate of
+the Z axis.<b><o:p></o:p></b></p>
+
+</div>
+
+</body>
+
+</html>

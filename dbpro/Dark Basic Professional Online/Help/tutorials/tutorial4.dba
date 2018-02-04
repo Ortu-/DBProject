@@ -1,0 +1,51 @@
+rem Tutorial 4
+
+rem Initial settings
+sync on : sync rate 100
+backdrop off : hide mouse
+
+rem *ADDCODE* TUT4C
+
+rem Load all media for game
+gosub _load_game
+
+rem Setup all objects for game
+gosub _setup_game
+
+rem Game loop
+do
+
+ rem Control game elements
+ gosub _control_player
+ gosub _control_gunandbullet
+ gosub _control_enemies
+
+ rem Update screen
+ sync
+
+rem End loop
+loop
+
+rem End program
+end
+
+_control_player:
+return
+
+_control_gunandbullet:
+return
+
+_control_enemies:
+return
+
+_control_stats:
+return
+
+_setup_game:
+ rem *ADDCODE* TUT4B
+return
+
+_load_game:
+ rem *ADDCODE* TUT4A
+return
+

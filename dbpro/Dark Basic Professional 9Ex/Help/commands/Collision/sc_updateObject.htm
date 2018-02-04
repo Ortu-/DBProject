@@ -1,0 +1,32 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+
+SC_updateObject
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    SC_updateObject  objNum
+
+<BR><BR>
+        <u>-objNum</u>:    the object you want to update<br>
+	    <br>
+        Will update the collision data with the object's new position and rotation<br>
+        and scaling if allowed using <a href="sc_allowObjectSclaing.htm">SC_allowObjectScaling</a> <br><br>
+
+        SC_updateObject should be called for any object that is changed before a collision<br>
+          - for example if you want to move an object and check collision, move agian<br>
+            and check collision again, then update should be called after both moves.<br>
+            however, if you move an object, move it again, then check collision, you only<br>
+            need to call the update method after the second move.<br>
+
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

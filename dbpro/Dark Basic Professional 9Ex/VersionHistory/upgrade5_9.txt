@@ -1,0 +1,50 @@
+Upgrade 5.9
+===========
+
+Information
+-----------
+
+ * Released two new and unsupported DLLs called ODE and MultiplayerPlus (FPSC support)
+ * New commands added to U5.9 but undocumented for this release (FPSC support only)
+
+Information about FPSCExtras (supplimentary release)
+----------------------------
+
+ * Released the DBPRO DLL source code to the ODE, making it open source to the community
+ * Released the FPSC game engine source code fully compatible with U5.9 upgrade
+ * The files in the supplimentary release contains a replacement Enhancements.DLL!
+
+General
+-------
+
+ * Numerous small fixes and changes within several DLLs due to FPSC development
+ 
+
+Basic3D
+-------
+
+ * New command named "calculate object bounds ID", this can be used to calculate an objects bounds for collision and visibility etc.
+ * Alpha mapping an instanced object no longer forces loss of transparency
+ * Fog no longer interferes with shaders
+ * Radius of objects are now updated when "offset limb" is used, this solves the problem of objects disappearing that have been offset
+ * Deleted lights are now removed completely
+ * Fixed an issue with "set object" when wireframe state was ignored
+ * Point camera will revert to Euler rotation automatically
+ * Instanced objects can now be cloned
+ * Fixed a problem where cloned objects did not correctly match position data of source object
+ * Copy bitmap command now updates size correctly on both axis
+ * Resolved a potential crash on "make memblock from file"
+ * The command "create animated sprite" no longer crashes when an invalid image is used
+ * Animated sprites now use the 1 texture flag by default ( 1 to 1 pixel mapping )
+ * Error message now displayed on "open to write" if invalid index is used
+ * When setting an object to another objects orientation the pivot is now retained, you can specify an extra parameter 1 to ignore to ensure the pivot matches the other object
+ * The command "make mesh from object" no longer crashes after a resolution change
+ * Instanced objects can now have their own independant alpha settings
+ * Resolved a crash with certain shader settings
+ * The size of a sprite is now updated when their image is changed to match the dimensions of the image
+ * Stopped a possible crash with "sprite collision" not checking for existence of both sprites
+ * Object looping property correctly updated when animation has stopped
+ * Alternative "make object plain" command, add extra parameter of 1 to use this
+ * Instanced objects will use pivot data from source object
+ * Object size values now take into account any pivot data
+ * Basic 2D pixel plotter now adds an extra check to ensure not drawing outside of surface bounds

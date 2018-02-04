@@ -1,0 +1,20 @@
+<BODY COLOR=black BACKGROUND=gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B><FONT SIZE=3><CENTER>LESSON 5<BR>
+My First 3D Program<BR>
+</CENTER></FONT></B></FONT><BR>
+1. Creating a 3D game or application is a simple matter of adding levels of detail to a program. Take a simple cube spinning program. The steps are to first create the cube, then to turn it slowly over time.<BR>
+<BR>
+<IMG SRC=gfx\lesson5a.jpg><BR>
+<BR>
+2. Type out the following small program into the editing area:<BR>
+<BR>
+<PRE><FONT FACE=courier COLOR=BLUE>	MAKE OBJECT CUBE 1,100
+	DO
+	 YROTATE OBJECT 1,OBJECT ANGLE Y(1)+0.1
+	LOOP
+</FONT></PRE>3. This program will loop forever spinning the cube very slowly. The MAKE OBJECT CUBE command first creates the cube, the DO and LOOP commands create the infinite loop and the YROTATE OBJECT command applies a new rotation angle to the cube. The new rotation angle is calculated from the current angle of the object plus a small incremental value. As the loop goes round and round, the angle is slowly incrementing causing the cube to spin.<BR>
+<BR>
+<BR>
+CLICK <A HREF=..\main.htm>HERE</A> TO RETURN TO THE MAIN MENU<BR>
+<BR>
+<BR>
+</FONT></BODY>

@@ -1,0 +1,137 @@
+rem Matrix Functionality
+
+gosub _setupcamera
+gosub _simplematrix : gosub _usingvectors : gosub _mouselook : gosub _deletematrix
+gosub _texturedmatrix : gosub _mouselook : gosub _deletematrix
+gosub _modifymatrix : gosub _mouselook
+gosub _movematrix : gosub _editmatrix : gosub _mouselook
+gosub _shiftmatrix : gosub _matrixdata
+gosub _deletematrix
+
+rem End of program
+end
+
+_setupcamera:
+ position camera 0,300,0 : autocam off
+ x#=30 : y#=0
+return
+
+_simplematrix:
+ MatrixNumber=1
+ make matrix MatrixNumber,1000,1000,25,25
+ title$="Simple Matrix"
+return
+
+_usingvectors:
+
+VectorNumber=1 : MatrixNumber=1
+result==make vector3(VectorNumber)
+set vector3 VectorNumber, -500, 0, -500
+position matrix MatrixNumber, VectorNumber
+set vector3 to matrix position VectorNumber, MatrixNumber
+result=delete vector3(VectorNumber)
+
+return
+
+_texturedmatrix:
+ ImageNumber=1
+ MatrixNumber=1
+ load image "ground.jpg",ImageNumber
+ make matrix MatrixNumber,1000,1000,25,25
+ prepare matrix texture MatrixNumber,ImageNumber,1,1
+ title$="Textured Matrix"
+return
+
+_modifymatrix:
+ ImageNumber=1
+ load image "ground.jpg",ImageNumber
+ make matrix MatrixNumber,1000,1000,25,25
+ prepare matrix texture MatrixNumber,ImageNumber,1,1
+ randomize matrix MatrixNumber,200 : update matrix MatrixNumber : sleep 1000
+ ImageNumber=2
+ load image "tile.bmp",ImageNumber
+ prepare matrix texture MatrixNumber,ImageNumber,2,2 : sleep 1000
+ set matrix wireframe on MatrixNumber : sleep 1000
+ fill matrix MatrixNumber,100.0,3 : update matrix MatrixNumber : sleep 1000
+ set matrix wireframe off MatrixNumber
+ title$="Modified Matrix"
+return
+
+_movematrix:
+ position matrix MatrixNumber,0,0,500
+ TextureMode=1 : set matrix texture MatrixNumber, TextureMode, 0
+ position matrix MatrixNumber,0,0,0
+return
+
+_editmatrix:
+ Height#=0.0 : a#=0.0
+ for x=0 to 25
+  for z=0 to 25
+
+   a#=a#+1 : if a#>359 then a#=a#-360.0
+   Height#=cos(a#)*50
+   set matrix height MatrixNumber, x, z, Height#
+
+   if x<25 and z<25
+    TileID=1+rnd(3)
+    set matrix tile MatrixNumber, x, z, TileID
+   endif
+
+   nx#=0.0 : ny#=(sin(a#)+1.0)/2.0 : nz#=0.0
+   set matrix normal MatrixNumber, x, z, nx#, ny#, nz#
+
+  next z
+ next x
+ update matrix MatrixNumber
+ title$="Edited Matrix"
+return
+
+_shiftmatrix:
+ clear camera view rgb(0,0,128)
+ for t=1 to 1000 step 3
+  set cursor 0,0  : print "SHIFTING MATRIX"
+  if t>=001 and t<250 then shift matrix up MatrixNumber
+  if t>=250 and t<500 then shift matrix down MatrixNumber
+  if t>=500 and t<750 then shift matrix left MatrixNumber
+  if t>=750 and t<999 then shift matrix right MatrixNumber
+  update matrix MatrixNumber
+  sleep 3
+ next t
+ title$="Matrix Data"
+return
+
+_matrixdata:
+
+ghost matrix on MatrixNumber
+clear camera view rgb(0,0,128)
+while inkey$()<>"x"
+ set cursor 0,0 : print "MATRIX DATA (Press X to Exit)" : print
+ print "exist:";matrix exist(MatrixNumber)
+ print "tilesexist:";matrix tiles exist(MatrixNumber)
+ print "tilecount:";matrix tile count(MatrixNumber)
+ print "wireframe:";matrix wireframe state(MatrixNumber)
+ print "position x:";matrix position x(MatrixNumber)
+ print "position y:";matrix position y(MatrixNumber)
+ print "position z:";matrix position z(MatrixNumber)
+ print "tile height at 12,12:";get matrix height(MatrixNumber, 12, 12)
+ print "ground height at 0,0:";get ground height(MatrixNumber, 0, 0)
+ x#=x#+mousemovey() : y#=y#+mousemovex() : rotate camera x#,y#,0
+endwhile
+ghost matrix off MatrixNumber
+
+return
+
+_deletematrix:
+ MatrixNumber=1
+ if matrix exist(MatrixNumber)=1 then delete matrix MatrixNumber
+return
+
+_mouselook:
+
+while mouseclick()<>1
+ set cursor 0,0 : print title$+" (Left Mouse Button To Continue)"
+ x#=x#+mousemovey() : y#=y#+mousemovex() : rotate camera x#,y#,0
+endwhile
+while mouseclick()=1 : endwhile
+
+return

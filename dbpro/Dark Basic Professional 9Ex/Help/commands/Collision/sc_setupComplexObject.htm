@@ -1,0 +1,33 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+
+SC_setupComplexObject
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    SC_setupComplexObject  objNum , GroupNum , FacesPerNode
+
+<BR><BR>
+        <u>-objNum</u>:        the object you want to setup<br>
+        <u>-groupNum</u>:      the group that you want this object to belong to (0 for no group)<br>
+        <u>-FacesPerNode</u>:  sets the maximum number of faces per tree node, usually the smaller this value the better the performance, if unsure of this value set it to 2<br>
+                      		
+        Mesh 255 and memblock 255 must not be in use.<br>
+        almost exactly the same as setup object except this command will setup optimized polygon collision on a <br>
+        complex (high poly) object so that you get much better performance for these types of object.<br>
+        realistically three is little difference between this and normal polygon collision<br>
+        for objects of less than 30-40 polys, but higher polycounts definately benifit from higher performance.<br>
+        You can think of it as splitting the object up into little bits, of size specified by facesPerNode,<br>
+        and only checking collision with sections near a collision, therefore cutting out alot of polygons.	<br>
+
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

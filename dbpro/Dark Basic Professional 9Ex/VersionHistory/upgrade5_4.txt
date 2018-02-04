@@ -1,0 +1,398 @@
+Upgrade 5.4
+===========
+
+BUGWEEK LEE WORKLOG
+-------------------
+
+SATURDAY 26TH JUNE:
+
+12:30PM - Up and adam, out the door in half to pick up some train tickets then back for finals!
+12:59PM - Found time to drink some coffee and fix a bug caused by the new DELETE ARRAY ELEMENT
+01:09PM - Compiler now refines the check so only an END that happens inside a declaration errors
+01:30PM - Out the door to get train rickets
+03:45PM - Back in the door with train tickets, battery for camera and other bits and bobs
+04:16PM - Backed up files for Saturday AM just before I start installer and final fixes for U5.4
+06:05PM - Just finished the installer, and made sure it works for different install paths
+06:12PM - Changed LAUNCH.EXE so that calling it to run the editor makes sure the CWD is rooted
+08:00PM - Tested all examples and projects with latest DLLs at at 9PM
+08:25PM - Looked hard at the MOUSEMOVE issue and discovered it was many redundant calls to DInput
+09:10PM - Uploaded 8PM Version as an installer with all latest DLLs and installer fixes for BETA
+09:37PM - Fixed bug that caused string table entries to be duplicated, EXIT and ENDFUNCTION safer
+09:52PM - U5.4SHADOWCODE from FPSC development, now replaced with older shadow code from U5.2
+10:04PM - Reduced ZSLOPE BIAS used for better self shadowing to remove certain shadow artifacts
+10:16PM - Improved CONSTANT verifier so single letters are excluded, and commands protected
+10:42PM - Just fixed a Debug Ok Release Crash nasty bug by padding the end of the program, fine!
+10:55PM - Fixed CONSTANT issue to replace use of spaces and tabs in constant values, exluding REMS
+11:04PM - Just about to compile to 10PM version, so what if I am a 'little' out - nearly there
+01:25AM - Ate and was merry, listening to our own Radio station courtesy of Ravey the Man!
+01:29AM - Refined check so bracket in program does not confuse constant replacement
+01:36AM - Fixed final bug and built release versions; no new confirmed bugs no new emails. Nearly!
+01:57AM - Final check of all files - ready to make final final final U5.4 Release Upgrade
+
+FRIDAY 25TH JUNE:
+
+12:30PM - Added another hour and start the day. You can see how time slides in development!
+01:11PM - Fixed #CONSTANT bug that caused debugger to report wrong lines, now shows post-DBA
+02:44PM - To satisfy those who froun on fixing twee bugs, passing UDTs from a function now works
+02:49PM - Confirmed second bug on UDT also as fixed thanks to the above fix
+03:12PM - User functions no longer get confused when considering overriding UDT parameter datatypes
+03:42PM - Fixed line reporting problem when many CRs between tokens disrupt correct return line
+03:51PM - Fixed line reporting problem when many CRs where placed at top of program
+04:21PM - Constant names are now checked against the reserve word and command database
+04:40PM - Constant values are not longer affected by comments appended to same line
+04:47PM - Build the new compiler and core DLL for the Friday day-time release with the above
+05:05PM - Confirmed several more email bugs as fixed while the internet is down, some OLD bugs
+05:23PM - Functions used as part of a uniary NOT condition no longer get called twice
+05:45PM - Fixed collision so detection is possible even when the object is glued to another
+06:10PM - Fixed parser error that caused some reserved words to be misinterpretted as labels
+06:19PM - Fixed compiler so that initialisation strings after a declaration are handled better
+06:27PM - Allowed literals to be passed out of user functions once more
+07:04PM - Concatenation seperator at end of IF THEN no longer adds next command to THEN statement
+07:15PM - Rejected a bug that claimed texture filter issues, provided code to resolve the issue
+07:23PM - Wrote snippet to show off texture filtered alpha against a sky sphere
+08:05PM - Further improved compiler fixing several bugs, internet down again so back to emails
+08:21PM - Fixed a bug that caused the LIMB POSITION data to only be updated after the SYNC
+08:30PM - Added a snippet to show how free flight angle compares to euler angle rotation
+08:56PM - FX files can now be successfully added as MEDIA to an EXE, and load its internal files
+09:17PM - when colon is right up against the declaration prior to an AS token, next command parses
+09:22PM - Confirmed that the shadow no longer has an aura gap between the object and the shadow
+09:36PM - Introduced an extra parameter to LOAD OBJECT to allow material colours to be maintained
+10:10PM - Added DIVISION BY ZERO runtime error into ASM builder to align with correct expectations
+10:48PM - Fixed the WRAPVALUE bug that caused it to stop after +/- 36000, now uses any size
+11:10PM - Wrote a snippet to show good use of flying camera tracking using the ORIENTATION command
+11:14PM - Fixed the fix which prevents constant names from sharing same name as commands
+11:19PM - Fixed compiler error when a space is detected between FUNCTION and its name
+11:47PM - Value assignment directly after variable declaration no longer corrupts the assignment
+12:07AM - DIV and MOD, and Division and Modulus Error Zero detection improves and fixed
+12:53AM - Took a goof forty minutes trying to trace a 'no big deal' bug down, ah well
+01:10AM - Added new check so that images currently locked by system cannot be read (memblocks)
+01:26AM - Hidden objects no longer calculate or render their shadow if shadow shading set
+02:24AM - One final round of compiler tweaks upto page 3 and then compile files for Friday upload
+03:26AM - Fixed so animation state and frame are not reset when OFFSET or SCALE LIMB used
+03:29AM - ROTATE LIMB will not calculate new bounds for performance reasons
+04:12AM - Further remedied SELECT CASE statement to return correct line number and work okay
+04:33AM - Fixed FTP PROGRESS command to report percentages instead of inflated byte size
+04:47AM - Changed behaviour of FTP CONNECT so Window Mode is off, and flag switches it back on
+05:00AM - Added code for the autodialup diconnect and connect systems, untested as yet
+
+THURSDAY 24TH JUNE:
+
+11:30AM - Started day four running, right where I left off deep inside the compiler.
+12:51PM - Fixed a few compiler bugs, and current deep in the debugger locating a serious crash
+01:29PM - Fixed rather bug bug causing corruption and CWD errors when using the debugger
+01:50PM - Looking into debugger bug that causes Bump and Rainbow shaders to hide objects
+02:05PM - Rejected a bug which assumed lack of polygon sorting by distance was an error
+03:36PM - Hour meeting with Rick talking about all sorts, including new technologies
+03:37PM - Added support so that MAKE OBJECT FROM LIMB retains the original textures
+03:39PM - Confirmed email as fixed some new X file model loads
+03:40PM - Confirmed email as fixed the OBJECT SIZE() which now adjusts to the object scale
+03:46PM - Wrote snippet to show off how to MAKE OBJECT FROM LIMB which carries over texture
+03:50PM - Confirmed five models submitted by NK work fine in latest X and 3DS loaders
+03:53PM - Just confirmed the fix for a C4D level written by NK from October 2002 - eep
+04:09PM - Wrote snippet to show off how to make a ghosted object render all its polygons
+04:15PM - Confirmed bones and vertcolor models X files load okay in latest version
+04:54PM - Amended APPEND OBJECT code so that only a subset of animation is required, no crash
+05:22PM - WAIT KEY will now continue even if the system F10 key is pressed
+05:35PM - Found a bug or two in MD2 animation playback, going to fix a few of them
+06:17PM - Changed MD2 animation code so it is unified with the main system - various bugs fixed
+06:52PM - Fixed line number reporting bug caused by extra CRs in Type being ignored
+07:02PM - Site down so switching to email bugs, starting with limb texture name bug
+07:05PM - Get Limb Texture Name no longer crashes if a null name exists in model
+07:09PM - Dark MATTER Two models need to be played at a speed of 6400 and uses high frames
+07:29PM - Thanks to two maths books, and a bug report, we now have LEFT TO RIGHT precedence
+07:38PM - Fixed compiler so that it will not allow variable names that start with a value
+08:05PM - Added extra detection of END inside a TYPE declaration for help adding ENDTYPE
+08:59PM - Decided to leave debugger function ESP warning bug for this time, it is very deep
+09:18PM - Rejected a bug that sought a fine edge with a low poly for the self-shadow effect
+09:21PM - Confirmed as fixed a bug involving instance collision, fixed for FPSC
+09:43PM - Improved number of types of data that can be used to initialise a variable declaration
+11:20PM - Fixed problem which caused line numbers not to be counted if solitary instructions
+11:20PM - Further refined system to detect for expression or temp var use after ENDFUNCTIONs
+11:27PM - Further refined system to exclude global variables for inclusion as ENDFUNCTION returns 
+11:55PM - Some old submitted X models work fine, though others are strange and are not supported
+12:18AM - Added compiler checks to exclude the compiling of lines that end in open speech marks
+12:26AM - Marked a bug as fixed as doing what the report stated U5.4 performed perfectly well
+01:01AM - New code in ASM which now produces a new runtime error for arrays out of bounds
+01:09AM - Added a new flag to the Compiler SETUP.INI called 'SafeArrays' - disables safearray code
+01:27AM - Added compiler checking to only allow INTEGER or DWORD subscripts for array access
+01:52AM - Rejected the bug that states BLEND MODE needs repair - it has been superceded by FX
+01:56AM - Confirmed a bug fix regarding limb visibility when parent out of view
+02:14AM - Can confirm a bug as fixed even though I have just read it, already fixed bitwise bug
+02:28AM - Fixed bug that caused values with leading zeros to parse as a wrong end value
+02:36AM - Reported bug against International Font use, however our own tests prove local text okay
+02:43AM - Rejected a bug that claimed CLONE OBJECT did not copy over collision data, it does
+02:56AM - Fixed compiler so it detects illegal passes of UDT arrays into user functions
+03:03AM - Possible fix for READ BYTE and READ BYTE FROM FILE as sample snippet worked fine
+03:25AM - Detected for and trapped declaration of user function inside a user function
+03:28AM - Will allow no variable to be used after a NEXT statment for easier coding
+03:47AM - Compiling up all latest files for upload before some sleep, a good days work!
+
+WEDNESDAY 23RD JUNE:
+
+10:45AM - Started day three of bugweek. Going to continue where I left off, bug feedback emails
+11:53AM - Fixed bug which caused index buffered and non indexed buffered objects to conflict
+12:06PM - Replied to 5 feedback bug emails as a response to making sure U5.4 remains stable
+12:13PM - Knock on bug fixed regarding TABS and SPACES in #CONSTANT expressions
+12:25PM - Constant statement can now handle TABS which have been left in by alternate editors
+12:40PM - Confirmed a debugger bug as fixed regarding breakpints in functions with BYTE locals
+12:47PM - Fixed compiler bug so that zero length parameters are detected, not causing a crash
+01:13PM - Fixed bug that caused AMBIENCE of one object to affect the ambience of another
+01:44PM - Compiler now produces an error if end function is given more than a single return value
+02:18PM - Wasted twenty minutes chasing a camera slowdown bug to discover it was a backsave bug
+02:19PM - Confirmed a fix that had already been made about DELETE ARRAY ELEMENT
+02:41PM - Wrote small snippet showing BITWISE NOT coding, left operand is ignored as is uniary
+02:48PM - Reject a bug that claimed error line numbers wrong, but not reproducable in U5.4
+03:05PM - Now DIM Arr() with no size creates a purely empty array - otherwise array sizes okay
+03:32PM - Prepared summary and checked latest snippets
+03:52PM - Compiler now traps for and does not allow reserved words to be used as parameters
+05:45PM - Dangerous new code added to remove DBPDATA folders more than two days old when executing
+05:48PM - A small snack while I prepare and pack up Wednesday Files, first of the evening
+06:22PM - Fixed bug which caused OBJECT IN SCREEN to report objects not visible on screen
+06:30PM - Wrote snippet for object in screen visibility test and uploaded new Wednesday Pack to FTP
+08:00PM - chat to 9:30PM, lots of questions answered and info dispensed
+09:30PM - food which included pizza and chips, and some wine
+10:00PM - got stuck into a bug that reported an object invisible when on screen
+11:09PM - Fixed bug caused by limb commands not updating the bounds boxs area of an object
+
+
+TUESDAY 22ND JUNE:
+
+10:30AM - Started work, had a few extra hours sleep to give me the edge on conciousness
+10:53AM - Read forum comments, checked bug reports and started looking at VERTEX COLORS
+11:12AM - CHANGE MESH no longer resets the vertex colour effect for memblock meshes
+11:17AM - Wrote small snippet that demonstrates the use of a memblock mesh with vertex colour
+11:30AM - Wrote snippet to show correct reflection shading use - limited stencil effect only
+11:43AM - Wrote first half of a new snippet to reveal shadow self shading looking bad
+12:25PM - Finished snippet and improved shadows to reduce Zclash - cannot improve self shadows
+12:41PM - Fixed the CAMERA and OBJECT ORIENTATION commands - matrices where inverted
+12:51PM - Wrote a snippet to show off use of camera to object to camera orientation
+01:10PM - Read a thread on slow WHILE loops - time to add in the zero-safe compiler directive
+01:41PM - Just addeda flag to switch off safety code for GOTO and LOOPS - going to do snippet
+01:44PM - Completed snippet to show WHILE and FORNEXT speed tests - new SETUP.INI and flag
+02:01PM - Completed first half of snippet to show memory usage as correct after deleting meshes
+02:20PM - Small break to eat and charge the batteries for the rest of the day
+02:43PM - Created snippet showing correct use of POINT CAMERA and one side effect of its use
+03:21PM - A little too much fun writing an intersect object snippet to show it works scaled
+03:35PM - Fixed a bug that caised the view matrix to be confused for OBJECT IN SCREEN
+03:38PM - Wrote a snippet to show correct multi camera use of the OBJECT IN SCREEN command
+03:56PM - Fixed a compiler bug so now INC and DEC are allowed without forcing float literals
+04:37PM - Spent a half hour exploring the mouse position bug and discoered it was Mikes bug :)
+04:59PM - Wrote a small snippet to show cartoon object usage, and confirmed the bug as fixed
+05:06PM - Fixed compiler bug that caused the IF statement to pick up THEN in comment
+05:14PM - Compiling the end of the day Pack of files and new DLLs, before checking the forums
+05:30PM - Fixed the DELETE CAMERA command so Alpha Texture is released correctly
+05:32PM - Fixed DELETE OBJECTS command bug so now ALL the objects including last one
+05:58PM - Added additional code so that DELETE IMAGE will trigger a clearance within objects
+06:03PM - Created small snippet to show an object having its image deleted indirectly
+06:20PM - Fixed a bug that caused EULER to FREEFLIGHT camera rotation conversion to fail
+06:26PM - Wrote a small snippet to show both EULER and FREEFLIGHT camera rotation in use
+06:31PM - Rejected a bug confirmed that called for the TIMER to be replaced with HITIMER
+06:43PM - Compiler now detects spaces used inside a function name
+06:47PM - Compiler now detects for illegal function name characters
+07:09PM - Compiler no longer allows function names that are also regular subroutine labels
+07:14PM - Compiler no longer allows TYPE structure to be declared without any fields
+07:45pm - Took a good half hour and now an array does not get confused with a function call
+07:47PM - One bug describes doing a very long TYPE structure, but it was quite a valid type
+08:12PM - Compiler will now give an error if a function is delcared inside a nested loop
+08:23PM - Rejected a bug on the grounds of being incomprehensible regarding SET DISPLAY MODE
+08:27PM - Updated the forum confirmed bugs state and prepared a new ZIP to be uploaded
+10:27PM - Two solid hours of very deep compiler surfing to find anf fix the non-alignment bug
+11:12PM - Compiler now reports if EXITFUNCTION returns a data type different from ENDFUNCTION
+
+MONDAY 21ST JUNE:
+
+8:30AM - Sorted Bugs Into Categories and Priorities
+12:00AM - Created MAKE IMAGE FROM MEMBLOCK snippet
+1:00PM - Created PICK OBJECT snippet
+1:30PM - Modified bug snippet to further demonstrate pick object working correctly
+2:00PM - Created Object Size Expression snippet to prove object size adjusts for scale
+2:30PM - Added extra compiler errors to detect for DOUBLE INTEGER BITWISE operations 
+2:34PM - Created snippet to show different between DOUBLE INTEGER and INTEGER bitwise usage
+2:42PM - Created snippet to demonstrate the fast DOT X,Y,RGB command (skips coord check)
+2:45PM - Do not regard the 'Variable declaring compiler bug' as a bug (only declare ONCE)
+2:53PM - Added compiler error trapping for FOR commands that try to use literal values
+4:26PM - Added support for alpha data to be generated using the command SET CAMERA TO IMAGE
+4:46PM - Created snippet to demonstrate using transparent renderings via a pasted image
+5:01PM - Prepared Monday Pack (4 DLLs, 1 COMPILER & 7 SNIPPETS)
+6:00PM - Upload Files and Update Forum Bug Report Threads
+7:16PM - Fixed compiler bug which caused the END: to be confused as a label, now fixed
+7:22PM - Rejected a bug that tried to add a comment to the end of a line without the ':'
+7:35PM - Wrote small program demonstrating loading byte data from a file within a function
+8:01PM - Fixed bug that caused the debugger to crash when an uninitialised string is used
+8:04PM - Found bug that has been fixed - memory leak in MID$ and other string commands
+8:08PM - Created a small snippet showing uninitialised strings displayed in the debugger
+8:14PM - Rejected bug that asserted that A=12.X would not load due to filename contents
+8:42PM - Compiler allows more variations of commentary inside the TYPE ENDTYPE structure
+8:58PM - Compiler now reports an error if a variable is used in a CASE statement
+9:05PM - Wrote a small program to show correct and incorrect CASE statement usage
+9:19PM - Compiler now explicitly detects for a constant value along with the constant name
+9:22PM - Rejected a confirmed bug which describes missing polygons due to basic Z buffer clip
+9:27PM - A good hour spent checking and refining the DELETE ARRAY ELEMENT command, now fixed
+10:35PM - Another good hour fixing the disappearing cylinder under PICK OBJECT duress
+10:55PM - Spent some short time writing a small snippet to show off a simple cylinder click
+11:26PM - Took a good 20 minutes to determine that a compiler bug is a big Tuesday job!
+11:34PM - Wrote small snippet to prove the GET IMAGE command now generates its mipmaps
+11:36PM - Rejected a bug that claimed error lines reported incorrectly, but no code to prove
+11:40PM - Wrote a small program to show that SET ALPHA MAPPING ON does not interfer old alphas
+11:43PM - Rejected a bug that claims MOUSEX and MOUSEMOVEX are buggy and random - they are good
+11:45PM - Decided to stop, two pages of confirmed bugs done, goes back to 15th March :)
+
+BUGWEEK MIKE WORKLOG
+--------------------
+
+26TH JUNE
+
+DISPLAY
+* Sorted mouse visibility when switching window mode off
+
+BASIC2D
+* Had to make another change for 16 bit mode with drawing commands which has resolved remaining issues with differences between 16 and 32 bit
+
+INPUT
+* Adjusted mouse move code
+
+25TH JUNE
+
+MATRIX
+* Changed ghost code so matrices are now ghosted correctly
+
+INPUT
+* MouseMoveX, MouseMoveY and MouseMoveZ no longer reset values after calling
+
+MULTIPLAYER
+* After performing a checklist for net sessions you can now find the number of players currently in the game in checklist value a, you can also find the maximum amount of players allowed in checklist value b
+* Fixed a memory leak with net messages
+* Fixed a crash when using perform checklist for net players
+
+Q3 BSP
+* Modified some collision code
+
+TEXT
+* Made a change so space is increased between characters and this removes some corruption
+* Adjusted character spacing when italics are in use
+* Font will resort to default type when display mode is changed
+* Space$ command will now return a blank string when a negative input is passed in
+
+FILE
+* Perform checklist for drives will no longer attempt to read from the floppy disk drive
+
+ANIMATION
+* Set animation volume fixed - silence is -10000 and full volume is 0
+
+DISPLAY
+* Set Window Title will now retain settings and won't intefere the the window position etc.
+* Switching the window off and then restoring retains the DB Pro icon
+* Screen fps will now report the correct value regardless of how many times it's called per frame.
+
+24TH JUNE
+
+FILE
+* Increased size of read buffer for strings
+
+HALF LIFE BSP
+* Setting collision properties on BSP after deleting a BSP caused a crash, now fixed
+* Modified loading code to stop crashing on loading particular maps
+* Increased mip map levels for textures
+* Threshold settings are now taken into account for collisions
+* Resolved a bug whereby calling collision commands in different orders affected the outcome of automatic collision
+* Sorted bsp collision hit command so it returns the correct value
+* BSP collision x now returns the right value
+* BSP collision y now returns the right value
+* BSP collision z now returns the right value
+* Will now respond to fog
+* Automatic BSP and automatic object collision can now be used together
+* Polygons with no textures linked to them are now ignored
+* Disabled sky box rendering
+
+Q3 BSP
+* Setting collision properties on BSP after deleting a BSP caused a crash, now fixed
+* Threshold settings are now taken into account for collisions
+* Objects last known positions are updated on the first collision update - solves issue of position object after calling collision commands and then object appearing in wrong place
+* Cameras last known positions are updated on the first collision update - solves issue of position camera after calling collision commands and then camera appearing in wrong place
+* Changed default texture settings - maps will now be much brighter
+* Fog can be used with Q3 BSPs
+* Changed lighting mode for meshes
+* Disabled sky box rendering
+
+SYSTEM
+* system smem available ( ) now returns correct value and changed to MB
+* system tmem available ( ) now returns correct value and changed to MB
+* system dmem available ( ) now returns correct value and changed to MB
+* Calling set window no longer resets loaded DLLs
+
+23RD JUNE
+
+FILE
+* Increased size of save buffer for strings
+
+Q3 BSP
+* Changed default patch levels
+* Adjusted default gamma on textues
+* Primitives with unloaded textures are now ignored
+
+HALF LIFE BSP
+* Modified texture settings on Half Life BSPs
+
+PARTICLES
+* Updated rendering code for snow particles
+* Particle rendering now updates polygon count for statistic ( 1 )
+* Fire particles will now display properly
+* Fixed the position particles emissions command - will now position properly
+
+BASIC 2D
+* Circles now display correct colour in 16 bit mode
+* Added clipping code in for drawing shapes
+* Render states don't cause conflicts anymore when mixing 3D and 2D
+* Fixed missing pixels when drawing ellipses
+
+SPRITES
+* Backsave turned off when all sprites are deleted
+
+SOUND
+* Play Sound command will now reset buffer each time
+* Stop Sound will reset the buffer position to the start
+* Loop Sound will now start sound from beginning position
+* Record Sound now overwrites any sound in ID - does not require you to have a sound in the ID specified anymore
+* Sound Looping return values are now updated correctly
+* Sound Playing return values are now updated correctly
+
+DISPLAY
+* Perform checklist for display mode no longer displays duplicate items
+* Added in extra safety checks for check display mode
+
+INPUT
+* Position mouse works properly now
+
+SYSTEM
+* Fixed System DMEM command crash
+
+MATRIX
+* Shift matrix up and down have been reversed
+* Can now set last matrix normal for end tiles
+* Now updates polygon count for statistic ( 1 )
+
+22ND JUNE
+
+SPRITES
+* Fixed problems with setting play frames for animated sprites
+* Sprite frame now returns the correct value
+* Error is now display when attempting to set a frame out of bounds
+* Fixed cropping on animated sprites
+* Size sprite now returns the right value
+* Paste sprite no longer interferes with the original sprite
+* Sprite collision now takes into account priority values
+* Rotated collision fixed
+* Alpha and diffuse working
+* Sprite animation loop no longer causes conflict with set frame
+* Error now shown when attempting to use an invalid image
+* Fixed no collision bug when setting animation frame
+* Wrapping now works horizontally
+
+3D MATHS
+* Copy vector is now working
+* Subtract vector is fixed
+* Multiply matrix works correctly
+* After a type has been created only functions that relate to that type can now be called e.g. you create a vector2 type, you then cannot call a vector3 command on it - this will affect some of the examples, they will be updated at a later point to reflect the modified functionality
+
+MATRIX
+* Fixed error when shifting matrices left / right on non square matrices

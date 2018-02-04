@@ -1,0 +1,39 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+
+SC_setupObject
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    SC_setupObject  objNum , GroupNum , Collision Type
+
+<BR><BR>
+
+        <u>-objNum</u>:        the object you want to setup<br>
+        <u>-groupNum</u>:      the group that you want this object to belong to (0 for no group)<br>
+        <u>-collisionType</u>: sets the type of collision to use with this object<br>
+                              0 - polygon collision, will check with every polygon in the object<br>
+                              1 - sphere collision, will create a sphere around the object to use in collisions<br>
+                              2 - box collision, will create a box around the object for collisions.<br>
+<br>
+		Mesh 255 and memblock 255 must not be in use.<br>
+		This command sets up an object for ray casting, object collision, and sliding collision, it need <br>
+            only be called once for each object. This command will also work when the object has been <br>
+		scaled before calling it but any further scaling of the object will not be updated in the collision<br>
+		unless you allow it. <a href="sc_allowObjectSclaing.htm">SC_allowObjectScaling</a> <br><br>
+
+		setupObject can be sucessfully called on an existing object, doing so<br>
+		will overwrite any stored collision data with the new object's data and reset collision to ON<br>
+		and scaling to False. The only drawback is re-settingup a complex/polygon object may take time.<br>
+
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

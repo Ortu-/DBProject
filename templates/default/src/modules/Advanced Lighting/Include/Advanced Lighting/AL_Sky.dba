@@ -1,0 +1,852 @@
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+`--------------
+` Make Sky
+`--------------
+function Sky_Create()
+   if AL_SkyEnabled=0
+      global AL_SkyEnabled as boolean
+      global AL_SkyVisible as integer
+      global AL_SkyDynamic as integer
+      global AL_SkySunAngle as AL_Vec3Float
+      global AL_SkySunDirection as AL_Vec3Float
+      global AL_SkyPlanetAngle as AL_Vec3Float
+      global dim AL_SkyObject(3) as integer
+      global dim AL_SkyEffect(3) as integer
+      AL_SkyEnabled=1
+      AL_SkyVisible=1
+      AL_SkyEffect(1)=find free effect()
+      AL_SkyObject(1)=find free object()
+      load effect AL_Directory+"Sky/Sky.fx",AL_SkyEffect(1),0,1
+      make object sphere AL_SkyObject(1),-100,18,18
+      offset limb AL_SkyObject(1),0,0,-50,0
+      texture object AL_SkyObject(1),1,AL_Image(2)
+      texture object AL_SkyObject(1),2,AL_Image(8)
+      set object effect AL_SkyObject(1),AL_SkyEffect(1)
+      set object mask AL_SkyObject(1),(2^AL_Camera(3))+(2^AL_Camera(7))
+      set object transparency AL_SkyObject(1),2
+      AL_SkyEffect(2)=find free effect()
+      AL_SkyObject(2)=find free object()
+      load effect AL_Directory+"Sky/Sky Geometry.fx",AL_SkyEffect(2),0,1
+      make object sphere AL_SkyObject(2),-100,18,18
+      set object effect AL_SkyObject(2),AL_SkyEffect(2)
+      set object mask AL_SkyObject(2),2^AL_Camera(2)
+      AL_SkyObject(3)=find free object()
+      AL_SkyEffect(3)=find free effect()
+      load effect AL_Directory+"Sky/Sky Scattering.fx",AL_SkyEffect(3),0,1
+      make object sphere AL_SkyObject(3),-100,18,18
+      texture object AL_SkyObject(3),0,AL_Image(2)
+      set object effect AL_SkyObject(3),AL_SkyEffect(3)
+      set object mask AL_SkyObject(3),2^AL_Camera(5)
+      hide object AL_SkyObject(3)
+      set vector4 AL_Vector4(1),0.5/AL_ViewVec.x,0.5/AL_ViewVec.y,1,1
+      set effect constant vector AL_SkyEffect(1),"ViewSize",AL_Vector4(1)
+      set effect constant vector AL_SkyEffect(1),"ViewVec",AL_Vector4(1)
+      set effect constant vector AL_SkyEffect(3),"ViewSize",AL_Vector4(1)
+      set effect constant vector AL_SkyEffect(3),"ViewVec",AL_Vector4(1)
+      set vector4 AL_Vector4(1),AL_Fog(1),AL_Fog(12),AL_Fog(2),AL_Fog(13)
+      set vector4 AL_Vector4(2),AL_Fog(3)/255,AL_Fog(4)/255,AL_Fog(5)/255,0
+      set vector4 AL_Vector4(3),AL_Fog(6)/255,AL_Fog(7)/255,AL_Fog(8)/255,0
+      set effect constant vector AL_SkyEffect(1),"FogRange",AL_Vector4(1)
+      set effect constant vector AL_SkyEffect(1),"FogColor1",AL_Vector4(2)
+      set effect constant vector AL_SkyEffect(1),"FogColor2",AL_Vector4(3)
+      set effect constant float AL_SkyEffect(1),"CameraRange",AL_CameraData(2)/1000
+      set effect constant float AL_SkyEffect(3),"CameraRange",AL_CameraData(2)/1000
+      Sky_SetAngle(0,0,0)
+      Sky_SetColor1(120,120,120)
+      Sky_SetColor2(120,120,120)
+      Sky_SetSunColor(120,120,120)
+      Sky_SetSunAngle(0,0,0,0.25)
+      Sky_SetPlanetColor(120,120,120)
+      Sky_SetPlanetAngle(0,0,0,0.01)
+      Sky_SetCloudsDensity(2,0.75)
+      Sky_SetCloudsScale(2,2)
+      Sky_SetCloudsSpeed(0.005,0.005)
+      Sky_SetCloudsColor(128,128,128)
+      Sky_SetCloudsLightColor(128,128,128)
+      Sky_SetDynamic(0)
+   endif
+endfunction
+
+`--------------
+` Update Sky
+`--------------
+function Sky_Update()
+   if AL_SkyEnabled=1 and AL_SkyVisible=1
+      position object AL_SkyObject(1),AL_CameraPos.x,AL_CameraPos.y+((AL_CameraData(2)*1.98)/2),AL_CameraPos.z
+      scale object AL_SkyObject(1),AL_CameraData(2)*1.98,AL_CameraData(2)*1.98,AL_CameraData(2)*1.98
+      position object AL_SkyObject(2),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+      scale object AL_SkyObject(2),AL_CameraData(2)*1.98,AL_CameraData(2)*1.98,AL_CameraData(2)*1.98
+      position object AL_SkyObject(3),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+      scale object AL_SkyObject(3),AL_CameraData(2)*1.98,AL_CameraData(2)*1.98,AL_CameraData(2)*1.98
+      if AL_TimeOfDayEnabled=1 and AL_CloudsEnable=1
+         set vector4 AL_Vector4(1),(AL_CloudsHeight.x/AL_CameraData(2))*((AL_CloudsHeight.x-AL_CameraPos.y)/AL_CloudsHeight.x),AL_TimeOfDay(11,5).x,0,0
+         set effect constant vector AL_SkyEffect(1),"Overcast",AL_Vector4(1)
+         set effect constant vector AL_SkyEffect(3),"Overcast",AL_Vector4(1)
+      endif
+   endif
+endfunction
+
+`--------------
+` Delete Sky
+`--------------
+function Sky_Delete()
+   if AL_SkyEnabled=1
+      if object exist(AL_SkyObject(1))=1 then delete object AL_SkyObject(1)
+      if effect exist(AL_SkyEffect(1))=1 then delete effect AL_SkyEffect(1)
+      if object exist(AL_SkyObject(2))=1 then delete object AL_SkyObject(2)
+      if effect exist(AL_SkyEffect(2))=1 then delete effect AL_SkyEffect(2)
+      if object exist(AL_SkyObject(3))=1 then delete object AL_SkyObject(2)
+      if effect exist(AL_SkyEffect(3))=1 then delete effect AL_SkyEffect(3)
+      AL_SkyEnabled=0
+      AL_SkyVisible=0
+   endif
+endfunction
+
+`--------------
+` Set Sky Visible
+`--------------
+function Sky_SetVisible(iVisible as integer)
+   if AL_SkyEnabled=1
+      AL_SkyVisible=iVisible
+      if iVisible=1
+         show object AL_SkyObject(1)
+         exclude object off AL_SkyObject(1)
+         show object AL_SkyObject(2)
+         exclude object off AL_SkyObject(2)
+         show object AL_SkyObject(3)
+         exclude object off AL_SkyObject(3)
+         if AL_CloudsEnable=1
+            show object AL_CloudsObject(2)
+            exclude object off AL_CloudsObject(2)
+            show object AL_CloudsObject(3)
+            exclude object off AL_CloudsObject(3)
+         endif
+      else
+         hide object AL_SkyObject(1)
+         exclude object on AL_SkyObject(1)
+         hide object AL_SkyObject(2)
+         exclude object on AL_SkyObject(2)
+         hide object AL_SkyObject(3)
+         exclude object on AL_SkyObject(3)
+         if AL_CloudsEnable=1
+            hide object AL_CloudsObject(2)
+            exclude object on AL_CloudsObject(2)
+            hide object AL_CloudsObject(3)
+            exclude object on AL_CloudsObject(3)
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Sky Dynamic
+`--------------
+function Sky_SetDynamic(iDynamic as integer)
+   if AL_Enabled=1 then AL_SkyDynamic=iDynamic
+   if AL_SkyEnabled=1 and AL_SkyDynamic=0 then set effect technique AL_SkyEffect(2),"WPosition"
+   if AL_SkyEnabled=1 and AL_SkyDynamic=1 then set effect technique AL_SkyEffect(2),"WPositionClip"
+endfunction
+
+`--------------
+` Set Sky Texture
+`--------------
+function Sky_SetTexture(iTexture as integer)
+   if AL_SkyEnabled=1 then texture object AL_SkyObject(1),0,iTexture
+endfunction
+
+`--------------
+` Set Sky Angle
+`--------------
+function Sky_SetAngle(iAngleX as float,iAngleY as float,iAngleZ as float)
+   if AL_SkyEnabled=1
+      rotate x matrix4 AL_Matrix(1),wrapvalue(iAngleX)/57.295
+      rotate y matrix4 AL_Matrix(2),wrapvalue(iAngleY)/57.295
+      rotate z matrix4 AL_Matrix(3),wrapvalue(iAngleZ)/57.295
+      multiply matrix4 AL_Matrix(4),AL_Matrix(1),AL_Matrix(2)
+      multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(3)
+      set effect constant matrix AL_SkyEffect(1),"SkyAngle",AL_Matrix(4)
+   endif
+endfunction
+
+`--------------
+` Set Sky Color1
+`--------------
+function Sky_SetColor1(iRed as float,iGreen as float,iBlue as float)
+   if AL_SkyEnabled=1
+      set vector4 AL_Vector4(1),iRed/255,iGreen/255,iBlue/255,0
+      set effect constant vector AL_SkyEffect(1),"SkyColor1",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Set Sky Color2
+`--------------
+function Sky_SetColor2(iRed as float,iGreen as float,iBlue as float)
+   if AL_SkyEnabled=1
+      set vector4 AL_Vector4(1),iRed/255,iGreen/255,iBlue/255,0
+      set effect constant vector AL_SkyEffect(1),"SkyColor2",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Set Sun Texture
+`--------------
+function Sky_SetSunTexture(iTexture as integer)
+   if AL_SkyEnabled=1
+      texture object AL_SkyObject(1),3,iTexture
+   endif
+endfunction
+
+`--------------
+` Set Sun Color
+`--------------
+function Sky_SetSunColor(iRed as float,iGreen as float,iBlue as float)
+   if AL_SkyEnabled=1
+      set vector4 AL_Vector4(1),iRed/255,iGreen/255,iBlue/255,0
+      set effect constant vector AL_SkyEffect(1),"SunColor",AL_Vector4(1)
+      if AL_DirLightLensFlare.x>-1 and AL_TimeOfDayEnabled=1 then LensFlare_SetColor(AL_DirLightLensFlare.x,iRed,iGreen,iBlue)
+   endif
+endfunction
+
+`--------------
+` Set Sun Angle
+`--------------
+function Sky_SetSunAngle(iAngX as float,iAngY as float,iAngZ as float,iSize as float)
+   if AL_SkyEnabled=1
+      if AL_TimeOfDayEnabled=1
+         if AL_SkySunAngle.x<>wrapvalue(iAngX) or AL_SkySunAngle.y<>wrapvalue(iAngY) or AL_SkySunAngle.z<>wrapvalue(iAngZ)
+            AL_TimeOfDayEnabled=2
+         endif
+      endif
+      AL_SkySunAngle.x=wrapvalue(iAngX)
+      AL_SkySunAngle.y=wrapvalue(iAngY)
+      AL_SkySunAngle.z=wrapvalue(iAngZ)
+      rotate x matrix4 AL_Matrix(1),iAngX/57.295
+      rotate y matrix4 AL_Matrix(2),iAngY/57.295
+      rotate z matrix4 AL_Matrix(3),iAngZ/57.295
+      multiply matrix4 AL_Matrix(4),AL_Matrix(1),AL_Matrix(2)
+      multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(3)
+      set vector3 AL_Vector3(1),0,0,1
+      transform normals vector3 AL_Vector3(1),AL_Vector3(1),AL_Matrix(4)
+      AL_SkySunDirection.x=-x vector3(AL_Vector3(1))
+      AL_SkySunDirection.y=-y vector3(AL_Vector3(1))
+      AL_SkySunDirection.z=-z vector3(AL_Vector3(1))
+      set vector4 AL_Vector4(2),-AL_SkySunDirection.x,-AL_SkySunDirection.y,-AL_SkySunDirection.z,0
+      set effect constant vector AL_SkyEffect(1),"LightDirection",AL_Vector4(2)
+      set effect constant vector AL_SkyEffect(3),"LightDirection",AL_Vector4(2)
+      set vector3 AL_Vector3(1),0,0,0
+      set vector3 AL_Vector3(2),AL_SkySunDirection.x,AL_SkySunDirection.y,AL_SkySunDirection.z
+      set vector3 AL_Vector3(3),0,1,0
+      build lookat lhmatrix4 AL_Matrix(1),AL_Vector3(1),AL_Vector3(2),AL_Vector3(3)
+      build fov lhmatrix4 AL_Matrix(2),iSize,1,1,10000
+      multiply matrix4 AL_Matrix(3),AL_Matrix(1),AL_Matrix(2)
+      set effect constant matrix AL_SkyEffect(1),"SunProjMatrix",AL_Matrix(3)
+      if AL_TimeOfDayEnabled=2
+         AL_TimeOfDayEnabled=1
+         if AL_SkySunDirection.y>0
+            DirLight_SetAngle(AL_SkySunAngle.x,AL_SkySunAngle.y,AL_SkySunAngle.z)
+            if AL_DirLightLensFlare.x>-1 then LensFlare_SetVisible(AL_DirLightLensFlare.x,1)
+         else
+            DirLight_SetAngle(AL_SkyPlanetAngle.x,AL_SkyPlanetAngle.y,AL_SkyPlanetAngle.z)
+            if AL_DirLightLensFlare.x>-1 then LensFlare_SetVisible(AL_DirLightLensFlare.x,0)
+         endif
+         TimeOfDay_Update()
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Planet Texture
+`--------------
+function Sky_SetPlanetTexture(iTexture as integer)
+   if AL_SkyEnabled=1 then texture object AL_SkyObject(1),4,iTexture
+endfunction
+
+`--------------
+` Set Planet Color
+`--------------
+function Sky_SetPlanetColor(iRed as float,iGreen as float,iBlue as float)
+   if AL_SkyEnabled=1
+      set vector4 AL_Vector4(1),iRed/255,iGreen/255,iBlue/255,0
+      set effect constant vector AL_SkyEffect(1),"PlanetColor",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Set Planet Angle
+`--------------
+function Sky_SetPlanetAngle(iAngX as float,iAngY as float,iAngZ as float,iSize as float)
+   if AL_SkyEnabled=1
+      if AL_TimeOfDayEnabled=1
+         if AL_SkyPlanetAngle.x<>wrapvalue(iAngX) or AL_SkyPlanetAngle.y<>wrapvalue(iAngY) or AL_SkyPlanetAngle.z<>wrapvalue(iAngZ)
+            AL_TimeOfDayEnabled=2
+         endif
+      endif
+      AL_SkyPlanetAngle.x=wrapvalue(iAngX)
+      AL_SkyPlanetAngle.y=wrapvalue(iAngY)
+      AL_SkyPlanetAngle.z=wrapvalue(iAngZ)
+      rotate x matrix4 AL_Matrix(1),iAngX/57.3
+      rotate y matrix4 AL_Matrix(2),iAngY/57.3
+      rotate z matrix4 AL_Matrix(3),iAngZ/57.3
+      multiply matrix4 AL_Matrix(4),AL_Matrix(1),AL_Matrix(2)
+      multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(3)
+      set vector3 AL_Vector3(1),0,0,1
+      transform normals vector3 AL_Vector3(2),AL_Vector3(1),AL_Matrix(4)
+      set vector3 AL_Vector3(1),0,0,0
+      set vector3 AL_Vector3(2),-x vector3(AL_Vector3(2)),-y vector3(AL_Vector3(2)),-z vector3(AL_Vector3(2))
+      set vector3 AL_Vector3(3),0,1,0
+      build lookat lhmatrix4 AL_Matrix(1),AL_Vector3(1),AL_Vector3(2),AL_Vector3(3)
+      build fov lhmatrix4 AL_Matrix(2),iSize,1,1,10000
+      multiply matrix4 AL_Matrix(3),AL_Matrix(1),AL_Matrix(2)
+      set effect constant matrix AL_SkyEffect(1),"PlanetProjMatrix",AL_Matrix(3)
+      if AL_TimeOfDayEnabled=2
+         AL_TimeOfDayEnabled=1
+         if AL_SkySunDirection.y>0
+            DirLight_SetAngle(AL_SkySunAngle.x,AL_SkySunAngle.y,AL_SkySunAngle.z)
+         else
+            DirLight_SetAngle(AL_SkyPlanetAngle.x,AL_SkyPlanetAngle.y,AL_SkyPlanetAngle.z)
+         endif
+         TimeOfDay_Update()
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Sky Cloud Texture
+`--------------
+function Sky_SetCloudsTexture(iTexture as integer,iNoise as integer)
+   if AL_SkyEnabled=1
+      texture object AL_SkyObject(1),5,iTexture
+      texture object AL_SkyObject(3),1,iTexture
+      texture object AL_SkyObject(1),6,iNoise
+   endif
+endfunction
+
+`--------------
+` Set Sky Cloud Density
+`--------------
+function Sky_SetCloudsDensity(iDensity as float,iAlpha as float)
+   if AL_SkyEnabled=1
+      set vector4 AL_Vector4(1),iDensity,iAlpha,0,0
+      set effect constant vector AL_SkyEffect(1),"CloudDensity",AL_Vector4(1)
+      set effect constant vector AL_SkyEffect(3),"CloudDensity",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Set Sky Cloud Scale
+`--------------
+function Sky_SetCloudsScale(iUSacle as float,iVSacle as float)
+   if AL_SkyEnabled=1
+      set vector4 AL_Vector4(1),iUSacle,iVSacle,0,0
+      set effect constant vector AL_SkyEffect(1),"CloudScale",AL_Vector4(1)
+      set effect constant vector AL_SkyEffect(3),"CloudScale",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Set Sky Cloud Speed
+`--------------
+function Sky_SetCloudsSpeed(iUSpeed as float,iVSpeed as float)
+   if AL_SkyEnabled=1
+      set vector4 AL_Vector4(1),iUSpeed,iVSpeed,0,0
+      set effect constant vector AL_SkyEffect(1),"CloudSpeed",AL_Vector4(1)
+      set effect constant vector AL_SkyEffect(3),"CloudSpeed",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Set Sky Cloud Color
+`--------------
+function Sky_SetCloudsColor(iRed as float,iGreen as float,iBlue as float)
+   if AL_SkyEnabled=1
+      set vector4 AL_Vector4(1),iRed/255,iGreen/255,iBlue/255,0
+      set effect constant vector AL_SkyEffect(1),"CloudColor",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Set Sky Cloud Light Color
+`--------------
+function Sky_SetCloudsLightColor(iRed as float,iGreen as float,iBlue as float)
+   if AL_SkyEnabled=1
+      set vector4 AL_Vector4(1),iRed/255,iGreen/255,iBlue/255,0
+      set effect constant vector AL_SkyEffect(1),"LightColor",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Cloud Setup
+`--------------
+function Clouds_Setup()
+   if AL_CloudsEnable=0
+      global AL_CloudsEnable as boolean
+      global AL_CloudsCamera as integer
+      global AL_CloudsImage as integer
+      global AL_CloudsDensity as float
+      global AL_CloudsMoved as float
+      global AL_CloudsSize as float
+      global AL_CloudsHeight as AL_Vec2Float
+      global AL_CloudsOldPos as AL_Vec3Float
+      global dim AL_CloudsObject(3) as integer
+      global dim AL_CloudsEffect(2) as integer
+      global dim AL_CloudsRandom(35) as float
+      AL_CloudsEnable=1
+      AL_CloudsCamera=find free camera()
+      AL_CloudsImage=find free image()
+      AL_CreateCamera(AL_CloudsCamera,AL_CloudsImage,AL_PostViewVec.x/4,AL_PostViewVec.y/4,20)
+      set camera range AL_CloudsCamera,AL_CameraData(1),AL_CameraData(2)
+      if AL_CameraData(3)>0 then set camera fov AL_CloudsCamera,AL_CameraData(3)
+      if AL_CameraData(4)>0 then set camera aspect AL_CloudsCamera,AL_CameraData(4)
+      backdrop on AL_CloudsCamera
+      color backdrop AL_CloudsCamera,0
+      AL_CloudsEffect(1)=find free effect()
+      load effect AL_Directory+"Sky/Clouds.fx",AL_CloudsEffect(1),0,1
+      AL_CloudsObject(1)=find free object()
+      load object AL_Directory+"Resources/Clouds.dbo",AL_CloudsObject(1)
+      set object effect AL_CloudsObject(1),AL_CloudsEffect(1)
+      set object mask AL_CloudsObject(1),2^AL_CloudsCamera
+      set object transparency AL_CloudsObject(1),1
+      AL_CloudsEffect(2)=find free effect()
+      load effect AL_Directory+"Sky/Clouds Project.fx",AL_CloudsEffect(2),0,1
+      set vector4 AL_Vector4(1),0.5/AL_ViewVec.x,0.5/AL_ViewVec.y,1,1
+      set effect constant vector AL_CloudsEffect(2),"ViewSize",AL_Vector4(1)
+      AL_CloudsObject(2)=find free object()
+      load object AL_Directory+"Resources/Skydome.dbo",AL_CloudsObject(2)
+      offset limb AL_CloudsObject(2),0,0,-50,0
+      set object effect AL_CloudsObject(2),AL_CloudsEffect(2)
+      set object transparency AL_CloudsObject(2),2
+      texture object AL_CloudsObject(2),0,AL_Image(2)
+      texture object AL_CloudsObject(2),1,AL_CloudsImage
+      set object mask AL_CloudsObject(2),(2^AL_Camera(9))+(2^AL_Camera(5))
+      AL_CloudsObject(3)=find free object()
+      make object sphere AL_CloudsObject(3),-100,10,15
+      set object effect AL_CloudsObject(3),AL_CloudsEffect(2)
+      set object transparency AL_CloudsObject(3),2
+      texture object AL_CloudsObject(3),0,AL_Image(2)
+      texture object AL_CloudsObject(3),1,AL_CloudsImage
+      set object mask AL_CloudsObject(3),(2^AL_Camera(9))+(2^AL_Camera(5))
+      for r=1 to 35
+         repeat
+            AL_CloudsRandom(r)=rnd(20)
+         until (AL_CloudsRandom(r)<AL_CloudsRandom(r-1)-5 or AL_CloudsRandom(r)>AL_CloudsRandom(r-1)+5)
+      next r
+      Clouds_SetDensity(50)
+      Clouds_SetHeight(10000,0.65)
+      Clouds_SetScale(1750,20,15,8,8)
+      Clouds_SetSpeed(0.009,-0.009,-0.0006,0.0006)
+      Clouds_SetColor(140,145,150)
+      Clouds_SetLightColor(90,50,20)
+   endif
+endfunction
+
+`--------------
+` Clouds Update
+`--------------
+function Clouds_Update()
+   if AL_CloudsEnable=1
+      local tRandom as integer
+      local tPos as AL_Vec3Float
+      position camera AL_CloudsCamera,AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+      rotate camera AL_CloudsCamera,AL_CameraAng.x,AL_CameraAng.y,AL_CameraAng.z
+      position object AL_CloudsObject(1),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+      set vector4 AL_Vector4(1),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z,0
+      set effect constant vector AL_CloudsEffect(1),"CloudPosition",AL_Vector4(1)
+      tPos.x=(AL_CameraPos.x-AL_CloudsOldPos.x)*AL_CameraDir.x
+      tPos.y=(AL_CameraPos.y-AL_CloudsOldPos.y)*AL_CameraDir.y
+      tPos.z=(AL_CameraPos.z-AL_CloudsOldPos.z)*AL_CameraDir.z
+      AL_CloudsMoved=AL_CloudsMoved-(tPos.x+tPos.y+tPos.z)
+      AL_CloudsOldPos=AL_CameraPos
+      if AL_CloudsMoved<0 then AL_CloudsMoved=AL_CloudsSize:inc AL_CloudsRandom(0)
+      if AL_CloudsMoved>AL_CloudsSize then AL_CloudsMoved=0:dec AL_CloudsRandom(0)
+      if AL_CloudsRandom(0)<0 then AL_CloudsRandom(0)=34
+      if AL_CloudsRandom(0)>34 then AL_CloudsRandom(0)=0
+      null=get object effect(AL_CloudsObject(1),-1)
+      for s=1 to 35
+         tRandom=s+AL_CloudsRandom(0)
+         if tRandom>35 then tRandom=tRandom-35
+         set vector4 AL_Vector4(1),((s-1)+(AL_CloudsMoved/AL_CloudsSize))*(AL_CloudsSize/100)*2,AL_CloudsRandom(tRandom)/20,0,0
+         set effect constant vector element "CloudScale",s,AL_Vector4(1)
+      next s
+      release effect pointer
+      if AL_CameraPos.y>AL_CloudsHeight.x-(AL_CloudsSize*AL_CloudsHeight.y) and AL_CameraPos.y<AL_CloudsHeight.x+(AL_CloudsSize*AL_CloudsHeight.y*4.5)
+         position object AL_CloudsObject(3),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+         show object AL_CloudsObject(3)
+         hide object AL_CloudsObject(2)
+      else
+         position object AL_CloudsObject(2),AL_CameraPos.x,AL_CloudsHeight.x,AL_CameraPos.z
+         if AL_CameraPos.y<AL_CloudsHeight.x-AL_CloudsSize*AL_CloudsHeight.y
+            scale object AL_CloudsObject(2),AL_CloudsSize*70,(AL_CloudsSize*70)/((AL_CloudsSize*35)/4000),AL_CloudsSize*70
+         else
+            scale object AL_CloudsObject(2),AL_CloudsSize*70,-(AL_CloudsSize*70)/((AL_CloudsSize*35)/4000),AL_CloudsSize*70
+         endif
+         show object AL_CloudsObject(2)
+         hide object AL_CloudsObject(3)
+      endif
+   endif
+endfunction
+
+`--------------
+` Delete Clouds
+`--------------
+function Clouds_Delete()
+   if AL_CloudsEnable=1
+      AL_CloudsEnable=0
+      if camera exist(AL_CloudsCamera) then delete camera AL_CloudsCamera
+      if image exist(AL_CloudsImage) then delete image AL_CloudsImage
+      if object exist(AL_CloudsObject(1)) then delete object AL_CloudsObject(1)
+      if object exist(AL_CloudsObject(2)) then delete object AL_CloudsObject(2)
+      if object exist(AL_CloudsObject(3)) then delete object AL_CloudsObject(3)
+      if effect exist(AL_CloudsEffect(1)) then delete effect AL_CloudsEffect(1)
+      if effect exist(AL_CloudsEffect(2)) then delete effect AL_CloudsEffect(2)
+   endif
+endfunction
+
+`--------------
+` Clouds Texture
+`--------------
+function Clouds_SetTexture(iCloudTexture as integer,iNoiseTexture as integer)
+   if AL_CloudsEnable=1
+      texture object AL_CloudsObject(1),0,iCloudTexture
+      texture object AL_CloudsObject(1),1,iNoiseTexture
+   endif
+endfunction
+
+`--------------
+` Clouds Density
+`--------------
+function Clouds_SetDensity(iDensity as float)
+   if AL_CloudsEnable=1
+      local tLightDensity as float
+      local tAlpha as float
+      local tCloudExp as float
+      if AL_CloudsDensity<>iDensity
+         AL_CloudsDensity=iDensity
+         if AL_TimeOfDayEnabled=1 then AL_TimeOfDayEnabled=2
+      endif
+      if AL_CloudsDensity>100 then AL_CloudsDensity=100
+      if AL_CloudsDensity<1 then AL_CloudsDensity=1
+      tLightDensity=5-(AL_CloudsDensity/5)
+      if tLightDensity<1 then tLightDensity=1
+      tAlpha=AL_CloudsDensity-69
+      if tAlpha<0 then tAlpha=0
+      tCloudExp=(1-(AL_CloudsDensity/100))*16
+      if tCloudExp<1 then tCloudExp=1
+      set vector4 AL_Vector4(1),1-(tAlpha/30),AL_CloudsDensity,2+tLightDensity,1+(1-(AL_CloudsDensity/100))
+      set effect constant vector AL_CloudsEffect(1),"CloudDensity",AL_Vector4(1)
+      set vector4 AL_Vector4(1),tCloudExp,tCloudExp/3,0,0
+      set effect constant vector AL_CloudsEffect(1),"CloudExp",AL_Vector4(1)
+      if AL_TimeOfDayEnabled=2
+         AL_TimeOfDayEnabled=1
+         TimeOfDay_Update()
+      endif
+   endif
+endfunction
+
+`--------------
+` Clouds Scale
+`--------------
+function Clouds_SetScale(iSacle as float,iUSacle as float,iVSacle as float,iNoiseUSacle as float,iNoiseVSacle as float)
+   if AL_CloudsEnable=1
+      AL_CloudsSize=iSacle
+      set vector4 AL_Vector4(1),AL_CloudsSize*iUSacle,AL_CloudsSize*iVSacle,0,0
+      set effect constant vector AL_CloudsEffect(1),"CloudUvScale",AL_Vector4(1)
+      set vector4 AL_Vector4(1),AL_CloudsSize*iNoiseUSacle,AL_CloudsSize*iNoiseVSacle,0,0
+      set effect constant vector AL_CloudsEffect(1),"NoiseUvScale",AL_Vector4(1)
+      if AL_CloudsSize*35<AL_CameraData(2)
+         set vector4 AL_Vector4(1),AL_CloudsSize*35,AL_CloudsSize,0,0
+      else
+         set vector4 AL_Vector4(1),AL_CameraData(2),AL_CloudsSize,0,0
+      endif
+      set effect constant vector AL_CloudsEffect(1),"CloudFalloff",AL_Vector4(1)
+      set vector4 AL_Vector4(1),AL_CloudsHeight.x,AL_CloudsSize*AL_CloudsHeight.y,0,0
+      set effect constant vector AL_CloudsEffect(1),"CloudHeight",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Clouds Height
+`--------------
+function Clouds_SetHeight(iHeight as float,iHeightSacle as float)
+   if AL_CloudsEnable=1
+      AL_CloudsHeight.x=iHeight
+      AL_CloudsHeight.y=iHeightSacle
+      set vector4 AL_Vector4(1),AL_CloudsHeight.x,AL_CloudsSize*AL_CloudsHeight.y,0,0
+      set effect constant vector AL_CloudsEffect(1),"CloudHeight",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Clouds Speed
+`--------------
+function Clouds_SetSpeed(iUSpeed as float,iVSpeed as float,iNoiseUSpeed as float,iNoiseVSpeed as float)
+   if AL_CloudsEnable=1
+      set vector4 AL_Vector4(1),iUSpeed,iVSpeed,0,0
+      set effect constant vector AL_CloudsEffect(1),"CloudSpeed",AL_Vector4(1)
+      set vector4 AL_Vector4(1),iNoiseUSpeed,iNoiseVSpeed,0,0
+      set effect constant vector AL_CloudsEffect(1),"NoiseSpeed",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Clouds Color
+`--------------
+function Clouds_SetColor(iRed as float,iGreen as float,iBlue as float)
+   if AL_CloudsEnable=1
+      set vector4 AL_Vector4(1),iRed/255,iGreen/255,iBlue/255,0
+      set effect constant vector AL_CloudsEffect(2),"CloudColor",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Clouds Light Color
+`--------------
+function Clouds_SetLightColor(iRed as float,iGreen as float,iBlue as float)
+   if AL_CloudsEnable=1
+      set vector4 AL_Vector4(1),iRed/255,iGreen/255,iBlue/255,0
+      set effect constant vector AL_CloudsEffect(2),"LightColor",AL_Vector4(1)
+   endif
+endfunction
+
+`--------------
+` Set Up Time Of Day
+`--------------
+function TimeOfDay_SetUp()
+   if AL_TimeOfDayEnabled=0
+      global AL_TimeOfDayEnabled as integer
+      global dim AL_TimeOfDay(11,15) as AL_Vec3Float
+      AL_TimeOfDayEnabled=1
+      AL_TimeOfDay(11,4).x=1
+      Sky_SetDynamic(1)
+
+   `Day
+      TimeOfDay_SetSkyColor(1,50,75,150,100,125,150)
+      TimeOfDay_SetFogColor(1,110,115,120,110,120,130,110,115,125)
+      TimeOfDay_SetLightColor(1,255,255,255,70,70,70)
+      TimeOfDay_SetSunPlanetColor(1,255,255,255,255,255,255)
+      TimeOfDay_SetCloudColor(1,115,120,125,130,125,120)
+      TimeOfDay_SetWaterColor(1,20,40,45,30,70,75,40,60,50,255,255,255)
+
+   `Night
+      TimeOfDay_SetSkyColor(2,15,20,15,0,0,0)
+      TimeOfDay_SetFogColor(2,14,16,20,26,28,30,18,19,20)
+      TimeOfDay_SetLightColor(2,40,40,40,25,25,25)
+      TimeOfDay_SetSunPlanetColor(2,255,255,255,255,255,255)
+      TimeOfDay_SetCloudColor(2,15,20,25,35,40,45)
+      TimeOfDay_SetWaterColor(2,20,30,35,20,35,40,30,50,40,255,255,255)
+
+   `Sun set
+      TimeOfDay_SetSkyColor(3,170,100,60,100,125,150)
+      TimeOfDay_SetFogColor(3,160,155,150,175,140,100,150,140,130)
+      TimeOfDay_SetLightColor(3,255,200,160,70,60,50)
+      TimeOfDay_SetSunPlanetColor(3,255,255,255,255,255,255)
+      TimeOfDay_SetCloudColor(3,140,115,100,150,125,110)
+      TimeOfDay_SetWaterColor(3,20,40,45,30,70,75,40,60,50,255,230,210)
+
+   `Sun rise
+      TimeOfDay_SetSkyColor(4,140,120,100,100,125,150)
+      TimeOfDay_SetFogColor(4,160,155,150,165,135,165,150,140,130)
+      TimeOfDay_SetLightColor(4,255,220,200,70,60,50)
+      TimeOfDay_SetSunPlanetColor(4,255,255,255,255,255,255)
+      TimeOfDay_SetCloudColor(4,135,125,115,140,125,120)
+      TimeOfDay_SetWaterColor(4,20,40,45,30,70,75,40,60,50,255,230,225)
+
+   `Day overcast
+      TimeOfDay_SetSkyColor(5,25,38,75,50,62,75)
+      TimeOfDay_SetFogColor(5,110,110,110,110,110,110,110,110,110)
+      TimeOfDay_SetLightColor(5,120,120,120,50,50,50)
+      TimeOfDay_SetSunPlanetColor(5,255,255,255,255,255,255)
+      TimeOfDay_SetCloudColor(5,80,85,95,110,115,110)
+      TimeOfDay_SetWaterColor(5,15,35,40,25,55,60,40,60,50,255,255,255)
+
+   `Night overcast
+      TimeOfDay_SetSkyColor(6,15,20,25,0,0,0)
+      TimeOfDay_SetFogColor(6,25,25,25,25,25,25,25,25,25)
+      TimeOfDay_SetLightColor(6,30,30,30,20,20,20)
+      TimeOfDay_SetSunPlanetColor(6,255,255,255,255,255,255)
+      TimeOfDay_SetCloudColor(6,15,20,25,25,30,35)
+      TimeOfDay_SetWaterColor(6,10,20,30,15,30,35,30,50,40,255,255,255)
+
+   `Sun set overcast
+      TimeOfDay_SetSkyColor(7,85,50,30,50,62,75)
+      TimeOfDay_SetFogColor(7,105,100,95,105,100,95,105,100,95)
+      TimeOfDay_SetLightColor(7,120,110,100,55,50,45)
+      TimeOfDay_SetSunPlanetColor(7,255,255,255,255,255,255)
+      TimeOfDay_SetCloudColor(7,115,105,100,130,115,100)
+      TimeOfDay_SetWaterColor(7,15,35,40,25,55,60,40,60,50,255,245,235)
+
+   `Sun rise overcast
+      TimeOfDay_SetSkyColor(8,70,60,50,50,62,75)
+      TimeOfDay_SetFogColor(8,105,100,95,105,100,95,105,100,95)
+      TimeOfDay_SetLightColor(8,120,110,100,55,50,45)
+      TimeOfDay_SetSunPlanetColor(8,255,255,255,255,255,255)
+      TimeOfDay_SetCloudColor(8,110,105,100,120,110,100)
+      TimeOfDay_SetWaterColor(8,15,35,40,25,55,60,40,60,50,255,235,245)
+
+   `Update
+      TimeOfDay_Update()
+
+   endif
+endfunction
+
+`--------------
+` Update Time Of Day
+`--------------
+function TimeOfDay_Update()
+   if AL_TimeOfDayEnabled=1
+      AL_TimeOfDay(11,1).x=(AL_SkySunDirection.y-0.15)*3.5
+      if AL_TimeOfDay(11,1).x<0 then AL_TimeOfDay(11,1).x=0
+      if AL_TimeOfDay(11,1).x>1 then AL_TimeOfDay(11,1).x=1
+      AL_TimeOfDay(11,2).x=(-AL_SkySunDirection.y+0.15)*3.5
+      if AL_TimeOfDay(11,2).x<0 then AL_TimeOfDay(11,2).x=0
+      if AL_TimeOfDay(11,2).x>1 then AL_TimeOfDay(11,2).x=1
+      AL_TimeOfDay(11,3).x=(AL_SkySunDirection.y-0.15)*3.5
+      if AL_TimeOfDay(11,3).x>0
+         AL_TimeOfDay(11,3).x=1-AL_TimeOfDay(11,3).x
+      else
+         AL_TimeOfDay(11,3).x=-AL_TimeOfDay(11,3).x
+         AL_TimeOfDay(11,3).x=1-AL_TimeOfDay(11,3).x
+      endif
+      if AL_TimeOfDay(11,3).x<0 then AL_TimeOfDay(11,3).x=0
+      if AL_TimeOfDay(11,3).x>1 then AL_TimeOfDay(11,3).x=1
+      if AL_TimeOfDay(11,1).x=1 then AL_TimeOfDay(11,4).x=1
+      if AL_TimeOfDay(11,2).x=1 then AL_TimeOfDay(11,4).x=0
+      AL_TimeOfDay(11,5).x=1
+      if AL_CloudsEnable=1
+         AL_TimeOfDay(11,5).x=AL_CloudsDensity-2
+         if AL_TimeOfDay(11,5).x>30 then AL_TimeOfDay(11,5).x=30
+         if AL_TimeOfDay(11,5).x<0 then AL_TimeOfDay(11,5).x=0
+         AL_TimeOfDay(11,5).x=AL_TimeOfDay(11,5).x/20
+      endif
+      AL_TimeOfDay(11,6).x=abs(AL_SkySunDirection.y)*10
+      if AL_TimeOfDay(11,6).x<0 then AL_TimeOfDay(11,6).x=0
+      if AL_TimeOfDay(11,6).x>1 then AL_TimeOfDay(11,6).x=1
+      if AL_TimeOfDay(11,1).x<>AL_TimeOfDay(11,1).y or AL_TimeOfDay(11,2).x<>AL_TimeOfDay(11,2).y or AL_TimeOfDay(11,3).x<>AL_TimeOfDay(11,3).y or AL_TimeOfDay(11,4).x<>AL_TimeOfDay(11,4).y or AL_TimeOfDay(11,5).x<>AL_TimeOfDay(11,5).y or AL_TimeOfDay(11,6).x<>AL_TimeOfDay(11,6).y
+         for i=1 to 15
+            AL_TimeOfDay(9,i).x=((AL_TimeOfDay(1,i).x*AL_TimeOfDay(11,1).x)+(AL_TimeOfDay(2,i).x*AL_TimeOfDay(11,2).x)+((AL_TimeOfDay(3,i).x*AL_TimeOfDay(11,3).x)*AL_TimeOfDay(11,4).x)+((AL_TimeOfDay(4,i).x*AL_TimeOfDay(11,3).x)*(1-AL_TimeOfDay(11,4).x)))
+            AL_TimeOfDay(9,i).y=((AL_TimeOfDay(1,i).y*AL_TimeOfDay(11,1).x)+(AL_TimeOfDay(2,i).y*AL_TimeOfDay(11,2).x)+((AL_TimeOfDay(3,i).y*AL_TimeOfDay(11,3).x)*AL_TimeOfDay(11,4).x)+((AL_TimeOfDay(4,i).y*AL_TimeOfDay(11,3).x)*(1-AL_TimeOfDay(11,4).x)))
+            AL_TimeOfDay(9,i).z=((AL_TimeOfDay(1,i).z*AL_TimeOfDay(11,1).x)+(AL_TimeOfDay(2,i).z*AL_TimeOfDay(11,2).x)+((AL_TimeOfDay(3,i).z*AL_TimeOfDay(11,3).x)*AL_TimeOfDay(11,4).x)+((AL_TimeOfDay(4,i).z*AL_TimeOfDay(11,3).x)*(1-AL_TimeOfDay(11,4).x)))
+            AL_TimeOfDay(10,i).x=((AL_TimeOfDay(5,i).x*AL_TimeOfDay(11,1).x)+(AL_TimeOfDay(6,i).x*AL_TimeOfDay(11,2).x)+((AL_TimeOfDay(7,i).x*AL_TimeOfDay(11,3).x)*AL_TimeOfDay(11,4).x)+((AL_TimeOfDay(8,i).x*AL_TimeOfDay(11,3).x)*(1-AL_TimeOfDay(11,4).x)))
+            AL_TimeOfDay(10,i).y=((AL_TimeOfDay(5,i).y*AL_TimeOfDay(11,1).x)+(AL_TimeOfDay(6,i).y*AL_TimeOfDay(11,2).x)+((AL_TimeOfDay(7,i).y*AL_TimeOfDay(11,3).x)*AL_TimeOfDay(11,4).x)+((AL_TimeOfDay(8,i).y*AL_TimeOfDay(11,3).x)*(1-AL_TimeOfDay(11,4).x)))
+            AL_TimeOfDay(10,i).z=((AL_TimeOfDay(5,i).z*AL_TimeOfDay(11,1).x)+(AL_TimeOfDay(6,i).z*AL_TimeOfDay(11,2).x)+((AL_TimeOfDay(7,i).z*AL_TimeOfDay(11,3).x)*AL_TimeOfDay(11,4).x)+((AL_TimeOfDay(8,i).z*AL_TimeOfDay(11,3).x)*(1-AL_TimeOfDay(11,4).x)))
+            AL_TimeOfDay(0,i).x=(AL_TimeOfDay(9,i).x*AL_TimeOfDay(11,5).x)+(AL_TimeOfDay(10,i).x*(1-AL_TimeOfDay(11,5).x))
+            AL_TimeOfDay(0,i).y=(AL_TimeOfDay(9,i).y*AL_TimeOfDay(11,5).x)+(AL_TimeOfDay(10,i).y*(1-AL_TimeOfDay(11,5).x))
+            AL_TimeOfDay(0,i).z=(AL_TimeOfDay(9,i).z*AL_TimeOfDay(11,5).x)+(AL_TimeOfDay(10,i).z*(1-AL_TimeOfDay(11,5).x))
+         next i
+         Sky_SetColor1(AL_TimeOfDay(0,1).x,AL_TimeOfDay(0,1).y,AL_TimeOfDay(0,1).z)
+         Sky_SetColor2(AL_TimeOfDay(0,2).x,AL_TimeOfDay(0,2).y,AL_TimeOfDay(0,2).z)
+         AdvLighting_SetFog(AL_Fog(1),AL_Fog(2),AL_TimeOfDay(0,3).x,AL_TimeOfDay(0,3).y,AL_TimeOfDay(0,3).z,AL_TimeOfDay(0,4).x,AL_TimeOfDay(0,4).y,AL_TimeOfDay(0,4).z)
+         AdvLighting_SetHeightFog(AL_Fog(9),AL_Fog(10),AL_Fog(11),AL_Fog(12),AL_Fog(13),AL_TimeOfDay(0,5).x,AL_TimeOfDay(0,5).y,AL_TimeOfDay(0,5).z,AL_Fog(17))
+         DirLight_SetColor(AL_TimeOfDay(0,6).x*AL_TimeOfDay(11,6).x,AL_TimeOfDay(0,6).y*AL_TimeOfDay(11,6).x,AL_TimeOfDay(0,6).z*AL_TimeOfDay(11,6).x)
+         AdvLighting_SetAmbient(AL_TimeOfDay(0,7).x,AL_TimeOfDay(0,7).y,AL_TimeOfDay(0,7).z)
+         Sky_SetSunColor(AL_TimeOfDay(0,8).x,AL_TimeOfDay(0,8).y,AL_TimeOfDay(0,8).z)
+         Sky_SetPlanetColor(AL_TimeOfDay(0,9).x,AL_TimeOfDay(0,9).y,AL_TimeOfDay(0,9).z)
+         Sky_SetCloudsColor(AL_TimeOfDay(0,10).x,AL_TimeOfDay(0,10).y,AL_TimeOfDay(0,10).z)
+         Sky_SetCloudsLightColor(AL_TimeOfDay(0,11).x*AL_TimeOfDay(11,6).x,AL_TimeOfDay(0,11).y*AL_TimeOfDay(11,6).x,AL_TimeOfDay(0,11).z*AL_TimeOfDay(11,6).x)
+         Clouds_SetColor(AL_TimeOfDay(0,10).x,AL_TimeOfDay(0,10).y,AL_TimeOfDay(0,10).z)
+         Clouds_SetLightColor(AL_TimeOfDay(0,11).x*AL_TimeOfDay(11,6).x,AL_TimeOfDay(0,11).y*AL_TimeOfDay(11,6).x,AL_TimeOfDay(0,11).z*AL_TimeOfDay(11,6).x)
+         Water_SetFogColor(Water_FogRange,Water_FogHeight,AL_TimeOfDay(0,12).x,AL_TimeOfDay(0,12).y,AL_TimeOfDay(0,12).z,AL_TimeOfDay(0,13).x,AL_TimeOfDay(0,13).y,AL_TimeOfDay(0,13).z)
+         Water_SetColor(AL_TimeOfDay(0,14).x,AL_TimeOfDay(0,14).y,AL_TimeOfDay(0,14).z,AL_TimeOfDay(0,15).x,AL_TimeOfDay(0,15).y,AL_TimeOfDay(0,15).z)
+         for i=1 to 6
+            AL_TimeOfDay(11,i).y=AL_TimeOfDay(11,i).x
+         next i
+      endif
+   endif
+endfunction
+
+`--------------
+` Sky Color
+`--------------
+function TimeOfDay_SetSkyColor(iIndex as integer,iRed1 as float,iGreen1 as float,iBlue1 as float,iRed2 as float,iGreen2 as float,iBlue2 as float)
+   if AL_TimeOfDayEnabled=1
+      AL_TimeOfDay(iIndex,1).x=iRed1
+      AL_TimeOfDay(iIndex,1).y=iGreen1
+      AL_TimeOfDay(iIndex,1).z=iBlue1
+      AL_TimeOfDay(iIndex,2).x=iRed2
+      AL_TimeOfDay(iIndex,2).y=iGreen2
+      AL_TimeOfDay(iIndex,2).z=iBlue2
+   endif
+endfunction
+
+`--------------
+` Fog Color
+`--------------
+function TimeOfDay_SetFogColor(iIndex as integer,iRed1 as float,iGreen1 as float,iBlue1 as float,iRed2 as float,iGreen2 as float,iBlue2 as float,iRed3 as float,iGreen3 as float,iBlue3 as float)
+   if AL_TimeOfDayEnabled=1
+      AL_TimeOfDay(iIndex,3).x=iRed1
+      AL_TimeOfDay(iIndex,3).y=iGreen1
+      AL_TimeOfDay(iIndex,3).z=iBlue1
+      AL_TimeOfDay(iIndex,4).x=iRed2
+      AL_TimeOfDay(iIndex,4).y=iGreen2
+      AL_TimeOfDay(iIndex,4).z=iBlue2
+      AL_TimeOfDay(iIndex,5).x=iRed3
+      AL_TimeOfDay(iIndex,5).y=iGreen3
+      AL_TimeOfDay(iIndex,5).z=iBlue3
+   endif
+endfunction
+
+`--------------
+` Light Color
+`--------------
+function TimeOfDay_SetLightColor(iIndex as integer,iRed1 as float,iGreen1 as float,iBlue1 as float,iRed2 as float,iGreen2 as float,iBlue2 as float)
+   if AL_TimeOfDayEnabled=1
+      AL_TimeOfDay(iIndex,6).x=iRed1
+      AL_TimeOfDay(iIndex,6).y=iGreen1
+      AL_TimeOfDay(iIndex,6).z=iBlue1
+      AL_TimeOfDay(iIndex,7).x=iRed2
+      AL_TimeOfDay(iIndex,7).y=iGreen2
+      AL_TimeOfDay(iIndex,7).z=iBlue2
+   endif
+endfunction
+
+`--------------
+` Sun Color
+`--------------
+function TimeOfDay_SetSunPlanetColor(iIndex as integer,iRed1 as float,iGreen1 as float,iBlue1 as float,iRed2 as float,iGreen2 as float,iBlue2 as float)
+   if AL_TimeOfDayEnabled=1
+      AL_TimeOfDay(iIndex,8).x=iRed1
+      AL_TimeOfDay(iIndex,8).y=iGreen1
+      AL_TimeOfDay(iIndex,8).z=iBlue1
+      AL_TimeOfDay(iIndex,9).x=iRed2
+      AL_TimeOfDay(iIndex,9).y=iGreen2
+      AL_TimeOfDay(iIndex,9).z=iBlue2
+   endif
+endfunction
+
+`--------------
+` Cloud Color
+`--------------
+function TimeOfDay_SetCloudColor(iIndex as integer,iRed1 as float,iGreen1 as float,iBlue1 as float,iRed2 as float,iGreen2 as float,iBlue2 as float)
+   if AL_TimeOfDayEnabled=1
+      AL_TimeOfDay(iIndex,10).x=iRed1
+      AL_TimeOfDay(iIndex,10).y=iGreen1
+      AL_TimeOfDay(iIndex,10).z=iBlue1
+      AL_TimeOfDay(iIndex,11).x=iRed2
+      AL_TimeOfDay(iIndex,11).y=iGreen2
+      AL_TimeOfDay(iIndex,11).z=iBlue2
+   endif
+endfunction
+
+`--------------
+` Water Color
+`--------------
+function TimeOfDay_SetWaterColor(iIndex as integer,iRed1 as float,iGreen1 as float,iBlue1 as float,iRed2 as float,iGreen2 as float,iBlue2 as float,iRed3 as float,iGreen3 as float,iBlue3 as float,iRed4 as float,iGreen4 as float,iBlue4 as float)
+   if AL_TimeOfDayEnabled=1
+      AL_TimeOfDay(iIndex,12).x=iRed1
+      AL_TimeOfDay(iIndex,12).y=iGreen1
+      AL_TimeOfDay(iIndex,12).z=iBlue1
+      AL_TimeOfDay(iIndex,13).x=iRed2
+      AL_TimeOfDay(iIndex,13).y=iGreen2
+      AL_TimeOfDay(iIndex,13).z=iBlue2
+      AL_TimeOfDay(iIndex,14).x=iRed3
+      AL_TimeOfDay(iIndex,14).y=iGreen3
+      AL_TimeOfDay(iIndex,14).z=iBlue3
+      AL_TimeOfDay(iIndex,15).x=iRed4
+      AL_TimeOfDay(iIndex,15).y=iGreen4
+      AL_TimeOfDay(iIndex,15).z=iBlue4
+   endif
+endfunction

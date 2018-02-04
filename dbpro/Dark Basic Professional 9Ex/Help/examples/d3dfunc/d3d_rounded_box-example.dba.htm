@@ -1,0 +1,40 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>Rem D3D_Rounded_Box Example
+Rem Written by Jason Clogg
+Rem 06/04/2008
+
+
+set display mode 800, 600, 16
+
+set window on
+
+Rem Initialise D3DFunc dll
+
+Rem Must be done if you run 'set display mode'
+
+d3d_init
+
+sync on: backdrop on: color backdrop 0
+
+
+do
+
+Rem Each of these commands is in a pair
+Rem One for filled box, and one for the outline
+
+d3d_rounded_box 10,10,600,50,10,1,rgb(255,0,0)
+d3d_rounded_box 10,10,600,50,10,0
+
+d3d_rounded_box 610,10,790,590,30,1,rgb(0,0,255)
+d3d_rounded_box 610,10,790,590,30,0
+
+d3d_rounded_box 10,60,600,530,100,1,rgb(0,128,0)
+d3d_rounded_box 10,60,600,530,100,0
+
+d3d_rounded_box 10,540,600,590,10,1,rgb(255,0,0)
+d3d_rounded_box 10,540,600,590,10,0
+
+sync
+
+loop
+</font></pre>
+</body>

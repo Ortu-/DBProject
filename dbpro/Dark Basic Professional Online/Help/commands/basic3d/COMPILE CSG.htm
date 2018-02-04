@@ -1,0 +1,16 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>COMPILE CSG</B></FONT><BR>
+This command will convert a specially designed X file into a CSG processed geometry set and save it out as an output X file. The input X file has to consist of a series of solid meshes with no complex frame hierarchy. The Constructive Solid Geometry process will split these meshes to remove all hidden surfaces. This can save polygons in large scenes, but may also increase polygon counts if the geometry is complex. A typical example of a good input X file is a sequence of solid boxes placed side by side to form a wall. CSG would remove the polygons where the boxes touch reducing the polygon count and improving polygon usage.<BR>
+<BR>
+SYNTAX<BR>
+COMPILE CSG Input X File, Output X File<BR>
+COMPILE CSG Input X File, Output X File, Epsilon<BR>
+<BR>
+RELATED INFO<BR>
+<a href="..\basic3d.htm">BASIC3D Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+EXAMPLE<BR>
+<a href="..\..\examples\basic3d\basic3d1-example.dba.htm">View Showcase Example</a><BR>
+<a href="..\..\examples\basic3d\basic3d2-example.dba.htm">View Usage Example</a><BR>
+<BR>
+</FONT></BODY>

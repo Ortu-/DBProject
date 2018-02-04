@@ -1,0 +1,222 @@
+Upgrade 5.8 BETA1-290305
+===========
+
+Information
+-----------
+
+ * Created a series of snippet examples that demonstrate all the fixes from the MAR05BUGLIST
+
+General
+-------
+
+ * Fixed debugger crashes so that large programs can be traced and stepped through
+ * Sured up compiler to allow better integration with debugger
+ * Reverted to the older DX 9.0c runtimes for U58 until MS release the new 2005 runtimes
+
+Compiler
+--------
+
+ * Booleans and other sub-DWORD sized varaibles can now be used as condition parameters
+ * Indirect addressing now allows you to assign, read and print the value, ie print *ptr
+ * Indirect addressing such as *ptr now also works for basic conditions
+ * Better parsing of conditions where brackets are used inside speed marks
+ * You can now have speech marks, of an odd number in the REMSTART/REMEND block
+ * Speed improvements - open setup.ini in the compiler folder, add a group named "[DIRECTIVES]", and an item below this "RemoveSafetyCode=Yes", recompile your program, this solves problems where loops may cause slow down and may significantly increase frame rates
+ * Host of fixes centered around comments beig parsed, variable handling and error runtime data
+ * Quotes allowed in REMSTART REMEND block, and REMBLOCK also allowed in SELECT CASE statement
+ * Changed compiler error 57 to better describe the need to have same function return types
+ * Can now place comments onto the end of a function declaration
+ * Fixed parsing of declarations so initialisation values are retained
+
+Basic3D
+-------
+
+ * Collision against sphere objects (tristrips fixed), no longer crashes out
+ * SAVE OBJECT no longer saves animated vertex data - uses original data
+ * LOAD OBJECT no longer crashes if the file contains some forms of invalid data
+ * X Files can now be loaded with their vertex colours taken into account
+ * Setting the material diffuse/ambient/etc components will now affect models using multimaterial data
+ * When transparency is used, zwrite is no longer reset (ignored)
+ * Instances that use animating bone objects now animate even when source object is not visible
+ * Deleting objects that are used as shadows or reflections no longer lingers
+ * Fixed problem of NOZDEPTH object causing ghostMatrix to render with no Zbuffer information
+ * In respect of the above command DOTPRODUCT3 bump mapping once again possible
+ * OBJECT IN SCREEN commands now account for the multiple camera viewport settings
+ * When mesh bounds are created their buffers are updated straight away meaning they will be drawn instantly
+ * Textures are now allowed if the shader does not specify the useTexture flag in LOAD EFFECT
+ * Animation now updates the boundbox from pre-created boundsarray (for speed), and fixed from B2
+ * Added extra code which uses the new exclusion flag of objects to skip code to speed up program
+ * Pick object now ignores culled polygons unless the CULL flag is set to zero
+ * CONVX now loads meshes even if the materiallist has only a single material entry (X file fix) 
+ * Put back ability for shaders using PS and not specifying internal textures to work again!
+
+
+ * Additional commands upgraded to public release, undocumented for U58.
+   For help, examine the NewU58Commands.DBA example provided:
+
+   rem Vertex Data Commands
+   LOCK VERTEXDATA FOR LIMB ObjectNumber, LimbNumber
+   LOCK VERTEXDATA FOR LIMB ObjectNumber, LimbNumber, LockMode
+   LOCK VERTEXDATA FOR MESH MeshNumber
+   ADD MESH TO VERTEXDATA MeshNumber
+   DELETE MESH FROM VERTEXDATA VertexStart, VertexEnd, IndexStart, IndexEnd
+   SET VERTEXDATA UV VertexIndex, U, V
+   SET VERTEXDATA UV VertexIndex, Stage Number, U, V
+   SET VERTEXDATA NORMALS VertexIndex, NX, NY, NZ
+   SET VERTEXDATA POSITION VertexIndex, X, Y, Z
+   SET VERTEXDATA DIFFUSE VertexIndex, RGBValue
+   n=GET VERTEXDATA VERTEX COUNT()
+   n=GET VERTEXDATA INDEX COUNT()
+   n=GET VERTEXDATA POSITION X(VertexIndex)
+   n=GET VERTEXDATA POSITION Y(VertexIndex)
+   n=GET VERTEXDATA POSITION Z(VertexIndex)
+   n=GET VERTEXDATA NORMALS X(VertexIndex)
+   n=GET VERTEXDATA NORMALS Y(VertexIndex)
+   n=GET VERTEXDATA NORMALS Z(VertexIndex)
+   n=GET VERTEXDATA U(VertexIndex)
+   n=GET VERTEXDATA V(VertexIndex)
+   n=GET VERTEXDATA U(VertexIndex, Stage Number)
+   n=GET VERTEXDATA V(VertexIndex, Stage Number)
+   n=GET VERTEXDATA DIFFUSE(VertexIndex)
+   UNLOCK VERTEXDATA
+
+   rem CSG Commands
+   PERFORM CSG UNION TargetObject, BrushObject
+   PERFORM CSG DIFFERENCE TargetObject, BrushObject
+   PERFORM CSG INTERSECTION TargetObject, BrushObject
+   PERFORM CSG UNION ON VERTEXDATA BrushMesh
+   PERFORM CSG DIFFERENCE ON VERTEXDATA BrushMesh
+   PERFORM CSG INTERSECTION ON VERTEXDATA BrushMesh
+
+   rem New Object Commands
+   SET GLOBAL OBJECT CREATION SharedVBMode
+   SAVE OBJECT Filename$, ObjectNumber
+   CLONE OBJECT ObjectNumber, SourceObject, ShareOriginalData
+   EXCLUDE OBJECT ON ObjectID
+   EXCLUDE OBJECT OFF ObjectID
+
+   rem Texture Stage Management
+   SET OBJECT TEXTURE ObjectNumber, StageNumber, TexturingMode, MipmapFlag
+   SET OBJECT FILTER ObjectNumber, StageNumber, Flag
+   SET BLEND MAPPING ON ObjectNumber, StageIndex, ImageNumber, TexCoordMode, BlendMode
+
+   rem Shadow Commands
+   SET SHADOW SHADING ON ObjectNumber, MeshNumber, ShadowRange, UseShader
+   SET SHADOW SHADING OFF ObjectNumber
+   SET SHADOW POSITION Mode, X, Y, Z
+
+   rem Extra Collision Support
+   SET OBJECT FRAME ObjectNumber, Frame, RecalculateBounds
+   CALCULATE AUTOMATIC COLLISION
+
+Image
+-----
+
+ * Confirmed that you cannot save successful BMP files in FullScreen mode (DX9.0c bug)
+ * Texture Flag of 2 in LOAD IMAGE will now allow CUBE maps to be loaded directly
+ * Updated Image DLL to save out all sizes of bitmaps, including those not to a power of two
+ * LOAD IMAGE now brings back alpha of images using SET IMAGE COLORKEY during pixel perfect
+
+Camera
+------
+
+ * MAKE CAMERA now sets the camera ID internally so SET CURRENT CAMERA is not depended upon
+ * Fixed camera angle readout so it matches the way the object freeflight angles read out
+
+Animation
+---------
+
+ * Animation - the set animation speed command only applies to mpg and avi, wmv is currently not supported
+ * Animation - set animation volume command, help is incorrect, full volume is 0 and lowest volume is -10000
+
+Sprite
+------
+
+ * Sprite - when using animated sprites the image dimensions are retained resulting in no more stretching
+ * Sprite - alpha testing disabled with sprites, stops problems with sprites not showing when objects are in certain transparent modes
+ * Sprite - animated sprites updated to use correct transparency
+
+Light
+-----
+
+ * Lights - fixed a problem with fog colour
+
+Music
+-----
+
+ * Music - no error shown when volume is above 100, also note that the maximum volume value is 100, anything over this makes no difference
+
+Input
+-----
+
+ * Input - mouse z value no longer reset when the mouse is positioned manually
+
+Basic2D
+-------
+
+ * Basic 2D - dot and point commands can now be used on bitmaps that are larger than the screen resolution
+ * Basic 2D - and modified so the draw commands do not overwrite memory of bitmap zero (screen)
+
+Sound
+-----
+
+ * Sound & Memblocks - when creating memblocks from sounds and sounds from memblocks the data format is retained so the sounds are played back correctly. this has altered the memblock format
+
+Text 
+----
+
+ * Text no longer corrupts when change the text size and text size texture plate use improved
+
+Multiplayer
+-----------
+ 
+ * Multiplayer - fixed problem with net buffer not moving onto the next message in the queue
+
+System
+------
+
+ * Setting the windows layout to a caption and popup no longer leaves corrupt window borders
+
+Multiformat Support
+-------------------
+
+ * HL BSP - tested object and bsp collision working together
+ * Q3 BSP - number of polygons drawn is updated for global statistics
+ * MD2 - updated animation handling code
+ * MD3 - updated animation handling code
+ * MDL - updated animation code
+ * 3DS - improved loading code
+
+Advanced Terrain Expansion Pack
+-------------------------------
+
+ * Terrain - multiple cameras now supported
+ * Terrain - if you want to hide limbs manually then don't call the update terrain command
+ * Terrain - save terrain command implemented
+ * Terrain - load terrain command fully implemented
+ * Terrain - culling now takes into account terrain position
+ * Terrain - collision data is updated when a terrain has been repositioned
+ * Terrain - tested shaders with terrain, not come across any problems
+ * Terrain - fixed a crash when display mode was changed
+ * Terrain - default values now applied, no longer crashes if all functions are not called
+ * Terrain - when loading a saved terrain note that you cannot adjust it's properties and rebuild, calling "build terrain" on a loaded terrain will casue an error message
+ * Terrain - error message shown on "load terrain" command if non standard extension used
+
+Cloth & Particles
+-----------------
+
+ * The color effector add key command now returns the correct value
+
+Enhancement Pack
+----------------
+
+ * Speech - the speech commands no longer pause until finished allowing programs to continue with execution
+ * Ogg Vorbis - volume can now be set correctly
+ * Ogg Vorbis - get state returns the right value
+ * File Blocks - if you add a file to a block and the file already exists it will be overwritten, previously the behaviour was to create an additional copy
+ * File Blocks - new command called "remove file from block ( id, file )"
+
+DBO
+---
+
+ * DBO - updated DBO documentation

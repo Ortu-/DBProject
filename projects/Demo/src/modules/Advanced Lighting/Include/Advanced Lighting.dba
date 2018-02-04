@@ -1,0 +1,876 @@
+`====================================================
+` Advanced Lighting Functions
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+   type AL_Vec2Integer
+      x as integer
+      y as integer
+   endtype
+
+   type AL_Vec2Float
+      x as float
+      y as float
+   endtype
+
+   type AL_Vec3Integer
+      x as integer
+      y as integer
+      z as integer
+   endtype
+
+   type AL_Vec3Float
+      x as float
+      y as float
+      z as float
+   endtype
+
+   type AL_Vec4Float
+      x as float
+      y as float
+      z as float
+      w as float
+   endtype
+
+   `#include "modules/Advanced Lighting/Include/Advanced Lighting/AL_Effect.dba"
+   `#include "modules/Advanced Lighting/Include/Advanced Lighting/AL_Object.dba"
+   `#include "modules/Advanced Lighting/Include/Advanced Lighting/AL_Lighting.dba"
+   `#include "modules/Advanced Lighting/Include/Advanced Lighting/AL_PostFilter.dba"
+   `#include "modules/Advanced Lighting/Include/Advanced Lighting/AL_Sky.dba"
+   `#include "modules/Advanced Lighting/Include/Terrain.dba"
+   `#include "modules/Advanced Lighting/Include/Water.dba"
+   `#include "modules/Advanced Lighting/Include/Materials.dba"
+
+`--------------
+` Advanced Lighting Setup
+`--------------
+function AdvLighting_Setup(iWidth as integer,iHeight as integer,iPostWidth as integer,iPostHeight as integer,iMotionBlur as boolean)
+   if AL_Enabled=0
+
+   `Variable
+      global AL_Enabled as boolean
+      global AL_CameraPos as AL_Vec3Float
+      global AL_CameraAng as AL_Vec3Float
+      global AL_CameraDir as AL_Vec3Float
+      global AL_CameraViewNormal as float
+      global AL_ViewVec as AL_Vec2Float
+      global AL_PostViewVec as AL_Vec2Float
+      global AL_CameraView as AL_Vec4Float
+      global AL_Directory as string
+      global AL_CurrentCamera as integer
+      global AL_WorldSize as float
+      global AL_ShadowBias as float
+      global AL_ShadowOffset as float
+      global AL_ShadowRange as float
+      global AL_AmbientAdjust as float
+      global AL_DirectionalColorAdjust as float
+      global AL_DirLightLensFlare as AL_Vec3Integer
+      global AL_SpotLightCount as integer
+      global AL_SpotLightVisibleCount as integer
+      global AL_PointLightCount as integer
+      global AL_PointLightVisibleCount as integer
+      global AL_SpotShadowMapCount as integer
+      global AL_SpotShadowUpdate as integer
+      global AL_MaxSpotShadowUpdate as integer
+      global AL_PointShadowMapCount as integer
+      global AL_PointShadowUpdate as integer
+      global AL_MaxPointShadowUpdate as integer
+      global AL_SpotDynamicTimer as integer
+      global AL_PointDynamicTimer as integer
+      global AL_EffectCount as integer
+      global AL_MotionBlurCount as integer
+      global AL_MotionBlurAttachCount as integer
+      global AL_AlphaEffectCount as integer
+      global AL_AlphaEffectLightingCount as integer
+      global AL_ObjectCount as integer
+      global AL_AlphaObjectCount as integer
+      global AL_ObjectAutoUpdateCount as integer
+      global AL_ObjectDynamicTimer as integer
+      global AL_ShadowmapLOD as integer
+      global AL_AlphaLightsUpdate as integer
+      global AL_AlphaEffectLightingUpdate as integer
+      global AL_AlphaEffectLightingMaxUpdate as integer
+      global AL_AlphaEffectLightingNum as integer
+      global AL_FogAreaCount as integer
+      global AL_MotionBlur as boolean
+      AL_Directory="resource/Advanced Lighting/Shaders/"
+      AL_CurrentCamera=0
+      AL_ShadowBias=0.001
+      AL_ShadowOffset=2
+      AL_ShadowRange=5000
+      AL_WorldSize=0.5
+      AL_DirectionalColorAdjust=0.1
+      AL_DirLightLensFlare.x=-1
+      AL_AmbientAdjust=0.1
+      AL_Enabled=1
+      AL_ViewVec.x=iWidth
+      AL_ViewVec.y=iHeight
+      AL_PostViewVec.x=iPostWidth
+      AL_PostViewVec.y=iPostHeight
+      AL_SpotLightCount=-1
+      AL_SpotLightVisibleCount=-1
+      AL_PointLightCount=-1
+      AL_PointLightVisibleCount=-1
+      AL_SpotShadowMapCount=12
+      AL_SpotShadowUpdate=1
+      AL_MaxSpotShadowUpdate=3
+      AL_PointShadowMapCount=8
+      AL_PointShadowUpdate=1
+      AL_MaxPointShadowUpdate=3
+      AL_SpotDynamicTimer=10
+      AL_PointDynamicTimer=20
+      AL_EffectCount=-1
+      AL_MotionBlurCount=-1
+      AL_MotionBlurAttachCount=-1
+      AL_AlphaEffectCount=-1
+      AL_AlphaEffectLightingCount=-1
+      AL_ObjectCount=-1
+      AL_AlphaObjectCount=-1
+      AL_AlphaEffectLightingUpdate=0
+      AL_AlphaEffectLightingMaxUpdate=4
+      AL_AlphaEffectLightingNum=0
+      AL_ObjectAutoUpdateCount=-1
+      AL_ObjectDynamicTimer=20
+      AL_ShadowmapLOD=800
+      AL_FogAreaCount=-1
+      AL_MotionBlur=iMotionBlur
+
+   `Arrays
+      global dim AL_Camera(9) as integer
+      global dim AL_Image(8) as integer
+      global dim AL_CameraData(8) as float
+      global dim AL_Ldx(5) as float
+      global dim AL_Ldy(5) as float
+      global dim AL_Ldz(5) as float
+      global dim AL_Ambient(8) as float
+      global dim AL_Fog(17) as float
+      global dim AL_ShadowMapCamera(11) as integer
+      global dim AL_ShadowMapTexture(11) as integer
+      global dim AL_CurrentShadowMapSize(11) as integer
+      global dim AL_CurrentShadowMapImage(12) as integer
+      global dim AL_CurrentShadowMapFormat(11) as integer
+      global dim AL_DirectionalUpdate(3) as integer
+      global dim AL_SpotLight(1) as AL_LightData
+      global dim AL_SpotLightVisible() as integer
+      global dim AL_SpotShadowMap(AL_SpotShadowMapCount) as AL_SpotShadowMapData
+      global dim AL_PointLight(1) as AL_LightData
+      global dim AL_PointLightVisible() as integer
+      global dim AL_PointShadowMap(AL_PointShadowMapCount) as AL_PointShadowMapData
+      global dim AL_PointShadowSide((AL_PointShadowMapCount+1)*6) as AL_PointShadowSideData
+      global dim AL_Effect() as AL_EffectData
+      global dim AL_MotionBlur() as AL_MotionBlurData
+      global dim AL_MotionBlurAttach() as AL_MotionBlurAttachData
+      global dim AL_AlphaEffect() as AL_AlphaEffectData
+      global dim AL_AlphaEffectLighting() as integer
+      global dim AL_Object() as AL_ObjectData
+      global dim AL_AlphaObject() as AL_AlphaObjectData
+      global dim AL_ObjectBounds(4) as float
+      global dim AL_ObjectAutoUpdate() as integer
+      global dim AL_ViewProject(15) as float
+      global dim AL_ViewProjectFrustum(AL_SpotShadowMapCount,5,3) as float
+      global dim AL_LightsToCamera(5) as integer
+      global dim AL_LightsToCameraDis(5) as float
+      global dim AL_LensFlare() as AL_LensFlareData
+      global dim AL_SubFlare() as AL_SubFlareData
+      global dim AL_FlareObject() as AL_FlareObjectData
+      global dim AL_FlareObjectCount(1) as integer
+
+   `Vectors/matrices
+      global dim AL_Vector3(4) as integer
+      global dim AL_Vector4(6) as integer
+      global dim AL_Matrix(6) as integer
+      AL_Vector3(1)=201:null=make vector3(AL_Vector3(1))
+      AL_Vector3(2)=202:null=make vector3(AL_Vector3(2))
+      AL_Vector3(3)=203:null=make vector3(AL_Vector3(3))
+      AL_Vector3(4)=204:null=make vector3(AL_Vector3(4))
+      AL_Vector4(1)=205:null=make vector4(AL_Vector4(1))
+      AL_Vector4(2)=206:null=make vector4(AL_Vector4(2))
+      AL_Vector4(3)=207:null=make vector4(AL_Vector4(3))
+      AL_Vector4(4)=208:null=make vector4(AL_Vector4(4))
+      AL_Vector4(5)=209:null=make vector4(AL_Vector4(5))
+      AL_Vector4(6)=210:null=make vector4(AL_Vector4(6))
+      AL_Matrix(1)=211:null=make matrix4(AL_Matrix(1))
+      AL_Matrix(2)=212:null=make matrix4(AL_Matrix(2))
+      AL_Matrix(3)=213:null=make matrix4(AL_Matrix(3))
+      AL_Matrix(4)=214:null=make matrix4(AL_Matrix(4))
+      AL_Matrix(5)=215:null=make matrix4(AL_Matrix(5))
+      AL_Matrix(6)=216:null=make matrix4(AL_Matrix(6))
+
+   `Renders
+      AL_Camera(1)=0
+      AL_Image(1)=find free image()
+      set camera to image AL_Camera(1),AL_Image(1),AL_ViewVec.x,AL_ViewVec.y,3,116 `Geometry
+      backdrop off AL_Camera(1)
+      AL_Camera(2)=find free camera()
+      AL_Image(2)=find free image()
+      if AL_MotionBlur=1
+         AL_CreateCamera(AL_Camera(2),AL_Image(2),AL_ViewVec.x,AL_ViewVec.y,113) `Position/depth/Motion vec
+      else
+         AL_CreateCamera(AL_Camera(2),AL_Image(2),AL_ViewVec.x,AL_ViewVec.y,112) `Position/depth
+      endif
+      AL_Camera(3)=find free camera()
+      AL_Image(3)=find free image()
+      AL_CreateCamera(AL_Camera(3),AL_Image(3),AL_PostViewVec.x/4,AL_PostViewVec.y/4,20) `Reflection
+      AL_Camera(5)=find free camera()
+      AL_Image(5)=find free image()
+      AL_CreateCamera(AL_Camera(5),AL_Image(5),AL_PostViewVec.x/4,AL_PostViewVec.y/4,21) `Distort/blocker/SSAO
+      backdrop on AL_Camera(5)
+      color backdrop AL_Camera(5),rgb(127,127,0)
+      AL_Camera(6)=find free camera()
+      AL_Image(6)=find free image()
+      AL_CreateCamera(AL_Camera(6),AL_Image(6),AL_PostViewVec.x/4,AL_PostViewVec.y/4,21) `Distort/scatter/SSAO blur
+      AL_Image(7)=find free image()
+      load image AL_Directory+"Resources/Mask.dds",AL_Image(7)
+      AL_Image(8)=find free image()
+      load image AL_Directory+"Resources/Noise.dds",AL_Image(8)
+
+   `Variance shadowmap cameras
+      AL_Image(0)=find free image()
+      load image AL_Directory+"Resources/Blend cube.dds",AL_Image(0),2
+      for c=1 to 11
+         AL_ShadowMapCamera(c)=find free camera()
+         make camera AL_ShadowMapCamera(c)
+      next c
+
+   `Variance shadowmap combine/blur
+      global dim AL_ShadowMapEffect(6) as integer
+      AL_ShadowMapEffect(0)=find free effect()
+      load effect AL_Directory+"Lighting/Shadow Backdrop.fx",AL_ShadowMapEffect(0),0,1
+      AL_ShadowMapEffect(1)=find free effect()
+      load effect AL_Directory+"Lighting/Shadow Combine.fx",AL_ShadowMapEffect(1),0,1
+      AL_ShadowMapEffect(2)=find free effect()
+      load effect AL_Directory+"Lighting/Shadow Combine 1.fx",AL_ShadowMapEffect(2),0,1
+      AL_ShadowMapEffect(3)=find free effect()
+      load effect AL_Directory+"Lighting/Shadow Combine 2.fx",AL_ShadowMapEffect(3),0,1
+      AL_ShadowMapEffect(4)=find free effect()
+      load effect AL_Directory+"Lighting/Shadow Blur.fx",AL_ShadowMapEffect(4),0,1
+      AL_ShadowMapEffect(5)=find free effect()
+      load effect AL_Directory+"Lighting/Shadow Blur 1.fx",AL_ShadowMapEffect(5),0,1
+      AL_ShadowMapEffect(6)=find free effect()
+      load effect AL_Directory+"Lighting/Shadow Blur 2.fx",AL_ShadowMapEffect(6),0,1
+      global dim AL_ShadowMapObject(6) as integer
+      global dim AL_ShadowMapObjectTexture(6) as integer
+      for o=0 to 6
+         AL_ShadowMapObject(o)=find free object()
+         make object plain AL_ShadowMapObject(o),2,2,1
+      next o
+      set object effect AL_ShadowMapObject(0),AL_ShadowMapEffect(0)
+      set object mask AL_ShadowMapObject(0),(2^AL_ShadowMapCamera(1))+(2^AL_ShadowMapCamera(2))+(2^AL_ShadowMapCamera(3))+(2^AL_ShadowMapCamera(6))+(2^AL_ShadowMapCamera(7))+(2^AL_ShadowMapCamera(8))
+      set object effect AL_ShadowMapObject(1),AL_ShadowMapEffect(4)
+      set object mask AL_ShadowMapObject(1),(2^AL_ShadowMapCamera(5))
+      hide object AL_ShadowMapObject(1):exclude object on AL_ShadowMapObject(1)
+      set object effect AL_ShadowMapObject(2),AL_ShadowMapEffect(5)
+      set object mask AL_ShadowMapObject(2),(2^AL_ShadowMapCamera(5))
+      hide object AL_ShadowMapObject(2):exclude object on AL_ShadowMapObject(2)
+      set object effect AL_ShadowMapObject(3),AL_ShadowMapEffect(6)
+      set object mask AL_ShadowMapObject(3),(2^AL_ShadowMapCamera(5))
+      hide object AL_ShadowMapObject(3):exclude object on AL_ShadowMapObject(3)
+      set object effect AL_ShadowMapObject(4),AL_ShadowMapEffect(4)
+      set object mask AL_ShadowMapObject(4),(2^AL_ShadowMapCamera(9))
+      set object effect AL_ShadowMapObject(5),AL_ShadowMapEffect(4)
+      set object mask AL_ShadowMapObject(5),(2^AL_ShadowMapCamera(10))
+      set object effect AL_ShadowMapObject(6),AL_ShadowMapEffect(4)
+      set object mask AL_ShadowMapObject(6),(2^AL_ShadowMapCamera(11))
+
+   `Amabient
+      global AL_AmbientObject as integer
+      global AL_AmbientEffect as integer
+      AL_AmbientObject=find free object()
+      AL_AmbientEffect=find free effect()
+      make object plain  AL_AmbientObject,2,2,1
+      load effect AL_Directory+"Lighting/Amabient.fx",AL_AmbientEffect,0,1
+      texture object AL_AmbientObject,0,AL_Image(1)
+      texture object AL_AmbientObject,1,AL_Image(2)
+      texture object AL_AmbientObject,3,AL_Image(7)
+      set object effect AL_AmbientObject,AL_AmbientEffect
+      set object mask AL_AmbientObject,2^AL_Camera(8)
+      set vector4 AL_Vector4(1),0.5/AL_ViewVec.x,0.5/AL_ViewVec.y,1,1
+      set effect constant vector AL_AmbientEffect,"ViewSize",AL_Vector4(1)
+      global AL_DirLightObject as integer
+      AL_DirLightObject=find free object()
+      make object cube AL_DirLightObject,-100
+      hide object AL_DirLightObject
+      exclude object on AL_DirLightObject
+
+   `Set point light variables
+      for p=1 to AL_PointShadowMapCount
+         AL_PointShadowSide((p*6)+0).Angle.y=90
+         AL_PointShadowSide((p*6)+1).Angle.x=270
+         AL_PointShadowSide((p*6)+3).Angle.y=270
+         AL_PointShadowSide((p*6)+4).Angle.x=90
+         AL_PointShadowSide((p*6)+5).Angle.y=180
+      next p
+
+   `Set ambient & fog
+      AdvLighting_SetAmbient(64,64,64)
+      AdvLighting_SetFog(5000,2,128,128,128,128,128,128)
+      AdvLighting_SetHeightFog(0,0,0,0,0,0,0,0,0)
+
+   endif
+endfunction
+
+`--------------
+` Advanced Lighting Update
+`--------------
+function AdvLighting_Update()
+   if AL_Enabled=1
+
+   `Get camera data
+      AL_CameraPos.x=camera position x(AL_CurrentCamera)
+      AL_CameraPos.y=camera position y(AL_CurrentCamera)
+      AL_CameraPos.z=camera position z(AL_CurrentCamera)
+      AL_CameraAng.x=camera angle x(AL_CurrentCamera)
+      AL_CameraAng.y=camera angle y(AL_CurrentCamera)
+      AL_CameraAng.z=camera angle z(AL_CurrentCamera)
+      rotate x matrix4 AL_Matrix(1),wrapvalue(AL_CameraAng.x)/57.295
+      rotate y matrix4 AL_Matrix(2),wrapvalue(AL_CameraAng.y)/57.295
+      rotate z matrix4 AL_Matrix(3),wrapvalue(AL_CameraAng.z)/57.295
+      multiply matrix4 AL_Matrix(4),AL_Matrix(1),AL_Matrix(2)
+      multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(3)
+      set vector3 AL_Vector3(1),0,0,1
+      transform normals vector3 AL_Vector3(1),AL_Vector3(1),AL_Matrix(4)
+      AL_CameraDir.x=x vector3(AL_Vector3(1))
+      AL_CameraDir.y=y vector3(AL_Vector3(1))
+      AL_CameraDir.z=z vector3(AL_Vector3(1))
+      set vector3 AL_Vector3(1),AL_CameraDir.x,AL_CameraDir.y-1,AL_CameraDir.z
+      AL_CameraViewNormal=dot product vector3(AL_Vector3(1),AL_Vector3(1)) * 0.5
+
+   `Frustum culling
+      set current camera AL_CurrentCamera
+      view matrix4 AL_Matrix(1)
+      projection matrix4 AL_Matrix(2)
+      multiply matrix4 AL_Matrix(3),AL_Matrix(1),AL_Matrix(2)
+      AL_GetViewProjectFrustum(0,-1)
+      r=inverse matrix4(AL_Matrix(2),AL_Matrix(2))
+      set effect constant matrix AL_AmbientEffect,"ProjInv",AL_Matrix(2)
+      if AL_SSAOEnabled=1 then set effect constant matrix AL_PostProcessingEffect(2),"ProjInv",AL_Matrix(2)
+
+   `Update cameras & objects
+      for c=1 to 9
+         position camera AL_Camera(c),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+         rotate camera AL_Camera(c),AL_CameraAng.x,AL_CameraAng.y,AL_CameraAng.z
+      next c
+      position object AL_AmbientObject,AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+      rotate object AL_AmbientObject,AL_CameraAng.x,AL_CameraAng.y,AL_CameraAng.z
+      PostFilter_Update()
+      LensFlare_Update()
+      FogArea_Update()
+      Sky_Update()
+      Clouds_Update()
+      Terrain_Update()
+      Water_Update()
+
+   `Update lighting & shadowmaps
+      AlphaEffect_UpdateLighting()
+      SpotLight_Update()
+      PointLight_Update()
+      Object_AutoUpdateObject()
+      SpotLight_Render()
+      PointLight_Render()
+
+   `Update directional light
+      if AL_DirLightInUse=1 and AL_DirLightVisible=1
+         position object AL_DirLightObject,AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+         set vector4 AL_Vector4(1),AL_CameraPos.x-(AL_DirLightDirection.x*AL_CameraData(2)),AL_CameraPos.y-(AL_DirLightDirection.y*AL_CameraData(2)),AL_CameraPos.z-(AL_DirLightDirection.z*AL_CameraData(2)),0
+         set effect constant vector AL_DirLightEffect,"LightPosition",AL_Vector4(1)
+         for e=0 to AL_EffectCount:set effect constant vector AL_Effect(e).Number,"LightPosition",AL_Vector4(1):next e
+         if AL_SkyEnabled=1 then set effect constant vector AL_SkyEffect(1),"LightPosition",AL_Vector4(1)
+         if Water_Enabled=1 then for e=0 to Water_Shaders:set effect constant vector Water_Effect(e),"LightPosition",AL_Vector4(1):next e
+         if AL_DirLightshadowQuality>0
+            DirLight_Render(1,((AL_DirLightRange/2.5)/2.5)/2.5)
+            if AL_DirectionalUpdate(1)<4 and AL_DirectionalUpdate(2)<8
+               DirLight_Render(2,(AL_DirLightRange/2.5)/2.5)
+            endif
+            if AL_DirectionalUpdate(1)=4
+               DirLight_Render(3,(AL_DirLightRange/2.5))
+               AL_DirectionalUpdate(1)=0
+            endif
+            if AL_DirectionalUpdate(2)>7 and AL_DirectionalUpdate(1)>0
+               DirLight_Render(4,AL_DirLightRange)
+               AL_DirectionalUpdate(2)=0
+            endif
+            inc AL_DirectionalUpdate(1)
+            inc AL_DirectionalUpdate(2)
+         endif
+      endif
+
+   `World position/depth
+      Terrain_FrustumCull()
+      for e=0 to AL_EffectCount:set effect technique AL_Effect(e).Number,"WPosition":next e
+      sync mask 2^AL_Camera(2)
+      sync
+
+   `World geometry & 3D Clouds
+      tSyncMask=0
+      for e=0 to AL_EffectCount:set effect technique AL_Effect(e).Number,AL_Effect(e).technique:next e
+      tSyncMask=2^AL_Camera(1)
+      if AL_CloudsEnable=1 and AL_SkyEnabled=1 and AL_CloudsDensity<99
+         if AL_CameraPos.y>AL_CloudsHeight.x-(AL_CloudsSize*AL_CloudsHeight.y) and AL_CameraPos.y<AL_CloudsHeight.x+((AL_CloudsSize*AL_CloudsHeight.y)*4)
+            tSyncMask=tSyncMask+(2^AL_CloudsCamera)
+         else
+            if AL_CameraPos.y<AL_CloudsHeight.x+(AL_CloudsHeight.y * 0.5)
+               if AL_CameraViewNormal-((AL_CameraPos.y-AL_CloudsHeight.x)/64000)<1.75 then tSyncMask=tSyncMask+(2^AL_CloudsCamera)
+            else
+               if AL_CameraViewNormal-((AL_CameraPos.y-AL_CloudsHeight.x)/64000)>0.25 then tSyncMask=tSyncMask+(2^AL_CloudsCamera)
+            endif
+         endif
+      endif
+      sync mask tSyncMask
+      fastsync
+
+   `Reflection & distortion/scattering/SSAO
+      tSyncMask=0
+      if Water_Reflection=1 and Water_Mode=1
+         if AL_CameraViewNormal-((AL_CameraPos.y-Water_Height)/64000)>0.35
+            for e=0 to AL_EffectCount:set effect technique AL_Effect(e).Number,"Diffuse":next e
+            if AL_SkyEnabled=1 and AL_SkyDynamic=0 then set effect technique AL_SkyEffect(1),"SkyBoxSolid"
+            if AL_SkyEnabled=1 and AL_SkyDynamic=1 then set effect technique AL_SkyEffect(1),"SkySolid"
+            tSyncMask=2^AL_Camera(3)
+         endif
+      endif
+      if AL_SSAOEnabled=1 or AL_ScatteringEnabled=1 or AL_DistortionEnabled=1 or AL_LensFlareEnabled=1
+         for e=0 to AL_AlphaEffectCount
+            if AL_AlphaEffect(e).Blocker=0
+               set effect technique AL_AlphaEffect(e).Number,"Blocker"
+            else
+               set effect constant float AL_AlphaEffect(e).Number,"Blocker",1
+            endif
+         next e
+         for o=0 to AL_AlphaObjectCount
+            if AL_AlphaObject(o).AdditiveBlending=1 then ghost object off AL_AlphaObject(o).Number
+         next o
+         if AL_LensFlareEnabled=1
+            for o=0 to AL_FlareObjectCount(1):enable object zdepth AL_FlareObject(o).Object:next o
+         endif
+         for f=0 to AL_FogAreaCount
+            if AL_FogArea(f).Visible=1 and AL_FogArea(f).InVolume=1 then set effect technique AL_FogArea(f).Effect,"Blocker"
+         next f
+         if AL_CloudsEnable=1 then set effect technique AL_CloudsEffect(2),"Blocker"
+         tSyncMask=tSyncMask+(2^AL_Camera(5))
+         if AL_SSAOEnabled=1 or AL_ScatteringEnabled=1 or AL_DistortionEnabled=1 then tSyncMask=tSyncMask+(2^AL_Camera(6))
+      endif
+      if AL_DirLightLensFlare.x>-1 and AL_SkyDynamic=1
+         if AL_LensFlare(AL_DirLightLensFlare.x).Visible=1
+            null=get object effect(AL_FlareObject(AL_DirLightLensFlare.y).Object,0)
+            set vector4 AL_Vector4(1),0,-999999999,0,0
+            set effect constant vector element "LensFlarePosition",AL_DirLightLensFlare.z,AL_Vector4(1)
+            release effect pointer
+         endif
+      endif
+      if tSyncMask>0
+         sync mask tSyncMask
+         fastsync
+      endif
+
+   `Render lighting & alpha/refracion & postprocessing
+      tSyncMask=2^AL_Camera(8)
+      if AL_SkyEnabled=1 and AL_SkyDynamic=0 then set effect technique AL_SkyEffect(1),"SkyBox"
+      if AL_SkyEnabled=1 and AL_SkyDynamic=1 then set effect technique AL_SkyEffect(1),"Sky"
+      if AL_SSAOEnabled=1 or AL_ScatteringEnabled=1 or AL_DistortionEnabled=1 or AL_LensFlareEnabled=1
+         for e=0 to AL_AlphaEffectCount
+            if AL_AlphaEffect(e).Blocker=0
+               set effect technique AL_AlphaEffect(e).Number,"Diffuse"
+            else
+               set effect constant float AL_AlphaEffect(e).Number,"Blocker",0
+            endif
+         next e
+         for o=0 to AL_AlphaObjectCount
+            if AL_AlphaObject(o).AdditiveBlending=1 then ghost object on AL_AlphaObject(o).Number
+         next o
+         if AL_LensFlareEnabled=1
+            for o=0 to AL_FlareObjectCount(1):disable object zdepth AL_FlareObject(o).Object:next o
+         endif
+         for f=0 to AL_FogAreaCount
+             if AL_FogArea(f).InUse=1 and AL_FogArea(f).Visible=1
+                if AL_FogArea(f).InVolume=1 then set effect technique AL_FogArea(f).Effect,"Diffuse"
+            endif
+         next f
+         if AL_CloudsEnable=1 then set effect technique AL_CloudsEffect(2),"Diffuse"
+      endif
+      if AL_RefractionEnabled=1 then tSyncMask=tSyncMask+(2^AL_Camera(4))
+      if AL_PostFilterEnabled=1
+         for c=0 to AL_RenderTargetCount-1
+            if AL_RenderTarget(iTarget).UpDate=1 then tSyncMask=tSyncMask+(2^AL_RenderTarget(c).Camera)
+         next c
+      endif
+      if AL_DirLightLensFlare.x>-1
+         if AL_LensFlare(AL_DirLightLensFlare.x).Visible=1
+            null=get object effect(AL_FlareObject(AL_DirLightLensFlare.y).Object,0)
+            set vector4 AL_Vector4(1),AL_CameraPos.x-(AL_DirLightDirection.x*AL_CameraData(2)*0.9),AL_CameraPos.y-(AL_DirLightDirection.y*AL_CameraData(2)*0.9),AL_CameraPos.z-(AL_DirLightDirection.z*AL_CameraData(2)*0.9),0
+            set effect constant vector element "LensFlarePosition",AL_DirLightLensFlare.z,AL_Vector4(1)
+            release effect pointer
+         endif
+      endif
+      sync mask tSyncMask
+      fastsync
+
+   `Motion Blur Update
+      set current camera AL_CurrentCamera
+      Effect_MotionBlurUpdate()
+
+   endif
+endfunction
+
+`--------------
+` AdvLighting Camera
+`--------------
+function AdvLighting_SetCamera(iNear as float,iFar as float,iFov as float,iAspect as float)
+   if AL_Enabled=1
+      AL_CameraData(1)=iNear
+      AL_CameraData(2)=iFar
+      if AL_CameraData(3)<>iFov then AL_CameraData(3)=iFov
+      if AL_CameraData(4)<>iAspect then AL_CameraData(4)=iAspect
+      if AL_Camera(8)=0 then AL_SetRenderOrder()
+      for c=1 to 9
+         set camera range AL_Camera(c),AL_CameraData(1),AL_CameraData(2)
+         if AL_CameraData(3)>0 then set camera fov AL_Camera(c),AL_CameraData(3)
+         if AL_CameraData(4)>0 then set camera aspect AL_Camera(c),AL_CameraData(4)
+      next c
+      if AL_CloudsEnable=1
+         set camera range AL_CloudsCamera,AL_CameraData(1),AL_CameraData(2)
+         if AL_CameraData(3)>0 then set camera fov AL_CloudsCamera,AL_CameraData(3)
+         if AL_CameraData(4)>0 then set camera aspect AL_CloudsCamera,AL_CameraData(4)
+      endif
+      set camera range AL_Camera(3),AL_CameraData(1)*1.5,AL_CameraData(2)*1.5
+      if AL_SkyEnabled=1
+         set effect constant float AL_SkyEffect(1),"CameraRange",AL_CameraData(2)/1000
+         set effect constant float AL_SkyEffect(3),"CameraRange",AL_CameraData(2)/1000
+      endif
+   endif
+endfunction
+
+`--------------
+` AdvLighting Debug
+`--------------
+function AdvLighting_Debug()
+   if AL_Enabled=1
+      if AL_DebugEnabled=0
+         global AL_DebugEnabled
+         global AL_DebugAdvLighting
+         global AL_Debugf1Keypress
+         AL_DebugEnabled=1
+      endif
+      if AL_DebugEnabled=1
+         if AL_DebugAdvLighting=0
+            if keystate(59)=1 and AL_Debugf1Keypress=0
+               AL_Debugf1Keypress=1
+               AL_DebugAdvLighting=1
+            endif
+            Text 20,20,"F1 to Show Stats : Fps = "+str$(screen fps())
+         else
+            if keystate(59)=1 and AL_Debugf1Keypress=0
+               AL_Debugf1Keypress=1
+               AL_DebugAdvLighting=0
+            endif
+            Text 20,20,"F1 to Hide Stats : Fps = "+str$(screen fps())
+            local tLine as integer
+            local tSpotCount as integer
+            local tPointCount as integer
+            for d=1 to AL_SpotShadowMapCount
+               if AL_SpotShadowMap(d).InUse=1
+                  UpdateMode$=""
+                  if AL_SpotShadowMap(d).UpdateMode=1 then UpdateMode$="Everything"
+                  if AL_SpotShadowMap(d).UpdateMode=2 then UpdateMode$="Dynamic"
+                  if AL_SpotShadowMap(d).UpdateMode=3 then UpdateMode$="Static and Dynamic"
+                  AL_SpotShadowMap(d).UpdateMode=0
+                  text 20,120+tLine*20,"Spot Shadow Number ["+str$(d)+"] : Effects Light Number ["+str$(AL_SpotShadowMap(d).Number)+"] update: "+UpdateMode$
+                  inc tSpotCount
+                  inc tLine
+               endif
+            next d
+            for d=1 to AL_PointShadowMapCount
+               if AL_PointShadowMap(d).InUse=1
+                  text 20,120+tLine*20,"Point Shadow Number ["+str$(d)+"] : Effects Light Number ["+str$(AL_PointShadowMap(d).Number)+"] update"
+                  tShadowMapSide=d*6
+                  for s=0 to 5
+                     UpdateMode$=""
+                     if AL_PointShadowSide(tShadowMapSide+s).UpdateMode=1 then UpdateMode$="Everything"
+                     if AL_PointShadowSide(tShadowMapSide+s).UpdateMode=2 then UpdateMode$="Dynamic"
+                     if AL_PointShadowSide(tShadowMapSide+s).UpdateMode=3 then UpdateMode$="Static and Dynamic"
+                     AL_PointShadowSide(tShadowMapSide+s).UpdateMode=0
+                     text 420+(150*s),120+(tLine*20),"side ["+str$(s+1)+"] : "+UpdateMode$
+                  next s
+                  inc tPointCount
+                  inc tLine
+               endif
+            next d
+            text 20,40,"Total Spot Light Visible count ["+str$(AL_SpotLightVisibleCount+1)+"]"
+            text 20,60,"Total Spot shadow map count ["+str$(tSpotCount)+"]"
+            text 20,80,"Total Point Light Visible count ["+str$(AL_PointLightVisibleCount+1)+"]"
+            text 20,100,"Total Point shadow map count ["+str$(tPointCount)+"]"
+         endif
+         if keystate(59)=0 and AL_Debugf1Keypress=1 then AL_Debugf1Keypress=0
+      endif
+   endif
+endfunction
+
+`--------------
+` Make Camera
+`--------------
+function AL_CreateCamera(iCamera as integer,iImage as integer,iWidth as integer,iHeight as integer,iD3DFormat as integer)
+   make camera iCamera
+   set camera to image iCamera,iImage,iWidth,iHeight,3,iD3DFormat
+   backdrop off iCamera
+endfunction
+
+`--------------
+` Set Camera Render Order
+`--------------
+function AL_SetRenderOrder()
+   if AL_Enabled=1
+      if AL_Camera(8)=0
+         AL_Camera(8)=find free camera()
+         make camera AL_Camera(8)
+         backdrop off AL_Camera(8)
+         if AL_PostFilterEnabled=0
+            if AL_RefractionEnabled=0
+               AL_Camera(7)=AL_Camera(8) `Light Camera
+               AL_Camera(9)=AL_Camera(8) `Alpha/Refraction Camera
+            else
+               AL_Camera(7)=AL_Camera(4)
+               AL_Camera(9)=AL_Camera(8)
+               set object mask AL_PostProcessingObject(1),2^AL_Camera(9)
+            endif
+         else
+            if AL_RefractionEnabled=0
+               AL_Camera(7)=AL_RenderTarget(0).Camera
+               AL_Camera(9)=AL_RenderTarget(0).Camera
+            else
+               AL_Camera(7)=AL_Camera(4)
+               AL_Camera(9)=AL_RenderTarget(0).Camera
+               set object mask AL_PostProcessingObject(1),2^AL_Camera(9)
+            endif
+            for t=0 to AL_FrameTargetCount-1
+               set object mask AL_FrameTarget(t).Object,2^AL_Camera(8)
+            next t
+         endif
+         backdrop off AL_Camera(7)
+         color backdrop AL_Camera(7),0
+         set object mask AL_AmbientObject,2^AL_Camera(7)
+      endif
+   endif
+endfunction
+
+`--------------
+` Free Camera
+`--------------
+/*
+function AL_FreeUpCamera()
+   tFreeup=0
+   repeat
+      inc tFreeup
+   until camera exist(tFreeup)=0
+endfunction tFreeup
+
+
+`--------------
+` Free Image
+`--------------
+function AL_FreeUpImage()
+   tFreeup=10000
+   repeat
+      inc tFreeup
+   until Image exist(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Free Object
+`--------------
+function AL_FreeUpObject()
+   tFreeup=10000
+   repeat
+      inc tFreeup
+   until object exist(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Free Mesh
+`--------------
+function AL_FreeUpMesh()
+   tFreeup=10000
+   repeat
+      inc tFreeup
+   until mesh exist(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Free Effect
+`--------------
+function AL_FreeUpEffect()
+   tFreeup=1000
+   repeat
+      inc tFreeup
+   until Effect exist(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Free File
+`--------------
+function AL_FreeUpFile()
+   tFreeup=0
+   repeat
+      inc tFreeup
+   until file open(tFreeup)=0
+endfunction tFreeup
+
+`--------------
+` Free Memblock
+`--------------
+function AL_FreeUpMemblock()
+   tFreeup=1
+   repeat
+      inc tFreeup
+   until Memblock exist(tFreeup)=0
+endfunction tFreeup
+*/
+`--------------
+` Box Collision
+`--------------
+function AL_BoxCollision(iX as float,iY as float,iZ as float,ipX as float,ipY as float,ipZ as float,iSx as float,iSy as float,iSz as float)
+   if iX<(ipX+(iSx * 0.5)) and iX>(ipX-(iSx * 0.5))
+      if iY<(ipY+(iSy * 0.5)) and iY>(ipY-(iSy * 0.5))
+         if iZ<(ipZ+(iSz * 0.5)) and iZ>(ipZ-(iSz * 0.5))
+            exitfunction 1
+         endif
+      endif
+   endif
+endfunction 0
+
+`--------------
+` Within Distance
+`--------------
+function AL_InDistance(iX as float,iY as float,iZ as float,ipX as float,ipY as float,ipZ as float,iDis as float)
+   set vector3 AL_Vector3(1),iX-ipX,iY-ipY,iZ-ipZ
+   if length vector3(AL_Vector3(1))<iDis then exitfunction 1
+endfunction 0
+
+`--------------
+` Get View Frustum
+`--------------
+function AL_GetViewProjectFrustum(iFrustumIndex as integer,iCamera as integer)
+   if iCamera>0
+      set current camera iCamera
+      view matrix4 AL_Matrix(1)
+      projection matrix4 AL_Matrix(2)
+      multiply matrix4 AL_Matrix(3),AL_Matrix(1),AL_Matrix(2)
+   endif
+   for i=0 to 15
+      AL_ViewProject(i)=get matrix4 element(AL_Matrix(3),i)
+   next i
+   local tLength as float
+   AL_ViewProjectFrustum(iFrustumIndex,0,0)=AL_ViewProject(3)-AL_ViewProject(0)
+   AL_ViewProjectFrustum(iFrustumIndex,0,1)=AL_ViewProject(7)-AL_ViewProject(4)
+   AL_ViewProjectFrustum(iFrustumIndex,0,2)=AL_ViewProject(11)-AL_ViewProject(8)
+   AL_ViewProjectFrustum(iFrustumIndex,0,3)=AL_ViewProject(15)-AL_ViewProject(12)
+   set vector3 AL_Vector3(1),AL_ViewProjectFrustum(iFrustumIndex,0,0),AL_ViewProjectFrustum(iFrustumIndex,0,1),AL_ViewProjectFrustum(iFrustumIndex,0,2)
+   tLength=1.0/Length vector3(AL_Vector3(1))
+   AL_ViewProjectFrustum(iFrustumIndex,0,0)=AL_ViewProjectFrustum(iFrustumIndex,0,0)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,0,1)=AL_ViewProjectFrustum(iFrustumIndex,0,1)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,0,2)=AL_ViewProjectFrustum(iFrustumIndex,0,2)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,0,3)=AL_ViewProjectFrustum(iFrustumIndex,0,3)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,1,0)=AL_ViewProject(3)+AL_ViewProject(0)
+   AL_ViewProjectFrustum(iFrustumIndex,1,1)=AL_ViewProject(7)+AL_ViewProject(4)
+   AL_ViewProjectFrustum(iFrustumIndex,1,2)=AL_ViewProject(11)+AL_ViewProject(8)
+   AL_ViewProjectFrustum(iFrustumIndex,1,3)=AL_ViewProject(15)+AL_ViewProject(12)
+   AL_ViewProjectFrustum(iFrustumIndex,1,0)=AL_ViewProjectFrustum(iFrustumIndex,1,0)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,1,1)=AL_ViewProjectFrustum(iFrustumIndex,1,1)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,1,2)=AL_ViewProjectFrustum(iFrustumIndex,1,2)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,1,3)=AL_ViewProjectFrustum(iFrustumIndex,1,3)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,2,0)=AL_ViewProject(3)+AL_ViewProject(1)
+   AL_ViewProjectFrustum(iFrustumIndex,2,1)=AL_ViewProject(7)+AL_ViewProject(5)
+   AL_ViewProjectFrustum(iFrustumIndex,2,2)=AL_ViewProject(11)+AL_ViewProject(9)
+   AL_ViewProjectFrustum(iFrustumIndex,2,3)=AL_ViewProject(15)+AL_ViewProject(13)
+   set vector3 AL_Vector3(1),AL_ViewProjectFrustum(iFrustumIndex,2,0),AL_ViewProjectFrustum(iFrustumIndex,2,1),AL_ViewProjectFrustum(iFrustumIndex,2,2)
+   tLength=1.0/Length vector3(AL_Vector3(1))
+   AL_ViewProjectFrustum(iFrustumIndex,2,0)=AL_ViewProjectFrustum(iFrustumIndex,2,0)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,2,1)=AL_ViewProjectFrustum(iFrustumIndex,2,1)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,2,2)=AL_ViewProjectFrustum(iFrustumIndex,2,2)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,2,3)=AL_ViewProjectFrustum(iFrustumIndex,2,3)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,3,0)=AL_ViewProject(3)-AL_ViewProject(1)
+   AL_ViewProjectFrustum(iFrustumIndex,3,1)=AL_ViewProject(7)-AL_ViewProject(5)
+   AL_ViewProjectFrustum(iFrustumIndex,3,2)=AL_ViewProject(11)-AL_ViewProject(9)
+   AL_ViewProjectFrustum(iFrustumIndex,3,3)=AL_ViewProject(15)-AL_ViewProject(13)
+   AL_ViewProjectFrustum(iFrustumIndex,3,0)=AL_ViewProjectFrustum(iFrustumIndex,3,0)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,3,1)=AL_ViewProjectFrustum(iFrustumIndex,3,1)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,3,2)=AL_ViewProjectFrustum(iFrustumIndex,3,2)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,3,3)=AL_ViewProjectFrustum(iFrustumIndex,3,3)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,4,0)=AL_ViewProject(3)-AL_ViewProject(2)
+   AL_ViewProjectFrustum(iFrustumIndex,4,1)=AL_ViewProject(7)-AL_ViewProject(6)
+   AL_ViewProjectFrustum(iFrustumIndex,4,2)=AL_ViewProject(11)-AL_ViewProject(10)
+   AL_ViewProjectFrustum(iFrustumIndex,4,3)=AL_ViewProject(15)-AL_ViewProject(14)
+   set vector3 AL_Vector3(1),AL_ViewProjectFrustum(iFrustumIndex,4,0),AL_ViewProjectFrustum(iFrustumIndex,4,1),AL_ViewProjectFrustum(iFrustumIndex,4,2)
+   tLength#=1.0/Length vector3(AL_Vector3(1))
+   AL_ViewProjectFrustum(iFrustumIndex,4,0)=AL_ViewProjectFrustum(iFrustumIndex,4,0)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,4,1)=AL_ViewProjectFrustum(iFrustumIndex,4,1)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,4,2)=AL_ViewProjectFrustum(iFrustumIndex,4,2)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,4,3)=AL_ViewProjectFrustum(iFrustumIndex,4,3)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,5,0)=AL_ViewProject(3)+AL_ViewProject( 2)
+   AL_ViewProjectFrustum(iFrustumIndex,5,1)=AL_ViewProject(7)+AL_ViewProject( 6)
+   AL_ViewProjectFrustum(iFrustumIndex,5,2)=AL_ViewProject(11)+AL_ViewProject(10)
+   AL_ViewProjectFrustum(iFrustumIndex,5,3)=AL_ViewProject(15)+AL_ViewProject(14)
+   set vector3 AL_Vector3(1),AL_ViewProjectFrustum(iFrustumIndex,5,0),AL_ViewProjectFrustum(iFrustumIndex,5,1),AL_ViewProjectFrustum(iFrustumIndex,5,2)
+   tLength=1.0/Length vector3(AL_Vector3(1))
+   AL_ViewProjectFrustum(iFrustumIndex,5,0)=AL_ViewProjectFrustum(iFrustumIndex,5,0)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,5,1)=AL_ViewProjectFrustum(iFrustumIndex,5,1)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,5,2)=AL_ViewProjectFrustum(iFrustumIndex,5,2)*tLength
+   AL_ViewProjectFrustum(iFrustumIndex,5,3)=AL_ViewProjectFrustum(iFrustumIndex,5,3)*tLength
+endfunction
+
+`--------------
+` Sphere In Frustum
+`--------------
+function AL_GetSphereInFrustum(iFrustumIndex as integer,iPosX as float,iPosY as float,iPosZ as float,iRadius as float)
+   for e=0 to 5
+      if (AL_ViewProjectFrustum(iFrustumIndex,e,0)*iPosX)+(AL_ViewProjectFrustum(iFrustumIndex,e,1)*iPosY)+(AL_ViewProjectFrustum(iFrustumIndex,e,2)*iPosZ)+AL_ViewProjectFrustum(iFrustumIndex,e,3)<=0-iRadius then exitfunction 0
+   next e
+endfunction 1
+
+`--------------
+` Box In Frustum
+`--------------
+function AL_GetBoxInFrustum(iFrustumIndex as integer,iPosX as float,iPosY as float,iPosZ as float,iSizeX as float,iSizeY as float,iSizeZ as float)
+   local tMinX as float
+   local tMinY as float
+   local tMinZ as float
+   local tMaxX as float
+   local tMaxY as float
+   local tMaxZ as float
+   local rCull as integer
+   for e=0 to 5
+      tMinX=AL_ViewProjectFrustum(iFrustumIndex,e,0)*(iPosX-iSizeX)
+      tMaxX=AL_ViewProjectFrustum(iFrustumIndex,e,0)*(iPosX+iSizeX)
+      tminY=AL_ViewProjectFrustum(iFrustumIndex,e,1)*(iPosY-iSizeY)
+      tMaxY=AL_ViewProjectFrustum(iFrustumIndex,e,1)*(iPosY+iSizeY)
+      tMinZ=AL_ViewProjectFrustum(iFrustumIndex,e,2)*(iPosZ-iSizeZ)
+      tMaxZ=AL_ViewProjectFrustum(iFrustumIndex,e,2)*(iPosZ+iSizeZ)
+      rCull=0
+         if tMinX+tMinY+tMinZ+AL_ViewProjectFrustum(iFrustumIndex,e,3)>0 then rCull=1
+      if rCull=0
+         if tMaxX+tMinY+tMinZ+AL_ViewProjectFrustum(iFrustumIndex,e,3)>0 then rCull=1
+      endif
+      if rCull=0
+         if tMinX+tMaxY+tMinZ+AL_ViewProjectFrustum(iFrustumIndex,e,3)>0 then rCull=1
+      endif
+      if rCull=0
+         if tMaxX+tMaxY+tMinZ+AL_ViewProjectFrustum(iFrustumIndex,e,3)>0 then rCull=1
+     endif
+      if rCull=0
+         if tMinX+tMinY+tMaxZ+AL_ViewProjectFrustum(iFrustumIndex,e,3)>0 then rCull=1
+      endif
+      if rCull=0
+         if tMaxX+tMinY+tMaxZ+AL_ViewProjectFrustum(iFrustumIndex,e,3)>0 then rCull=1
+      endif
+      if rCull=0
+         if tMinX+tMaxY+tMaxZ+AL_ViewProjectFrustum(iFrustumIndex,e,3)>0 then rCull=1
+      endif
+      if rCull=0
+         if tMaxX+tMaxY+tMaxZ+AL_ViewProjectFrustum(iFrustumIndex,e,3)>0 then rCull=1
+      endif
+      if rCull=0
+         exitfunction 0
+      endif
+   next e
+endfunction 1
+

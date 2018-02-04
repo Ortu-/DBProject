@@ -1,0 +1,37 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+SC_objectCollision
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    return float=SC_objectCollision ( obj1, obj2 )
+
+<BR><BR>
+
+        <u>-obj1</u>:   an object you want to check collision against<br>
+        <u>-obj2</u>:   the other object you want to check it against (0 to check against all)<br>
+   						<br>
+        <u>returns</u>: if obj2=0 then it returns the number of the object collided with<br>
+                        if checking two specific objects, returns 1 if collision occurs.<br>
+                        returns 0 if no collision occured<br>
+   						<br>
+        Replaces dbp built in Object Collision() command.<br><br>
+
+        Will check if obj1 is intersecting with obj2 (or any object if obj2=0) <br>
+        Objects setup as boxes or spheres are counted as solid, so any object inside<br>
+        intersects them. Objects setup as polygon or complex are counted as hollow<br>
+        so an object must be touching a polygon to count as intersecting.<br><br>
+
+        This command does not return any other information about the collision, it's<br>
+        normal or point of contact.
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

@@ -1,0 +1,37 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+SC_rayCast
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    return integer=SC_rayCast ( objNum, oldx, oldy, oldz, x, y, z, excludeObj )
+
+<BR><BR>
+
+        <u>-objNum</u>:       the object you want to check for collision use 0 for all objects<br>
+        <u>-oldx...z</u>:     the start and end points of the ray to check.<br>
+        <u>-excludeObj</u>:   an object to exclude from the collision check.<br>
+        <u>returns</u>:       if objNum=0 then the object number collided with is returned<br>
+                              if checking a specific object then a 1 is returned if a collision occured.<br>
+                              returns 0 if no collision occured.
+   						<br>
+        will check if the ray starting at oldx#,oldy#,oldz# and ending at<br>
+        x#,y#,z# collides with the specified object (obj=0 for all).<br>
+        does not collide with backfaces, will return the number of the object<br>
+        hit first, or 0 for no collision.<br><br>
+
+        Ray casting commands are useful for calculating the collisions of bullets with<br>
+        levels and objects, or for representing the line of sight of an enemy to detect<br>
+        if they can see the player.<br>
+
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

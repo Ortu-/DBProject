@@ -1,0 +1,126 @@
+*********************************************************
+* Changelog for DBPro 9Ex project			*
+* 		- Joel "Rudolpho" Sjöqvist, 2016-10-01	*
+*********************************************************
+
+########################################
+# Build 1.0.0.1 on 2016-10-01
+########################################
+# §	Fixed a bug where the compiler could crash when trying to release allocated memory.
+# §	Third party libraries are no longer loaded as executable modules during compilation; 
+#	this prevents them from raising errors about missing external files that will not be 
+#	present during the compilation process.
+# §	Fixed a bug where using certain shader functionality caused a crash when applying the effect.
+# §	Added a new function, USE LEGACY SHADER COMPILER, for using the less strict shader compiler 
+#	employed by earlier DBPro versions. This allows to compile certain shaders that don't fully 
+# 	adhere to the strict HLSL standard without warnings. It is however adviced that you instead
+# 	update any shaders to adhere to the stricter rules imposed by the newer shader compiler.
+
+########################################
+# Build 1.0.0.2 on 2016-10-05
+########################################
+# §	Fixed a bug where the attached SC_Collision.dll was using an older mesh format left over from
+#	pre-release testing, resulting in crashes if trying to use it.
+# §	The issue where compilation would fail for whitespace-separated comments following an EXIT
+#	instruction has been resolved.
+# §	Added an optional setting to have the precompiler use the IDE-supplied full source dump rather
+#	than rebuild this from the source files. Add the following to your Setup.ini file (in the 
+#	compiler folder) to control this setting:
+#		[PRECOMPILER]
+# 		UseIDESourceDump=Yes 		# Or set it to "No" to disable. Will be disabled by default.
+# 	This setting is disabled by default so unless you want to use it you don't have to alter your
+# 	configuration file.
+# 	This should allow IDEs that don't automatically save on compilation to work with the new precompiler, 
+#	however beware that this will reintroduce the old issues where you will get errors like 
+#	"Failed to xxx at line 29496" and then have you manually figure out that this is in fact line 48 in
+# 	include file #12.
+# 	There may also be issues with using the #include directive with older IDEs that may not properly resolve
+# 	this (I recall the official IDE had this problem a few years back, though it may have been fixed by now).
+
+########################################
+# Build 1.0.0.3 on 2016-10-09
+########################################
+# §	Fixed a bug where any combination of multiple whitespace characters inside a string would be condensed 
+#	into a single whitespace.
+# §	Reintroduced the MESHRADIUS shader constant that was removed in 2011. Fixes issues with shaders using it.
+# §	Fixed an issue where the ABS() function was missing from previous builds.
+# § 	Fixed an issue where the render target would be cleared in the middle of a two-step reflection shading pass.
+# § 	Visual styles are now enabled for compiled programs, letting your Windows GUI applications use more 
+#	modern themes.
+
+
+########################################
+# Build 1.0.0.4 on 2016-10-23
+########################################
+# §	Issues with various third party plugins that originated from the plugin assuming functionality present in DirectX 9.0c
+# 	that has since been removed in DirecX 9Ex have been addressed by manually implementing emulations of these, seamlessly
+# 	forwarded to the plugin through the D3D interface.
+# §	Added new keywords to utilize the resource management functionality mentioned above for texture created through the DBPro
+#	runtime that will later be used by plugins assuming such functionality; these are as follows:
+#		ENABLE VIRTUAL TEXTURE MANAGEMENT
+# 		DISABLE VIRTUAL TEXTURE MANAGEMENT
+# 		IS VIRTUAL TEXTURE MANAGEMENT ENABLED
+# §	Now supports plugins that will attempt to access DirectX directly from another thread.
+# 	Use the precompiler directive #USE MULTITHREADED DIRECTX to enable this for your project.
+# §	Single PRINT commands and the like should now handle dual buffering properly when backdrop clearing is disabled.
+# §	Fixed a memory leak in the precompiler.
+# §	The "About" dialog will now display the installed DBPro9Ex version.
+# §	Changes to the compiler has necessitated a new version of the Precompiler library. This means that any precompilers
+#	written using the old library will have to be recompiled with the new one to function properly. No code changes will
+# 	be necessary; the changes are all internal.
+
+
+########################################
+# Build 1.0.0.5 on 2017-01-07
+########################################
+# §	Fixed an issue where the compiler would make the assumption that all user-defined functions returned integer values
+#	in certain situations. This fixes the issue where nested floating-point (or indeed any non-integer data type) returning
+#	functions would have their returned bytes interpreted as integer values.
+# §	Fixed a bug where the pseudo-assembly dump generated by the compiler would write two bytes out of bounds for each line, 
+#	thus creating messed up _Temp.dbm files.
+# §	A compile-time error will now be raised when trying to return a string literal from a function. This used to cause a
+#	rather unobvious runtime crash, so I think this way is better.
+
+
+########################################
+# Build 1.0.0.6 on 2017-01-22
+########################################
+# §	Fixed a bug where returning a string from an EXITFUNCTION statement would wrongly cause compile-time errors.
+# §	Includes a new precompiler that allows for returning string literals from functions.
+# §	UPDATE 2017-01-29 	» Replaced accidental debug build remnants with their appropriate release build versions.
+
+
+########################################
+# Build 1.0.0.7 on 2017-02-18
+########################################
+# §	Fixed a bug where frame copying was accidentally enabled by default and would stay so until creating a new sprite, 
+# 	which would reset it. This increases the frame rate significantly (to where it should be) for projects not using sprites.
+# §	Fixed a bug where excluded objects did flag themselves to have their buffers updated when un-excluded, however did not set 
+# 	the global buffer update flag. This lead to the previously excluded objects not being rendered until another operation set 
+# 	said flag, such as creating a new object, changing its vertex data, etc.
+# §	The "About" dialog now shows the build date of the DBPro9Ex installation as well as the version number.
+
+########################################
+# Build 1.0.0.8 on 2017-03-12
+########################################
+# § 	The display mode can now be changed at runtime without the need to reload any media (take note that this may only work on 
+# 	Windows Vista and later).
+# §	Patched calls to IDirect3DDevice9::CreateVertexBuffer and IDirect3DDevice9::CreateIndexBuffer so as to detect and properly 
+# 	translate invalid parameters to these in calls from third party plugins (ie. arguments that were supported in D3D9 but aren't 
+# 	in D3D9Ex). This solves crashes with third party plugins that would create mesh data on their own such as BlitzTerrain.
+# § 	Patched calls to the D3DX-utility functions for creating / loading textures to substitute invalid arguments in much the same 
+# 	way as described in the previous entry. This solves issues with third party plugin that loads images / textures directly through 
+# 	these functions instead of the D3D interface and would assume D3D9, thus sometimes providing arguments that are illegal in D3D9Ex, 
+# 	such as the AdvancedTerrain plugin.
+# § 	Fixed a bug where the emulated texture management system would not initially copy pixel data to internally held staging resources.
+# §	Fixed a memory leak in DBProSetupDebug.dll
+
+########################################
+# Build 1.0.0.9 on 2017-06-04
+########################################
+# § 	Updates the built-in DBPRO 'animation' (video) system to use staging buffers, which should allow it to work with DBP9Ex.
+# §	Rewrote the logic behind the SET WINDOW ON / SET WINDOW OFF functions. They are now seemingly working as intended for me (using Windows 7), however 
+# 	further testing may be warranted to ensure that they perform as they should in all situations.
+# § 	All executable files build by the DBPro compiler are now large address-aware, meaning that they can potentially use up to 4Gb of memory on a 64-bit 
+# 	machine, or 3 on a 32-bit machine (as opposed to 2, which was the upper limit in previous builds).
+# 	Take note that this is not guaranteed to work with all third party plugins. Let me know if you encounter issues due to this.

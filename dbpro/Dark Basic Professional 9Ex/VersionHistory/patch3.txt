@@ -1,0 +1,94 @@
+Patch 3
+=======
+
+GENERAL
+-------
+* SELECT statement in FUNCTIONS now works correctly
+* Proper casting of input parameters of a condition revealed by code 'if a#>a(0)'
+* Internal SpeedOverStabilityFlag for the compiler, to allow for 'safe' default DBV1 style code
+* Conditional Comparisons that have no comparison symbol now work, even with arrays and variables
+* Indirect (*) operations can now take place inside functions as normal
+* Compiler now handles Third Party Command string tables that do not use decorated names (Delphi)
+* Compiler can now handle the presence of TYPEs within REMSTART/REMEND blocks
+* RND command now returns an integer value as it should be
+* Improved code for instances where result values casting back to variables are accurate
+* Variables within functions that had no defined type would crash a function on exit
+* Compiler can now determnine the difference between a float and double float immediate
+* Fixed a bug that caused multiple arrays into a READ command to crash, now fixed
+* Holding down delete key on an INPUT command caused a huge resource drain and crash, now fixed
+* Adjusted SYNC RATE to better reflect a better refresh at this value - added help too
+* Can now place comments between the last case and the endselect command
+* RESTORE within a function and label data outside of a function now works correctly
+* Arrays declaraed with an unknown type would crash the compiler, now reports good error
+* Compiler and engine can now handle more advanced TPC DLLs that use core data
+* Changed FLOAT to DOUBLE cast again so it retains the extra un-seen information (for accuracy)
+* ..and changed the PRINT FLOAT command to display regular float values
+* ..and added a new STR$() which now takes a double float value you want the extended float displayed
+* When global arrays within no clue as to type is used within function, the true type is used
+* Variables using custom types and not specifying a field name now produces an error
+* WRITE MEMBLOCK DWORD now handles the full range of DWORD values, and not the silly 22 million limit
+* Comments can now be appended to DATA statement and FOR-NEXT lines without a compiler error
+* CONSTANTS are now handled better by parsing the program only once to prevent multiple iterations
+* Added Support for VAL to return DOUBLE INTEGERS to support very large numbers
+* Due to a parse error, A = A * -1 with spaces caused the equation to produce the wrong result
+* CALL DLL that returns a value would not detect params over five, now fixed.
+* SELECT statement within a function can now handle arrays and array string as well as variables
+* Ensured that the A=A*-1 error did not introduce another bug which crops rightmost characters
+
+BASIC3D
+-------
+* Older cards can sometimes cause a general DirextX error - so more details added
+* MAKE OBJECT TRIANGLE no longer crops float values to integers during triangle creation
+* DOT command and POINT command fixed use 32bit values, and conversions down to 16bit when required
+* DOT X,Y,Col now works like DOT X,Y with the exception of no limit checks for a speed boost
+* Objects that are glued and culled no longer disappear when they should be visible again
+* Objects would not load in with a COLORKEY MASK, now all internal textures use a RGB(0,0,0) colorkey
+* LOCK OBJECT now works like DBV1 in that FOV will not affect its rendering in any way
+
+3D COLLISION
+------------
+* Updated collision system further for perfect poly-to-sphere check solving low poly collision issues
+* SET OBJECT RADIUS now affects bnoundboxes where box collision is used instead of sphere collision
+* In improving the collision for polygons, found a bug involving scale of polygon detection, also fixed
+
+LIGHT
+-----
+* set normalization on command now works correctly, as does the override when fade object is used
+
+MATRIX
+------
+* Fixed bug that caused matrix tiles to use first row correctly, the remaining rows reversed
+
+BSP
+---
+* Changed SET BSP COLLISION HEIGHT ADJUSTMENT so a positive value now means upward adjustment
+* Added HEIGHT ADJUSTMENT for Objects and also Quake3 BSP Collision too
+
+IMAGE AND BITMAP
+----------------
+* LOAD BITMAP now no longer dithers, scales or stretches leaving the image integrity intact
+
+
+SPRITES
+-------
+* Mirror and Flip now work with CREATE ANIMATED SPRITE correctly and texture data handling improved
+* CREATE ANIMATED SPRITE can now handle images of nonstandard size ie 1024x768 non square texture
+* PASTE SPRITE does not work if the sprite has been hiden, now fixed
+* Fixed PLAY SPRITE so anim settings can be changed even during an existing sprite animation
+* ROTATE SPRITE and PASTE SPRITE did not work well together, bug now fixed
+
+TEXT
+----
+* ASCII Characters 128-255 where not supported by the text commands, now fixed
+* Text width and height commands and internal use of same function no longer causes huge scrolls
+
+
+FILE
+----
+* Files that have been locked by other processes and tried to delete, causes a runtime error
+
+
+LIMITATIONS OF USE
+------------------
+* Placed safe code back into the GOTO command, to allow for a minimum screen refresh scan. The compiler now has a flag to deactivate this and will feature as an option in the editor soon
+* Added code to check for a negative value in the demo count registry entry so such hacking is discouraged, where upon the CD will be requested.

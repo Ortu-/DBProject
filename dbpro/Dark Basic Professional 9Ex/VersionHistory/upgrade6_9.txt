@@ -1,0 +1,22 @@
+Upgrade 6.9
+===========
+
+Compiler
+--------
+
+ * if compiler detects no TEMP, or write protected TEMP, it will use USER TEMP
+
+Setup
+-----
+
+ * Changed from COPY to DISCARD mode if VSYNC flag used in SET DISPLAY MODE
+ * Added new MULTISAMPLING factor to SET DISPLAY MODE W,H,D,VSYNC,MULTISAMPLING,MULTIMON
+ * Above command can be used to create full scene antialiasing effects
+ * Above MULTIMON param can be used to create a double-wide device (multimonitor)
+
+Camera
+------
+
+ * Added new command 'set cameras to stereoscopic cam1, cam2, backimg, frontimg
+ * Above command converts camera images to stereoscopic images for some S-3D use
+ * When SET CAMERA VIEW specifies size larger than default, viewport2D adjusts

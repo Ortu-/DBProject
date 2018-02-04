@@ -1,0 +1,153 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem Core Functionality
+
+#CONSTANT BIGVALUE 22000000
+#CONSTANT GREETING "Hello World "
+
+rem Call function held in included file
+#INCLUDE "extra.dba"
+ExtraFunction()
+
+rem Test loop
+_top:
+do
+
+rem Produce random values
+HighValue=BIGVALUE
+FloatValue#=(rnd(200)/100.0)-1.0
+XDistance#=rnd(1000)
+YDistance#=rnd(1000)
+AngleValue#=rnd(360)
+BigFloatValue#=rnd(100)
+BigFloatValue#=BigFloatValue#*BigFloatValue#
+SyncRateValue=rnd(100)
+ArraySizeValue=rnd(5000)
+SeedValue=rnd(5000)
+DelayValue=rnd(1000)
+IntegerVariable=rnd(100)
+SmallIntegerVariable=rnd(3)
+
+rem Try each command at random
+SET CURSOR 0,0
+if rnd(5)=1 then SET CURSOR rnd(HighValue),rnd(HighValue)
+if rnd(5)=1 then PRINT GREETING;
+if rnd(5)=1 then PRINTC HighValue
+if rnd(150)=1 then CLS : INPUT "Enter Name>";Name$
+if rnd(5)=1 then SYNC ON
+if rnd(5)=1 then SYNC OFF
+if rnd(5)=1 then SYNC
+if rnd(5)=1 then SYNC RATE SyncRateValue
+if rnd(5)=1 then DIM SampleArray(ArraySizeValue)
+if rnd(5)=1 then REM boo
+REMSTART
+if rnd(5)=1 then end
+REMEND
+if rnd(5)=1 then RESTORE
+if rnd(5)=1 then UNDIM SampleArray()
+if rnd(5)=1 then READ IntegerVariable
+if rnd(5)=1 then RANDOMIZE SeedValue
+if rnd(5)=1 then SLEEP DelayValue
+if rnd(150)=1 then CLS : set cursor 280,10 : print "Hit Key" : WAIT KEY
+if rnd(150)=1 then CLS : set cursor 280,10 : print "Hit Key" : SUSPEND FOR KEY
+if rnd(150)=1 then CLS : set cursor 280,10 : print "Hit Button" : WAIT MOUSE
+if rnd(150)=1 then CLS : set cursor 280,10 : print "Hit Button" : SUSPEND FOR MOUSE
+if rnd(5)=1 then WAIT DelayValue
+if rnd(5)=1 then SAVE ARRAY "Sample.arr",SampleArray()
+if rnd(5)=1 then LOAD ARRAY "Sample.arr",SampleArray()
+if rnd(5)=1 then INC IntegerVariable
+if rnd(5)=1 then DEC IntegerVariable
+if rnd(5)=1 then GOSUB _subroutine
+if rnd(5)=1 then GOTO _jumppoint
+if rnd(5)=1 then ReturnValue = SampleFunction(HighValue)
+
+rem Try Case Statements
+if rnd(5)=1
+ SELECT SmallIntegerVariable
+  CASE 1 : print "Hello A" : ENDCASE
+  CASE 2 : print "Hello B" : ENDCASE
+  CASE 3 : print "Hello C" : ENDCASE
+  CASE DEFAULT : print "Hello Anything Else" : ENDCASE
+ ENDSELECT
+endif
+
+rem Try If Then Statements
+if rnd(5)=1
+ IF SmallIntegerVariable=1
+  print "Value is one"
+ ELSE
+  print "Value is not one"
+ ENDIF
+endif
+
+rem Try Repeat Statements
+if rnd(5)=1
+ REPEAT
+  print "Value is one at the moment"
+  SmallIntegerVariable=rnd(3)
+ UNTIL SmallIntegerVariable=1
+endif
+
+rem Try While Statements
+if rnd(5)=1
+ WHILE SmallIntegerVariable=1
+  print "Value is one at the moment"
+  SmallIntegerVariable=rnd(3)
+ ENDWHILE
+endif
+
+rem Try Do Loop Statements
+if rnd(5)=1
+ DO
+  print "Inside the DO LOOP"
+  if rnd(5)=1 then EXIT
+ LOOP
+endif
+
+rem Try For Next Statements
+if rnd(5)=1
+ FOR TempValue=1 to 10 STEP 1
+  PRINT "The value is ";TempValue
+ NEXT TempValue
+endif
+
+rem Display data
+set cursor 0,0
+print "CORE EXPRESSION DATA"
+print
+print "rnd:";RND(HighValue)
+print "acos:";ACOS(FloatValue#)
+print "asin:";ASIN(FloatValue#)
+print "atan:";ATAN(FloatValue#)
+print "atanfull:";ATANFULL(XDistance#,YDistance#)
+print "cos:";COS(AngleValue#)
+print "sin:";SIN(AngleValue#)
+print "tan:";TAN(AngleValue#)
+print "hcos:";HCOS(AngleValue#)
+print "hsin:";HSIN(AngleValue#)
+print "htan:";HTAN(AngleValue#)
+print "sqrt:";SQRT(BigFloatValue#)
+print "abs:";ABS(FloatValue#)
+print "int:";INT(FloatValue#)
+print "exp:";EXP(SmallIntegerVariable)
+print "timer:";TIMER()
+print "inkey$:";INKEY$()
+print "get date$:";GET DATE$()
+print "get time$:";GET TIME$()
+print "cl$:";CL$()
+
+loop
+END
+
+_subroutine:
+ DATA 1,2,3,4,5,6
+RETURN
+
+_jumppoint:
+rem No way back so force a jump to _top
+GOTO _top
+
+FUNCTION SampleFunction(InputValue as integer)
+ if rnd(5)=1 then EXITFUNCTION
+ ReturnValue=rnd(5)
+ENDFUNCTION ReturnValue
+
+</pre></FONT></BODY>

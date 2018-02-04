@@ -1,0 +1,31 @@
+D3DFunc
+Version		: 3.7
+Requires	: DBP v6.2b+
+Release Date	: 17/04/2008
+
+Bug Fixes
+=========
+
+New Commands
+============
+
+D3D_Rounded_Box - Draws both filled and outlined rounded boxes
+D3D_Progress Bar - Draws a progress bar from a given sprite
+D3D_Get_Camera_Up - Get the camera's up vector
+D3D_Get_Camera_Right - Get the camera's right vector
+D3D_Draw_Fustrum - Draw the requested camera's fustrum
+D3D_Draw_Primitive - A basic wrapper for the DirectX DrawPrimitiveUp commadn
+
+Enhancements
+============
+
+Removed redundant versions of D3D_Polygon command
+Added new option to D3D_Polygon to allow specification of a rotation angle for the polygon
+Amended D3D_init to allow optional maximum font count parameter to allow more than 20 fonts. Defaults to 20.
+Renamed D3D_Camera_Vector_X with D3D_Vector_X
+Renamed D3D_Camera_Vector_Y with D3D_Vector_Y
+Renamed D3D_Camera_Vector_Z with D3D_Vector_Z
+
+Updated command showcase
+Added new command examples
+

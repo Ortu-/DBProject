@@ -1,0 +1,285 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	Event Management & Handling
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides loading, handling, and interaction for triggered events.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+		SC_Collision.dll (Sparky)
+		SQLITE.dll (Duffer)
+
+	*******************************************
+	Classes:
+
+		Requires system.dbx
+		Requires database.dbx
+		Requires media.dbx
+		Requires anim3d.dbx
+		Requires world.dbx
+		Requires controls.dbx
+
+		=========================================
+		Defines STATIC CLASS: Events
+
+			------------------------
+			public functions:
+
+				Events_updateInteractableTarget()
+					- Updates the current interaction target based on raycast collision from camera to max interractable distance.
+
+				Events_setInteractableTargetState(rState as string)
+					- Set the current state of the object being interracted with.
+
+				Events_setInteractableCollisionState(rArgs as string)
+					- Set the current collision state of the object being interracted with. Useful for doors.
+
+				Events_triggerInteractable()
+					- Use the current interaction target.
+
+			------------------------
+			public data
+
+				Events.interactableTarget
+					- struct holding data about the current interaction target.
+
+			------------------------
+			private functions
+
+				_Events_init()
+					- Module initialization
+
+			------------------------
+			private data:
+
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+events_module_init:
+
+	if EVENTS_MODULE_LOADED = FALSE
+
+		<?System_log("events.dbx", 2, "main", "Begin module load: events.")?>
+		App_updateSplashScreen("- Events")
+
+		`Declare Events -----------------------------------------------------------
+
+		type STATIC_CLASS_Events
+			interactableTarget as CLASS_InteractableObject
+		endtype
+
+		`private data -------------------------------------------------------------
+
+
+
+		`public data --------------------------------------------------------------
+
+
+
+		`Init ---------------------------------------------------------------------
+
+		`==================================
+
+		GLOBAL Events as STATIC_CLASS_Events
+
+		`==================================
+
+		_Events_init()
+
+		EVENTS_MODULE_LOADED = TRUE
+
+		<?System_log("events.dbx", 2, "main", "End module load: events.")?>
+
+	endif
+return
+
+
+function _Events_init()
+
+	World_getInteractableData()
+
+	App_addUpdate("Events_updateInteractableTarget", "Camera_updatePhysicalState", FALSE)
+
+	//TODO: Controls_addControl("Interactions" ENUM_KEY_F, "Events_triggerInteractable") ??
+
+endfunction
+
+
+function Events_updateInteractableTarget()
+
+	<?System_log("events.dbx", 2, "main", "Begin Update: Events_updateInteractableTarget")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	if Camera.baseData.focalTargetNum > -1 and Camera.baseData.focalDistance <= World.envConfig.scaleMeter * 3.0
+
+		Media_getObjectRefByID(Events.interactableTarget.objectID)
+		oldIntrNum = Media.objectResult.number
+
+		`do nothing if target hasn't changed
+		if Camera.baseData.focalTargetNum = oldIntrNum
+			exitfunction
+		endif
+
+		doesUse = FALSE
+		doesExamine = FALSE
+		doesTake = FALSE
+		doesConverse = FALSE
+
+		tIntrIndex = World_getInteractableRefByNumber(Camera.baseData.focalTargetNum)
+		if tIntrIndex > -1
+			<?System_log("events.dbx", 2, "events", " > Setting interactableTarget to camera.focalTargetNum: " + str$(Camera.baseData.focalTargetNum))?>
+			//LEAK: (STILL) TODO: need to assign props one by one.
+			Events.interactableTarget = World_interactableObjects[tIntrIndex]
+		else
+			`target object is not interactable, clear it
+			Events.interactableTarget = $new CLASS_InteractableObject
+		endif
+	else
+		`no object within target range, clear it
+		Events.interactableTarget = $new CLASS_InteractableObject
+	endif
+
+	<?System_log("events.dbx", 2, "main", "End Update: Events_updateInteractableTarget," + str$(hitimer(1000000) - updateMark) + "us")?>
+
+endfunction
+
+
+function Events_setInteractableTargetState(rState as string)
+
+	<?System_log("events.dbx", 2, "events", " > setting interactable to state: " + rState)?>
+
+	if rState = "next"
+		nextState = Events.interactableTarget.activeState + 1
+		if nextState > Events.interactableTarget.maxStates
+			nextState = 1
+		endif
+	else
+		nextState = intval(rState)
+		if nextState > Events.interactableTarget.maxStates
+			nextState = Events.interactableTarget.maxStates
+		endif
+	endif
+
+	stateToOff = nextState
+
+	`TEMP:
+	if stateToOff = 1
+			stateToOn = 2
+	else
+			stateToOn = 1
+	endif
+	`TEMPEND
+
+	<?System_log("events.dbx", 1, "events", "  out state " + str$(stateToOff) + " on state " + str$(stateToOn))?>
+
+	tState$ = "state" + str$(nextState)
+
+	Events.interactableTarget.activeState = nextState
+
+	<?System_log("events.dbx", 1, "events", "  > set interactableTarget.activeState = " + str$(nextState))?>
+
+	`apply to all linked multistate objects for this entity
+	for i = 0 to array count(World_interactableObjects[])
+		<?System_log("events.dbx", 1, "events", "check if World_interactableObjects["+str$(i)+"].parentID = Events.interactableTarget.parentID :: " + World_interactableObjects[i].parentID +" == " + Events.interactableTarget.parentID)?>
+
+		if World_interactableObjects[i].parentID = Events.interactableTarget.parentID
+
+			<?System_log("events.dbx", 1, "events", "  interactable " + World_interactableObjects[i].filebase + " is linked to current interactable target")?>
+			<?System_log("events.dbx", 1, "events", "  > set interactable["+str$(i)+"].activeState = " + str$(nextState))?>
+
+			World_interactableObjects[i].activeState = nextState
+
+			split string World_interactableObjects[i].filebase, "_"
+			iState = intval(fast right$(get split word$(split count() - 1), fast len(get split word$(split count() - 1)) - 5))
+			<?System_log("events.dbx", 1, "events", "  extracted interactable state " + str$(iState))?>
+
+			tAnimSet = Anim3d_getAnimSetNumber(get split word$(1) + "_" + get split word$(2) + ".anim")
+
+			if iState = stateToOn
+				objOnID$ = World_interactableObjects[i].objectID
+			endif
+			if iState = stateToOff
+				objOffID$ = World_interactableObjects[i].objectID
+			endif
+
+		endif
+	next i
+
+	//set animation
+	//NOTE: the interactable object should be a non-visible collision mesh. the visible non-interactble parent object is what needs to be animated.
+	<?System_log("events.dbx", 1, "events", "  set animation for visible parent of interactableTarget: " + Events.interactableTarget.parentID)?>
+
+	Media_getObjectRefByID(Events.interactableTarget.parentID)
+	tObjNum = Media.objectResult.number
+
+	callbackArgs$ = objOffID$ + "," + objOnID$
+	Anim3d_clearAppliedAnimations(tObjNum)
+	tAnim = $new CLASS_AppliedAnimation3d
+	tAnim.objectNum = tObjNum
+	tAnim.animSetNum = tAnimSet
+	tAnim.keyName = tState$
+	tAnim.callback = "Events_setInteractableCollisionState"
+	tAnim.callbackArgs = callbackArgs$
+	Anim3d_addAppliedAnimation(tAnim)
+
+endfunction
+
+
+function Events_setInteractableCollisionState(rArgs as string)
+
+	split string rArgs, ","
+
+	stateToOff$ = get split word$(1)
+	stateToOn$ = get split word$(2)
+
+	Media_getObjectRefByID(stateToOff$)
+	objNumOff = Media.objectResult.number
+	<?
+		fileToOff$ = Media.objectResult.text
+	?>
+
+	Media_getObjectRefByID(stateToOn$)
+	objNumOn = Media.objectResult.number
+	<?
+		fileToOn$ = Media.objectResult.text
+	?>
+
+	<?System_log("events.dbx", 1, "events", "  > set interactable collision states: state to on " + stateToOn$ + " (" + fileToOn$ + "), state to off " + stateToOff$ + "(" + fileToOff$ + ")")?>
+
+	sc_setObjectCollisionOn objNumOn
+	sc_setObjectCollisionOff objNumOff
+
+endfunction

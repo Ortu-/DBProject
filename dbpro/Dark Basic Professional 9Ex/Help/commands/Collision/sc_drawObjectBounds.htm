@@ -1,0 +1,30 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+
+SC_drawObjectBounds
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    SC_drawObjectBounds  objNum
+
+<BR><BR>
+        <u>-objNum</u>:    the object to show its bounds<br>
+	    <br>
+        Will draw a visable object of the shape of the object's representation<br>
+        in the collision system. Objects setup as polygon will not draw any shape.<br>
+        Objects setup as complex show every node from the root (surrounds whole object)<br>
+        down to the nodes surrounding groups of individual polygons.<br><br>
+
+        The bounds shape will update with every call to SC_updateObject<br>
+        and can be deleted using SC_removeVisualBounds.<br><br>
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

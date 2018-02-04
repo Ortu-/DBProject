@@ -1,0 +1,766 @@
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+type AL_EffectData
+   Number as integer
+   Object as integer
+   technique as string
+   MotionBlur as integer
+endtype
+
+type AL_MotionBlurData
+   Inuse as integer
+   AttachCount as integer
+   MotionBlurAttachStart as integer
+endtype
+
+type AL_MotionBlurAttachData
+   Object as integer
+   ObjectArray as integer
+   Limb as integer
+endtype
+
+type AL_AlphaEffectData
+   Number as integer
+   Blocker as boolean
+   LightingEnabled as integer
+   LightingPosition as AL_Vec3Float
+   LightingTrackCamera as boolean
+   LightingTrackObject as integer
+   Light1 as integer
+   LightDis1 as float
+   Light2 as integer
+   LightDis2 as float
+   Light3 as integer
+   LightDis3 as float
+   Light4 as integer
+   LightDis4 as float
+   Light5 as integer
+   LightDis5 as float
+endtype
+
+`--------------
+` Add Effect
+`--------------
+function Effect_Add(iEffect as integer)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         local tEffect as integer
+         tEffect=AL_EffectArray(iEffect)
+         if tEffect=-1
+            array insert at bottom AL_Effect()
+            inc AL_EffectCount
+            AL_Effect(AL_EffectCount).Number=iEffect
+            AL_Effect(AL_EffectCount).Object=0
+            AL_Effect(AL_EffectCount).technique="Geometry"
+            AL_Effect(AL_EffectCount).MotionBlur=-1
+            set vector4 AL_Vector4(1),AL_Ambient(1)/255,AL_Ambient(2)/255,AL_Ambient(3)/255,0
+            set effect constant vector AL_Effect(AL_EffectCount).Number,"AmbientColor",AL_Vector4(1)
+            set vector4 AL_Vector4(1),AL_DirLightDirection.x,AL_DirLightDirection.y,AL_DirLightDirection.z,0
+            set effect constant vector AL_Effect(AL_EffectCount).Number,"LightDirection",AL_Vector4(1)
+            set vector4 AL_Vector4(1),(AL_DirLightColor.x/255)*AL_Ambient(5),(AL_DirLightColor.y/255)*AL_Ambient(6),(AL_DirLightColor.z/255)*AL_Ambient(7),0
+            set effect constant vector AL_Effect(AL_EffectCount).Number,"LightColor",AL_Vector4(1)
+            set vector4 AL_Vector4(1),AL_DirLightDirection.x,AL_DirLightDirection.y,AL_DirLightDirection.z,0
+            set effect constant vector AL_Effect(AL_EffectCount).Number,"LightDirection",AL_Vector4(1)
+            set vector4 AL_Vector4(1),AL_Fog(1),AL_Fog(12),AL_Fog(2),AL_Fog(13)
+            set vector4 AL_Vector4(2),AL_Fog(3)/255,AL_Fog(4)/255,AL_Fog(5)/255,0
+            set vector4 AL_Vector4(3),AL_Fog(6)/255,AL_Fog(7)/255,AL_Fog(8)/255,0
+            set effect constant vector AL_Effect(AL_EffectCount).Number,"FogRange",AL_Vector4(1)
+            set effect constant vector AL_Effect(AL_EffectCount).Number,"FogColor1",AL_Vector4(2)
+            set effect constant vector AL_Effect(AL_EffectCount).Number,"FogColor2",AL_Vector4(3)
+            set vector4 AL_Vector4(1),AL_Fog(9),AL_Fog(10),AL_Fog(11),0
+            set vector4 AL_Vector4(2),AL_Fog(14)/255,AL_Fog(15)/255,AL_Fog(16)/255,AL_Fog(17)/255
+            set effect constant vector AL_Effect(AL_EffectCount).Number,"HeightFog",AL_Vector4(1)
+            set effect constant vector AL_Effect(AL_EffectCount).Number,"HeightFogColor",AL_Vector4(2)
+            set effect constant float AL_Effect(AL_EffectCount).Number,"ClipHeight",Water_Height-(Water_WaveHeight/2)
+         endif
+      endif
+   endif
+endfunction AL_EffectCount
+
+`--------------
+` Remove Effect
+`--------------
+function Effect_Remove(iEffect as integer)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         local tEffect as integer
+         tEffect=AL_EffectArray(iEffect)
+         if tEffect>-1
+            if AL_Effect(tEffect).MotionBlur>-1
+               tMotionBlur=AL_Effect(tEffect).MotionBlur
+               for o=0 to 50
+                  tMotionBlurAttach=AL_MotionBlur(tMotionBlur).MotionBlurAttachStart
+                  if AL_MotionBlurAttach(AL_MotionBlurAttachCount).Object>0 then AL_Object(AL_MotionBlurAttach(tMotionBlurAttach).ObjectArray).MotionBlur=0
+                  array delete element AL_Effect(),tMotionBlurAttach
+                  dec AL_MotionBlurAttachCount
+               next o
+               for m=0 to AL_MotionBlurCount
+                  if AL_MotionBlur(m).MotionBlurAttachStart>AL_MotionBlur(tMotionBlur).MotionBlurAttachStart
+                     dec AL_MotionBlur(m).MotionBlurAttachStart,51
+                  endif
+               next m
+               AL_MotionBlur(tMotionBlur).InUse=0
+               AL_MotionBlur(tMotionBlur).AttachCount=0
+               AL_MotionBlur(tMotionBlur).MotionBlurAttachStart=0
+            endif
+            array delete element AL_Effect(),tEffect
+            dec AL_EffectCount
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Detail Mapping
+`--------------
+function Effect_SetDetailMapping(iEffect as integer,iDetail as boolean)
+   if AL_Enabled=1
+      if iDetail=1
+         Effect_SetTechnique(iEffect,"GeometryDetail")
+      else
+         Effect_SetTechnique(iEffect,"Geometry")
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Technique
+`--------------
+function Effect_SetTechnique(iEffect as integer,iTechnique as string)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         local tEffect as integer
+         tEffect=AL_EffectArray(iEffect)
+         if tEffect>-1 then AL_Effect(tEffect).technique=iTechnique
+      endif
+   endif
+endfunction
+
+`--------------
+` Motion Blur effect
+`--------------
+function Effect_MotionBlur(iEffect as integer)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         local tEffect as integer
+         local tMotionBlur as integer
+         tEffect=AL_EffectArray(iEffect)
+         if tEffect>-1
+            if AL_Effect(tEffect).MotionBlur=-1
+               tMotionBlur=-1
+               for m=0 to AL_MotionBlurCount
+                  if AL_MotionBlur(m).InUse=0 then tMotionBlur=m
+               next m
+               if tMotionBlur=-1
+                  array insert at bottom AL_MotionBlur()
+                  inc AL_MotionBlurCount
+                  tMotionBlur=AL_MotionBlurCount
+               endif
+               AL_Effect(tEffect).MotionBlur=tMotionBlur
+               AL_MotionBlur(tMotionBlur).InUse=1
+               AL_MotionBlur(tMotionBlur).AttachCount=0
+               AL_MotionBlur(tMotionBlur).MotionBlurAttachStart=AL_MotionBlurAttachCount+1
+               for o=0 to 50
+                  array insert at bottom AL_MotionBlurAttach()
+                  inc AL_MotionBlurAttachCount
+                  AL_MotionBlurAttach(AL_MotionBlurAttachCount).Object=0
+                  AL_MotionBlurAttach(AL_MotionBlurAttachCount).ObjectArray=-1
+                  AL_MotionBlurAttach(AL_MotionBlurAttachCount).Limb=-1
+               next o
+            endif
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Motion Blur effect Update
+`--------------
+function Effect_MotionBlurUpdate()
+   if AL_Enabled=1 and AL_MotionBlur=1
+      local tObject as integer
+      local tLimb as integer
+      local tMotionBlur as integer
+      local tMotionBlurAttach as integer
+      local tGetEffect as integer
+      view matrix4 AL_Matrix(1)
+      projection matrix4 AL_Matrix(2)
+      multiply matrix4 AL_Matrix(5),AL_Matrix(1),AL_Matrix(2)
+      if AL_SkyEnabled=1 then set effect constant matrix AL_SkyEffect(2),"PreviousVP",AL_Matrix(5)
+      for e=0 to AL_EffectCount
+         set effect constant matrix AL_Effect(e).Number,"PreviousVP",AL_Matrix(5)
+         if AL_Effect(e).MotionBlur>-1
+            tMotionBlur=AL_Effect(e).MotionBlur
+            if AL_MotionBlur(tMotionBlur).AttachCount>0
+               tGetEffect=0
+               for o=0 to AL_MotionBlur(tMotionBlur).AttachCount-1
+                  tMotionBlurAttach=AL_MotionBlur(tMotionBlur).MotionBlurAttachStart+o
+                  if AL_MotionBlurAttach(tMotionBlurAttach).Object>0
+                     tObject=AL_MotionBlurAttach(tMotionBlurAttach).Object
+                     if AL_Object(AL_MotionBlurAttach(tMotionBlurAttach).ObjectArray).Updated=1
+                        if AL_MotionBlurAttach(tMotionBlurAttach).Limb>-1
+                           tLimb=AL_MotionBlurAttach(tMotionBlurAttach).Limb
+                           rotate x matrix4 AL_Matrix(1),-wrapvalue(object angle x(tObject))*0.0174532778
+                           rotate y matrix4 AL_Matrix(2),-wrapvalue(object angle y(tObject))*0.0174532778
+                           rotate z matrix4 AL_Matrix(3),-wrapvalue(object angle z(tObject))*0.0174532778
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(3),AL_Matrix(2)
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(1)
+                           rotate x matrix4 AL_Matrix(1),-wrapvalue(limb angle x(tObject,tLimb))*0.0174532778
+                           rotate y matrix4 AL_Matrix(2),-wrapvalue(limb angle y(tObject,tLimb))*0.0174532778
+                           rotate z matrix4 AL_Matrix(3),-wrapvalue(limb angle z(tObject,tLimb))*0.0174532778
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(3)
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(2)
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(1)
+                           scale matrix4 AL_Matrix(1),(object size x(tObject,1)/object size x(tObject))*(limb scale x(tObject,tLimb)/100),(object size y(tObject,1)/object size y(tObject))*(limb scale y(tObject,tLimb)/100),(object size z(tObject,1)/object size z(tObject))*(limb scale z(tObject,tLimb)/100)
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(1)
+                           transpose matrix4 AL_Matrix(4),AL_Matrix(4)
+                           translate matrix4 AL_Matrix(1),limb position x(tObject,tLimb),limb position y(tObject,tLimb),limb position z(tObject,tLimb)
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(1)
+                        else
+                           rotate x matrix4 AL_Matrix(1),-wrapvalue(object angle x(tObject))*0.0174532778
+                           rotate y matrix4 AL_Matrix(2),-wrapvalue(object angle y(tObject))*0.0174532778
+                           rotate z matrix4 AL_Matrix(3),-wrapvalue(object angle z(tObject))*0.0174532778
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(3),AL_Matrix(2)
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(1)
+                           scale matrix4 AL_Matrix(1),object size x(tObject,1)/object size x(tObject),object size y(tObject,1)/object size y(tObject),object size z(tObject,1)/object size z(tObject)
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(1)
+                           transpose matrix4 AL_Matrix(4),AL_Matrix(4)
+                           translate matrix4 AL_Matrix(1),object position x(tObject),object position y(tObject),object position z(tObject)
+                           multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(1)
+                        endif
+                        if tGetEffect=0 then null=get object effect(tObject,-1):tGetEffect=1
+                        set vector4 AL_Vector4(1),get matrix4 element(AL_Matrix(4),0),get matrix4 element(AL_Matrix(4),1),get matrix4 element(AL_Matrix(4),2),get matrix4 element(AL_Matrix(4),3)
+                        set effect constant vector element "PreviousWorldx1",o,AL_Vector4(1)
+                        set vector4 AL_Vector4(1),get matrix4 element(AL_Matrix(4),4),get matrix4 element(AL_Matrix(4),5),get matrix4 element(AL_Matrix(4),6),get matrix4 element(AL_Matrix(4),7)
+                        set effect constant vector element "PreviousWorldx2",o,AL_Vector4(1)
+                        set vector4 AL_Vector4(1),get matrix4 element(AL_Matrix(4),8),get matrix4 element(AL_Matrix(4),9),get matrix4 element(AL_Matrix(4),10),get matrix4 element(AL_Matrix(4),11)
+                        set effect constant vector element "PreviousWorldx3",o,AL_Vector4(1)
+                        set vector4 AL_Vector4(1),get matrix4 element(AL_Matrix(4),12),get matrix4 element(AL_Matrix(4),13),get matrix4 element(AL_Matrix(4),14),get matrix4 element(AL_Matrix(4),15)
+                        set effect constant vector element "PreviousWorldx4",o,AL_Vector4(1)
+                     endif
+                  endif
+               next o
+               if tGetEffect=1 then release effect pointer
+            endif
+         endif
+      next e
+   endif
+endfunction
+
+`--------------
+` Effect Array
+`--------------
+function AL_EffectArray(iEffect as integer)
+   if AL_Enabled=1
+      for e=0 to AL_EffectCount
+         if AL_Effect(e).Number=iEffect then exitfunction e
+      next e
+   endif
+endfunction -1
+
+`--------------
+` Add Alpha Effect
+`--------------
+function AlphaEffect_Add(iEffect as integer)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         local tEffect as integer
+         tEffect=AL_AlphaEffectArray(iEffect)
+         if tEffect=-1
+            array insert at bottom AL_AlphaEffect()
+            inc AL_AlphaEffectCount
+            AL_AlphaEffect(AL_AlphaEffectCount).Number=iEffect
+            AL_AlphaEffect(AL_AlphaEffectCount).LightingTrackCamera=1
+            set vector4 AL_Vector4(1),0.5/AL_ViewVec.x,0.5/AL_ViewVec.y,1,1
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"ViewSize",AL_Vector4(1)
+            set vector4 AL_Vector4(1),1,1,1,0
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"AmbientColor",AL_Vector4(1)
+            set vector4 AL_Vector4(1),0,0,0,0
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"LightColor",AL_Vector4(1)
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"LightColor1",AL_Vector4(1)
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"LightColor2",AL_Vector4(1)
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"LightColor3",AL_Vector4(1)
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"LightColor4",AL_Vector4(1)
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"LightColor5",AL_Vector4(1)
+            set vector4 AL_Vector4(1),AL_Fog(1),AL_Fog(12),AL_Fog(2),AL_Fog(13)
+            set vector4 AL_Vector4(2),AL_Fog(3)/255,AL_Fog(4)/255,AL_Fog(5)/255,0
+            set vector4 AL_Vector4(3),AL_Fog(6)/255,AL_Fog(7)/255,AL_Fog(8)/255,0
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"FogRange",AL_Vector4(1)
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"FogColor1",AL_Vector4(2)
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"FogColor2",AL_Vector4(3)
+            set vector4 AL_Vector4(1),AL_Fog(9),AL_Fog(10),AL_Fog(11),0
+            set vector4 AL_Vector4(2),AL_Fog(14)/255,AL_Fog(15)/255,AL_Fog(16)/255,AL_Fog(17)/255
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"HeightFog",AL_Vector4(1)
+            set effect constant vector AL_AlphaEffect(AL_AlphaEffectCount).Number,"HeightFogColor",AL_Vector4(2)
+         endif
+      endif
+   endif
+endfunction AL_AlphaEffectCount
+
+`--------------
+` Remove Alpha Effect
+`--------------
+function AlphaEffect_Remove(iEffect as integer)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         local tEffect as integer
+         tEffect=AL_AlphaEffectArray(iEffect)
+         AlphaEffect_EnableLighting(iEffect,0)
+         if tEffect>-1
+            array delete element AL_AlphaEffect(),tEffect
+            dec AL_AlphaEffectCount
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Enable Alpha Lighting
+`--------------
+function AlphaEffect_EnableLighting(iEffect as integer,iEnable as boolean)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         tEffect=AL_AlphaEffectArray(iEffect)
+         if tEffect>-1
+            if AL_AlphaEffect(tEffect).LightingEnabled<>iEnable
+               AL_AlphaEffect(tEffect).LightingEnabled=iEnable
+               if AL_AlphaEffect(tEffect).LightingEnabled>0
+                  tAddEffect=0
+                  for e=0 to AL_AlphaEffectLightingCount
+                     if AL_AlphaEffectLighting(e)=tEffect+1
+                        tAddEffect=1
+                        exit
+                     endif
+                  next e
+                  if tAddEffect=0
+                     array insert at bottom AL_AlphaEffectLighting()
+                     inc AL_AlphaEffectLightingCount
+                     AL_AlphaEffectLighting(AL_AlphaEffectLightingCount)=tEffect+1
+                  endif
+                  set vector4 AL_Vector4(1),AL_Ambient(1)/255,AL_Ambient(2)/255,AL_Ambient(3)/255,0
+                  set effect constant vector AL_AlphaEffect(tEffect).Number,"AmbientColor",AL_Vector4(1)
+                  set vector4 AL_Vector4(1),(AL_DirLightColor.x/255)*AL_Ambient(5),(AL_DirLightColor.y/255)*AL_Ambient(6),(AL_DirLightColor.z/255)*AL_Ambient(7),0
+                  set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor",AL_Vector4(1)
+                  AlphaEffect_GetclosestLights(tEffect)
+               else
+                  for e=0 to AL_AlphaEffectLightingCount
+                     if AL_AlphaEffectLighting(e)=tEffect+1
+                        array delete element AL_AlphaEffectLighting(),e
+                        dec AL_AlphaEffectLightingCount
+                        exit
+                     endif
+                  next e
+                  AL_AlphaEffect(tEffect).LightingTrackCamera=1
+                  AL_AlphaEffect(tEffect).LightingTrackObject=0
+                  AL_AlphaEffect(tEffect).Light1=0
+                  AL_AlphaEffect(tEffect).Light2=0
+                  AL_AlphaEffect(tEffect).Light3=0
+                  AL_AlphaEffect(tEffect).Light4=0
+                  AL_AlphaEffect(tEffect).Light5=0
+                  set vector4 AL_Vector4(1),1,1,1,0
+                  set effect constant vector AL_AlphaEffect(tEffect).Number,"AmbientColor",AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor",AL_Vector4(1)
+                  set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor1",AL_Vector4(1)
+                  set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor2",AL_Vector4(1)
+                  set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor3",AL_Vector4(1)
+                  set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor4",AL_Vector4(1)
+                  set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor5",AL_Vector4(1)
+               endif
+            endif
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Lighting Positon To Camera
+`--------------
+function AlphaEffect_SetLightingPositonToCamera(iEffect as integer,iEnable as boolean)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         tEffect=AL_AlphaEffectArray(iEffect)
+         if tEffect>-1
+            AL_AlphaEffect(tEffect).LightingTrackCamera=iEnable
+            AlphaEffect_GetclosestLights(tEffect)
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Lighting Positon To Object
+`--------------
+function AlphaEffect_SetLightingPositonToObject(iEffect as integer,iObject as integer)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         tEffect=AL_AlphaEffectArray(iEffect)
+         if tEffect>-1
+            if iObject>0
+               if object exist(iObject)=1
+                  AL_AlphaEffect(tEffect).LightingTrackObject=iObject
+                  AlphaEffect_GetclosestLights(tEffect)
+               else
+                  AL_AlphaEffect(tEffect).LightingTrackObject=0
+               endif
+            else
+               AL_AlphaEffect(tEffect).LightingTrackObject=0
+            endif
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Lighting Positon
+`--------------
+function AlphaEffect_SetLightingPositon(iEffect as integer,iPosX as float,iPosY as float,iPosZ as float)
+   if AL_Enabled=1
+      if effect exist(iEffect)=1
+         tEffect=AL_AlphaEffectArray(iEffect)
+         if tEffect>-1
+            AL_AlphaEffect(tEffect).LightingPosition.x=iPosX
+            AL_AlphaEffect(tEffect).LightingPosition.y=iPosY
+            AL_AlphaEffect(tEffect).LightingPosition.z=iPosZ
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Alpha Effect Vertex Lighting Update
+`--------------
+function AlphaEffect_UpdateLighting()
+   if AL_Enabled=1
+      local tLightDis as float
+      local tSetLight as integer
+
+   `Get 5 closest lights to camera
+      tSetLight=0
+      tLightDis=0
+      inc AL_AlphaLightsUpdate
+      if AL_AlphaLightsUpdate>10
+         AL_AlphaLightsUpdate=0
+         for l=1 to 5
+            if AL_LightsToCamera(l)=0
+               tSetLight=l
+               tLightDis=9999999999
+            else
+               if AL_LightsToCamera(l)<10000
+                  set vector3 AL_Vector3(1),AL_CameraPos.x-AL_PointLight(AL_LightsToCamera(l)-1).Position.x,AL_CameraPos.y-AL_PointLight(AL_LightsToCamera(l)-1).Position.y,AL_CameraPos.z-AL_PointLight(AL_LightsToCamera(l)-1).Position.z
+                  if AL_PointLight(AL_LightsToCamera(l)-1).Visible=0 then AL_LightsToCamera(l)=0
+               else
+                  set vector3 AL_Vector3(1),AL_CameraPos.x-AL_SpotLight(AL_LightsToCamera(l)-10000).Position.x,AL_CameraPos.y-AL_SpotLight(AL_LightsToCamera(l)-10000).Position.y,AL_CameraPos.z-AL_SpotLight(AL_LightsToCamera(l)-10000).Position.z
+                  if AL_SpotLight(AL_LightsToCamera(l)-10000).Visible=0 then AL_LightsToCamera(l)=0
+               endif
+               AL_LightsToCameraDis(l)=length vector3(AL_Vector3(1))
+            endif
+         next l
+         if tLightDis=0
+            for l=1 to 5
+               if AL_LightsToCameraDis(l)>tLightDis then tSetLight=l:tLightDis=AL_LightsToCameraDis(l)
+            next l
+         endif
+         if tSetLight>0
+            for l=0 to AL_PointLightVisibleCount
+               tLightNum=AL_PointLightVisible(l)-1
+               if AL_PointLight(tLightNum).Visible=1
+                  if AL_InDistance(AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z,AL_PointLight(tLightNum).Position.x,AL_PointLight(tLightNum).Position.y,AL_PointLight(tLightNum).Position.z,tLightDis)=1
+                     if tLightNum<>AL_LightsToCamera(1)-1 and tLightNum<>AL_LightsToCamera(2)-1 and tLightNum<>AL_LightsToCamera(3)-1 and tLightNum<>AL_LightsToCamera(4)-1 and tLightNum<>AL_LightsToCamera(5)-1
+                        AL_LightsToCamera(tSetLight)=tLightNum+1
+                        exit
+                     endif
+                  endif
+               endif
+            next l
+            for l=0 to AL_SpotLightVisibleCount
+               tLightNum=AL_SpotLightVisible(l)-1
+               if AL_SpotLight(tLightNum).Visible=1
+                  if AL_InDistance(AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z,AL_SpotLight(tLightNum).Position.x,AL_SpotLight(tLightNum).Position.y,AL_SpotLight(tLightNum).Position.z,tLightDis)=1
+                     if tLightNum<>AL_LightsToCamera(1)-10000 and tLightNum<>AL_LightsToCamera(2)-10000 and tLightNum<>AL_LightsToCamera(3)-10000 and tLightNum<>AL_LightsToCamera(4)-10000 and tLightNum<>AL_LightsToCamera(5)-10000
+                        AL_LightsToCamera(tSetLight)=tLightNum+10000
+                        exit
+                     endif
+                  endif
+               endif
+            next l
+         endif
+      endif
+
+   `Update lighting on alpha effects
+      for e=0 to AL_AlphaEffectLightingCount
+         tEffect=AL_AlphaEffectLighting(e)-1
+         if AL_AlphaEffect(tEffect).LightingEnabled>1
+            if AL_AlphaEffect(tEffect).Light1>0
+               if AL_AlphaEffect(tEffect).Light1<10000
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Position.z
+                  set vector4 AL_Vector4(1),(AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Color.x/255)*AL_Ambient(5),(AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Color.y/255)*AL_Ambient(6),(AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Position.x,AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Position.y,AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Position.z,AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Range
+                  set vector4 AL_Vector4(3),0,0,0,1
+                  if AL_PointLight(AL_AlphaEffect(tEffect).Light1-1).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light1=0
+               else
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Position.z
+                  set vector4 AL_Vector4(1),(AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Color.x/255)*AL_Ambient(5),(AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Color.y/255)*AL_Ambient(6),(AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Position.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Position.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Position.z,AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Range
+                  set vector4 AL_Vector4(3),AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Normal.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Normal.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Normal.z,0
+                  if AL_SpotLight(AL_AlphaEffect(tEffect).Light1-10000).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light1=0
+               endif
+               AL_AlphaEffect(tEffect).LightDis1=length vector3(AL_Vector3(1))
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor1",AL_Vector4(1)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightPosition1",AL_Vector4(2)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightNormal1",AL_Vector4(3)
+            endif
+            if AL_AlphaEffect(tEffect).Light2>0
+               if AL_AlphaEffect(tEffect).Light2<10000
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Position.z
+                  set vector4 AL_Vector4(1),(AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Color.x/255)*AL_Ambient(5),(AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Color.y/255)*AL_Ambient(6),(AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Position.x,AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Position.y,AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Position.z,AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Range
+                  set vector4 AL_Vector4(3),0,0,0,1
+                  if AL_PointLight(AL_AlphaEffect(tEffect).Light2-1).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light2=0
+               else
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Position.z
+                  set vector4 AL_Vector4(1),(AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Color.x/255)*AL_Ambient(5),(AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Color.y/255)*AL_Ambient(6),(AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Position.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Position.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Position.z,AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Range
+                  set vector4 AL_Vector4(3),AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Normal.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Normal.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Normal.z,0
+                  if AL_SpotLight(AL_AlphaEffect(tEffect).Light2-10000).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light2=0
+               endif
+               AL_AlphaEffect(tEffect).LightDis1=length vector3(AL_Vector3(1))
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor2",AL_Vector4(1)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightPosition2",AL_Vector4(2)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightNormal2",AL_Vector4(3)
+            endif
+            if AL_AlphaEffect(tEffect).Light3>0
+               if AL_AlphaEffect(tEffect).Light3<10000
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Position.z
+                  set vector4 AL_Vector4(1),(AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Color.x/255)*AL_Ambient(5),(AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Color.y/255)*AL_Ambient(6),(AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Position.x,AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Position.y,AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Position.z,AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Range
+                  set vector4 AL_Vector4(3),0,0,0,1
+                  if AL_PointLight(AL_AlphaEffect(tEffect).Light3-1).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light3=0
+               else
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Position.z
+                  set vector4 AL_Vector4(1),(AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Color.x/255)*AL_Ambient(5),(AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Color.y/255)*AL_Ambient(6),(AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Position.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Position.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Position.z,AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Range
+                  set vector4 AL_Vector4(3),AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Normal.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Normal.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Normal.z,0
+                  if AL_SpotLight(AL_AlphaEffect(tEffect).Light3-10000).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light3=0
+               endif
+               AL_AlphaEffect(tEffect).LightDis1=length vector3(AL_Vector3(1))
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor3",AL_Vector4(1)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightPosition3",AL_Vector4(2)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightNormal3",AL_Vector4(3)
+            endif
+            if AL_AlphaEffect(tEffect).Light4>0
+               if AL_AlphaEffect(tEffect).Light4<10000
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Position.z
+                  set vector4 AL_Vector4(1),(AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Color.x/255)*AL_Ambient(5),(AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Color.y/255)*AL_Ambient(6),(AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Position.x,AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Position.y,AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Position.z,AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Range
+                  set vector4 AL_Vector4(3),0,0,0,1
+                  if AL_PointLight(AL_AlphaEffect(tEffect).Light4-1).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light4=0
+               else
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Position.z
+                  set vector4 AL_Vector4(1),(AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Color.x/255)*AL_Ambient(5),(AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Color.y/255)*AL_Ambient(6),(AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Position.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Position.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Position.z,AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Range
+                  set vector4 AL_Vector4(3),AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Normal.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Normal.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Normal.z,0
+                  if AL_SpotLight(AL_AlphaEffect(tEffect).Light4-10000).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light4=0
+               endif
+               AL_AlphaEffect(tEffect).LightDis1=length vector3(AL_Vector3(1))
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor4",AL_Vector4(1)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightPosition4",AL_Vector4(2)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightNormal4",AL_Vector4(3)
+            endif
+            if AL_AlphaEffect(tEffect).Light5>0
+               if AL_AlphaEffect(tEffect).Light5<10000
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Position.z
+                  set vector4 AL_Vector4(1),(AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Color.x/255)*AL_Ambient(5),(AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Color.y/255)*AL_Ambient(6),(AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Position.x,AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Position.y,AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Position.z,AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Range
+                  set vector4 AL_Vector4(3),0,0,0,1
+                  if AL_PointLight(AL_AlphaEffect(tEffect).Light5-1).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light5=0
+               else
+                  set vector3 AL_Vector3(1),AL_AlphaEffect(tEffect).LightingPosition.x-AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Position.x,AL_AlphaEffect(tEffect).LightingPosition.y-AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Position.y,AL_AlphaEffect(tEffect).LightingPosition.z-AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Position.z
+                  set vector4 AL_Vector4(1),(AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Color.x/255)*AL_Ambient(5),(AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Color.y/255)*AL_Ambient(6),(AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Color.z/255)*AL_Ambient(7),0
+                  set vector4 AL_Vector4(2),AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Position.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Position.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Position.z,AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Range
+                  set vector4 AL_Vector4(3),AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Normal.x,AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Normal.y,AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Normal.z,0
+                  if AL_SpotLight(AL_AlphaEffect(tEffect).Light5-10000).Visible=0 then set vector4 AL_Vector4(2),0,0,0,0:AL_AlphaEffect(tEffect).Light5=0
+               endif
+               AL_AlphaEffect(tEffect).LightDis1=length vector3(AL_Vector3(1))
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightColor5",AL_Vector4(1)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightPosition5",AL_Vector4(2)
+               set effect constant vector AL_AlphaEffect(tEffect).Number,"LightNormal5",AL_Vector4(3)
+            endif
+         endif
+      next e
+
+   `Apply closest lights
+      if AL_AlphaLightsUpdate<10 and AL_AlphaEffectLightingCount>-1
+         AL_AlphaEffectLightingNum=0
+         repeat
+            if AL_AlphaEffectLightingUpdate>AL_AlphaEffectLightingCount then AL_AlphaEffectLightingUpdate=0
+            tEffect=AL_AlphaEffectLighting(AL_AlphaEffectLightingUpdate)-1
+            if AL_AlphaEffect(tEffect).LightingEnabled>1
+               AlphaEffect_GetclosestLights(tEffect)
+            endif
+            inc AL_AlphaEffectLightingUpdate
+            inc AL_AlphaEffectLightingNum
+         until AL_AlphaEffectLightingNum>AL_AlphaEffectLightingCount or AL_AlphaEffectLightingNum>AL_AlphaEffectLightingMaxUpdate
+      endif
+
+   endif
+endfunction
+
+`--------------
+` Get 5 closest lights to effects position
+`--------------
+function AlphaEffect_GetclosestLights(iEffect as integer)
+   local tLightDis as float
+   local tSetLight as integer
+   if AL_AlphaEffect(iEffect).LightingTrackCamera=1
+      AL_AlphaEffect(iEffect).Light1=AL_LightsToCamera(1)
+      AL_AlphaEffect(iEffect).Light2=AL_LightsToCamera(2)
+      AL_AlphaEffect(iEffect).Light3=AL_LightsToCamera(3)
+      AL_AlphaEffect(iEffect).Light4=AL_LightsToCamera(4)
+      AL_AlphaEffect(iEffect).Light5=AL_LightsToCamera(5)
+   else
+      if AL_AlphaEffect(iEffect).LightingTrackObject>0
+         if object exist(AL_AlphaEffect(iEffect).LightingTrackObject)=1
+            AL_AlphaEffect(iEffect).LightingPosition.x=object position x(AL_AlphaEffect(iEffect).LightingTrackObject)
+            AL_AlphaEffect(iEffect).LightingPosition.y=object position y(AL_AlphaEffect(iEffect).LightingTrackObject)
+            AL_AlphaEffect(iEffect).LightingPosition.z=object position z(AL_AlphaEffect(iEffect).LightingTrackObject)
+         else
+            AL_AlphaEffect(iEffect).LightingTrackObject=0
+         endif
+      endif
+      tSetLight=0
+      tLightDis=0
+      if AL_AlphaEffect(iEffect).Light1=0 then tSetLight=1:tLightDis=9999999999
+      if AL_AlphaEffect(iEffect).Light2=0 then tSetLight=2:tLightDis=9999999999
+      if AL_AlphaEffect(iEffect).Light3=0 then tSetLight=3:tLightDis=9999999999
+      if AL_AlphaEffect(iEffect).Light4=0 then tSetLight=4:tLightDis=9999999999
+      if AL_AlphaEffect(iEffect).Light5=0 then tSetLight=5:tLightDis=9999999999
+      if tLightDis=0
+         if AL_AlphaEffect(iEffect).LightDis1>tLightDis then tSetLight=1:tLightDis=AL_AlphaEffect(iEffect).LightDis1
+         if AL_AlphaEffect(iEffect).LightDis2>tLightDis then tSetLight=2:tLightDis=AL_AlphaEffect(iEffect).LightDis2
+         if AL_AlphaEffect(iEffect).LightDis3>tLightDis then tSetLight=3:tLightDis=AL_AlphaEffect(iEffect).LightDis3
+         if AL_AlphaEffect(iEffect).LightDis4>tLightDis then tSetLight=4:tLightDis=AL_AlphaEffect(iEffect).LightDis4
+         if AL_AlphaEffect(iEffect).LightDis5>tLightDis then tSetLight=5:tLightDis=AL_AlphaEffect(iEffect).LightDis5
+      endif
+      if tSetLight>0
+         for l=0 to AL_PointLightVisibleCount
+             tLightNum=AL_PointLightVisible(l)-1
+             if AL_PointLight(tLightNum).Visible=1
+               if AL_InDistance(AL_AlphaEffect(iEffect).LightingPosition.x,AL_AlphaEffect(iEffect).LightingPosition.y,AL_AlphaEffect(iEffect).LightingPosition.z,AL_PointLight(tLightNum).Position.x,AL_PointLight(tLightNum).Position.y,AL_PointLight(tLightNum).Position.z,tLightDis)=1
+                   if tLightNum<>AL_AlphaEffect(iEffect).Light1-1 and tLightNum<>AL_AlphaEffect(iEffect).Light2-1 and tLightNum<>AL_AlphaEffect(iEffect).Light3-1 and tLightNum<>AL_AlphaEffect(iEffect).Light4-1 and tLightNum<>AL_AlphaEffect(iEffect).Light5-1
+                      if tSetLight=1 then AL_AlphaEffect(iEffect).Light1=tLightNum+1
+                      if tSetLight=2 then AL_AlphaEffect(iEffect).Light2=tLightNum+1
+                      if tSetLight=3 then AL_AlphaEffect(iEffect).Light3=tLightNum+1
+                      if tSetLight=4 then AL_AlphaEffect(iEffect).Light4=tLightNum+1
+                      if tSetLight=5 then AL_AlphaEffect(iEffect).Light5=tLightNum+1
+                      exit
+                   endif
+                endif
+             endif
+         next l
+         for l=0 to AL_SpotLightVisibleCount
+            tLightNum=AL_SpotLightVisible(l)-1
+            if AL_SpotLight(tLightNum).Visible=1
+               if AL_InDistance(AL_AlphaEffect(iEffect).LightingPosition.x,AL_AlphaEffect(iEffect).LightingPosition.y,AL_AlphaEffect(iEffect).LightingPosition.z,AL_SpotLight(tLightNum).Position.x,AL_SpotLight(tLightNum).Position.y,AL_SpotLight(tLightNum).Position.z,tLightDis)=1
+                  if tLightNum<>AL_AlphaEffect(iEffect).Light1-10000 and tLightNum<>AL_AlphaEffect(iEffect).Light2-10000 and tLightNum<>AL_AlphaEffect(iEffect).Light3-10000 and tLightNum<>AL_AlphaEffect(iEffect).Light4-10000 and tLightNum<>AL_AlphaEffect(iEffect).Light5-10000
+                     if tSetLight=1 then AL_AlphaEffect(iEffect).Light1=tLightNum+10000
+                     if tSetLight=2 then AL_AlphaEffect(iEffect).Light2=tLightNum+10000
+                     if tSetLight=3 then AL_AlphaEffect(iEffect).Light3=tLightNum+10000
+                     if tSetLight=4 then AL_AlphaEffect(iEffect).Light4=tLightNum+10000
+                     if tSetLight=5 then AL_AlphaEffect(iEffect).Light5=tLightNum+10000
+                     exit
+                  endif
+               endif
+            endif
+         next l
+      endif
+   endif
+endfunction
+
+`--------------
+` Alpha Effect Array
+`--------------
+function AL_AlphaEffectArray(iEffect as integer)
+   if AL_Enabled=1
+      for e=0 to AL_AlphaEffectCount
+         if AL_AlphaEffect(e).Number=iEffect then exitfunction e
+      next e
+   endif
+endfunction -1
+
+`--------------
+` Lock Effect To Set Identifiers
+`--------------
+function Effect_LockIdentifier(iFxfile as string)
+   if AL_EffectIdentifierEnabled=0 and file exist(iFxfile)=1
+      global AL_EffectIdentifierEnabled as boolean
+      global AL_EffectIdentifierFxfile as string
+      global AL_EffectIdentifierCount as integer
+      global dim AL_EffectIdentifierDefine() as string
+      global dim AL_EffectIdentifierValue() as boolean
+      AL_EffectIdentifierFxfile=iFxfile
+      AL_EffectIdentifierEnabled=1
+      AL_EffectIdentifierCount=0
+   endif
+endfunction
+
+`--------------
+` Set Effect Identifier
+`--------------
+function Effect_SetIdentifier(iDefine as string,iValue as boolean)
+   if AL_EffectIdentifierEnabled=1
+      array insert at bottom AL_EffectIdentifierDefine()
+      array insert at bottom AL_EffectIdentifierValue()
+      AL_EffectIdentifierDefine(AL_EffectIdentifierCount)=iDefine
+      AL_EffectIdentifierValue(AL_EffectIdentifierCount)=iValue
+      inc AL_EffectIdentifierCount
+   endif
+endfunction
+
+`--------------
+` UnLock Effect Identifier
+`--------------
+function Effect_UnLockIdentifier()
+   if AL_EffectIdentifierEnabled=1 and file exist(AL_EffectIdentifierFxfile)=1
+      local tFile1 as integer
+      local tFile2 as integer
+      local tLineStr as string
+      local tLine as string
+      tFile1=1
+      tFile2=1
+      repeat
+        inc tFile1
+      until file open(tFile1)=0
+      open to read tFile1,AL_EffectIdentifierFxfile
+         repeat
+            inc tFile2
+         until file open(tFile2)=0
+         open to write tFile2,AL_EffectIdentifierFxfile+"_TEMP"
+         repeat
+            read string tFile1,tLineStr
+            if file end(tFile1)=0
+               if left$(tLineStr,7)="#define"
+                   tLine=right$(tLineStr,len(tLineStr)-8)
+                   for i=0 to AL_EffectIdentifierCount-1
+                     if lower$(left$(tLine,len(tLine)-2))=lower$(AL_EffectIdentifierDefine(i))
+                        tLineStr="#define "+left$(tLine,len(tLine)-2)+" "+str$(AL_EffectIdentifierValue(i))
+                     endif
+                  next i
+               endif
+               write string tFile2,tLineStr
+            endif
+         until file end(tFile1)=1
+         close file tFile2
+      close file tFile1
+      delete file AL_EffectIdentifierFxfile
+      rename file AL_EffectIdentifierFxfile+"_TEMP",AL_EffectIdentifierFxfile
+      AL_EffectIdentifierEnabled=0
+      undim AL_EffectIdentifierDefine()
+      undim AL_EffectIdentifierValue()
+   endif
+endfunction
+
+

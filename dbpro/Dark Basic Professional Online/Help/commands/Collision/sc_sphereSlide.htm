@@ -1,0 +1,47 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+SC_sphereSlide
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    return integer=SC_sphereSlide ( objNum, oldx, oldy, oldz, x, y, z, radius, excludeObj )
+
+<BR><BR>
+
+        <u>-objNum</u>:       the object you want to check for collision use 0 for all objects<br>
+        <u>-oldx...z</u>:     the start and end points of the sphere to check.<br>
+        <u>-radius</u>:       the radius of the sphere you want to cast.<br>
+        <u>-excludeObj</u>:   an object to exclude from the collision check.<br>
+        <u>returns</u>:       if objNum=0 then the object number collided with is returned<br>
+                              if checking a specific object then a 1 is returned if a collision occured.<br>
+                              returns 0 if no collision occured.<br>
+   						<br>
+        This command does the same as SC_sphereCast but over multiple iterations to produce<br>
+        a slide point for use in sliding collisions.<br><br>
+
+        <a href="sc_sphereCast.htm">SC_sphereCast</a> produces a slide point that must be checked 
+        again to make sure this new<br>
+        point does not collide with any objects. This produces another point, which must be checked<br>
+        and so on. SC_sphereSlide uses a maximum of three iterations to finalize a point that<br>
+        will keep the sphere outside all objects checked.<br><br>
+
+        The command <a href="sc_getNumCollisions.htm">SC_getNumCollisions</a> can be used to get
+        the number of iterations used by<br> 
+        this command. Details of the collision point, normal, and slide point for each iteration<br>
+        are also available using getCollisionNormal(1) (2) or (3). 
+
+        The final collision point, normal and slide point are in getCollisionSlide(0), or by using<br>
+        no parameter getCollisionSlide() (defaults to 0).
+
+        see the sliding demo for an example usage of this command.
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

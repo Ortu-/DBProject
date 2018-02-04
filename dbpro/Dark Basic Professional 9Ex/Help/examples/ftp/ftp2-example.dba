@@ -1,0 +1,129 @@
+rem Ftp Functionality
+sync on
+
+rem Run ftp tests
+gosub _connect : gosub _waitkey
+gosub _viewfiles : gosub _waitkey
+gosub _downloadfiles : gosub _waitkey
+gosub _downloadlargefile : gosub _waitkey
+gosub _disconnect : gosub _waitkey
+gosub _uploadfiles : gosub _waitkey
+
+rem End program
+end
+
+_connect:
+ cls : print "FTP CONNECTION"
+ url$="www.darkbasic.com"
+ user$="anonymous"
+ pass$="me@isp.com"
+ time#=timer()
+ print "Connecting..." : sync
+ ftp connect url$,user$,pass$
+ if get ftp failure()=0
+  time#=timer()-time#
+  print "Connection established in ";time#/1000.0;" seconds."
+ else
+  print "Could not connect to ";url$
+  print "Error:";get ftp error$()
+  wait key
+  end
+ endif
+return
+
+_viewfiles:
+ cls : print "VIEW EACH FTP FILE IN A FOLDER"
+ if get ftp status()=1
+  print "FTP DIR:";get ftp dir$();"..." : sync
+  ftp find first
+  while get ftp file type()<>-1
+   print "Type:";get ftp file type();
+   print " Name:";get ftp file name$();
+   print " Size:";get ftp file size()
+   ftp find next
+   sync
+  endwhile
+ endif
+return
+
+_downloadfiles:
+ cls : print "DOWNLOAD FTP FILES"
+ if get ftp status()=1
+  print "Getting photos\db_photo_pack1.zip..." : sync
+  ftp set dir "photos"
+  ftp get file "db_photo_pack1.zip","photos.zip"
+  if get ftp failure()=0
+   print "FTP GET FILE Succeeded!"
+  else
+   print "FTP GET FILE Failed!"
+  endif
+  ftp set dir ".."
+ endif
+return
+
+_downloadlargefile:
+ cls : print "DOWNLOAD LARGE FTP FILE"
+ if get ftp status()=1
+  print "Getting photos\db_photo_pack1.zip in bits..." : sync
+  GrabInBits=1024
+  ftp set dir "photos"
+  ftp get file "db_photo_pack1.zip","photos.zip",GrabInBits
+  if get ftp failure()=0
+   while get ftp progress()<>-1
+    cls : print "DOWNLOAD LARGE FTP FILE"
+    print "PROGRESS:";get ftp progress()
+    ftp proceed
+   endwhile
+  else
+   print "FTP GET FILE (with progress) Failed!"
+  endif
+  ftp set dir ".."
+ endif
+return
+
+_disconnect:
+ cls : print "DISCONNECTED FROM SERVER" : sync
+ ftp terminate
+ ftp disconnect
+return
+
+_uploadfiles:
+ cls : print "UPLOAD AND DELETE FTP FILES (Your Own Server Only)"
+ print
+ input "Enter Your Own URL>";url$
+ input "Enter Username>";user$
+ input "Enter Password>";pass$
+ ftp connect url$,user$,pass$
+ if get ftp failure()=0
+  time#=timer()-time#
+  print "Connection established!"
+ else
+  print "Could not connect to ";url$
+  print "Error:";get ftp error$()
+  wait key
+  end
+ endif
+ if get ftp failure()=0
+  gosub _viewfiles
+  print
+  print "Putting file.dat..." : sync
+  ftp put file "file.dat"
+  if get ftp failure()=0
+   print "FTP PUT FILE Succeeded!"
+  else
+   print "FTP PUT FILE Failed!"
+  endif
+  ftp delete file "file.dat"
+  if get ftp failure()=0
+   print "FTP DELETE FILE Succeeded!"
+  else
+   print "FTP DELETE FILE Failed!"
+  endif
+ endif
+ ftp disconnect 1
+return
+
+_waitkey:
+ print : print "Press Key"
+ wait key : sleep 500
+return

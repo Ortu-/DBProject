@@ -1,0 +1,15 @@
+Upgrade 5.1
+===========
+
+GENERAL
+-------
+* DELETE FILE now has the power to delete files that are set to read-only
+* Compiler can now save version information under Win98 and WinME
+* Compiler once again allows programs to compile with step-through breakpoints (stepthroughbug)
+* Internal changes to allow greater TPC control - documentation to follow in future upgrade
+* Solved the mystery of the odd graphics behaviour of missing objects and corrupt textures from U5.0
+* Patch Levels Fixed on Quake3 BSP maps, equalling much faster FPS rates Full Quake3 BSP Map Support
+* Tested on every map in the game Full Half-Life BSP Map Support
+* Tested on every map in the game Quake2 BSP Map Support improved, removed need for .pal files
+* DISABLED DX9 check as this caused problems with DXDIAG on Win2000 Operating Systems (graphics bug)
+

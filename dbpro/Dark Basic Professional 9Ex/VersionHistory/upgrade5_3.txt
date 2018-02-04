@@ -1,0 +1,8 @@
+Upgrade 5.3
+===========
+
+COMPILER
+--------
+* Replaced protection code with TGC Online Certificate System
+* Added TGCOnline and TGCViewer applications to control above
+* Created new PLUGINS-LICENSED folder for licensed plugins

@@ -1,0 +1,732 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	Application Main
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		This is the main entry point to the application.
+		It is responsible for initialization of the game, provides basic set up, loads required modules, and provides the main update loop.
+
+	*******************************************
+	Plugin Dependancies:
+
+		D3DFunc.dll (Cloggy) - d3d drawing & text
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_06.dll (IanM) - error handling
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+
+	*******************************************
+	Classes:
+
+		Requires System
+
+		Defines App as Application
+
+			------------------------
+			public functions:
+
+				App_addUpdate(rName as string, rRequired as string, rPauseIgnore as boolean)
+					- Registers a function to the main loop update queue.
+
+				App_addRequiredToUpdate(rName as string, rRequired as string, rPauseIgnore as boolean)
+					- Appends a function as a pre-requisite update to a registered update.
+
+				App_updateSplashScreen(rMessage as string)
+					- Updates splash screen during loading and transition.
+
+				App_closeGame(rError as boolean)
+					- Ends the application with clean up.
+
+				App_callFunction(rFunctionName as string, rArgs as string)
+					- Calls the specified function.
+					- NOTE: moved to dispatcher.dbx due to length and accessibility.
+
+			------------------------
+			public data:
+
+
+
+			-------------------------
+			private functions:
+
+				_App_init()
+					- Provides core initialization.
+
+				_App_sortUpdateQueue()
+					- Organizes the main loop update queue to ensure all pre-requisite updates are called first.
+
+			------------------------
+			private data:
+
+				_App_updateList[]
+					- Unsorted list of registered updates. This is used as an initial / temporary location.
+
+				_App_updateQueue[]
+					- Sorted list of registered updates. This is used by the main update loop.
+
+				_App_splashScreenResource[]
+					- Maintains list of images used by the splash screen
+
+	*******************************************
+	Notes:
+
+		Splash screen: this is not handled by the standard update and gui processes, because it needs to be used immediately before modules have loaded.
+
+
+*/
+
+//Initialize General -------------------------------------------------------------
+
+//If compiling with 9Ex and using AdvLighting, uncomment:
+//use legacy shader compiler
+
+#CONSTANT ENV_TEXTUREFORMAT ".png"
+//#CONSTANT ENV_TEXTUREFORMAT ".dds"
+
+//Declare Application -----------------------------------------------------------
+
+type Application_type_configData
+	screenWidth as integer
+	screenHeight as integer
+	screenCenterX as integer
+	screenCenterY as integer
+	isWindowed as boolean
+	usePerfCap as boolean
+	logLevel as integer
+	musicVolume as integer
+	soundVolume as integer
+endtype
+
+type Application_type_statusData
+	<?debugModeIsActive as boolean?> //TODO: move this to Debug module ??
+	loadState as byte //0 not loaded | 1 loading | 2 title loop | 3 level load finished | 4 game in progress | 5 level reload/transition
+	loadStage as byte //0 init resources | 1 transition in | 2 body | 3 transition out
+	loadType as byte // 0 not loading | 1 title load | 2 level load
+	loadMusicMark as integer
+	isRunning as boolean
+endtype
+
+type Application_type_updateHandlerData
+	ignorePause as boolean
+	functionName as string
+	required as string
+endtype
+
+type Application_type_splashScreenData
+	imgNum as integer
+	pasteX as integer
+	pasteY as integer
+endtype
+
+type STATIC_CLASS_Application
+	config as Application_type_configData
+	status as Application_type_statusData
+	currentProfile as string
+	debug as string
+endtype
+
+//private data -----------------------------------------------------------------
+
+dim _App_updateQueue[] as Application_type_updateHandlerData
+dim _App_updateList[] as Application_type_updateHandlerData
+dim _App_splashScreenResource[] as Application_type_splashScreenData
+
+//public data ------------------------------------------------------------------
+
+
+
+//Init ----------------------------------------------------------------
+
+//==================================
+
+GLOBAL App as STATIC_CLASS_Application
+
+//==================================
+
+_App_init()
+
+//Initialize GUI ----------------------------------------------------------------------
+
+UI_load("common")
+UI_load("titleMenu")
+	//this has to be called after App init as it needs to work with GUI elements that wont exist yet during the initial module load.
+	UI_controller_titleMenu_init()
+
+
+//Main Loop ---------------------------------------------------------------------------
+
+System.timing.loopCount = 1
+<?System_log("main.dbx", 2, "main", "All initialization is finished. Beginning main loop.")?>
+
+App.status.loadStage = 3
+App_updateSplashScreen("- Finishing")
+
+cls
+
+App.status.isRunning = TRUE
+
+while App.status.isRunning
+
+	System.timing.timer = timer()
+	App.debug = ""
+
+	if App.status.loadState > 1
+
+		System_getHardwareInput()
+
+		//Title Menu Loop  ------------------------------------
+
+		if App.status.loadState = 2
+			System_updateIntervals()
+			System_updateMetrics()
+			UI_updatePageFlow()
+			UI_getInterfaceInput()
+			//recheck loadState -> it may have changed during UI updates
+			if App.status.loadState = 2 then sync
+		endif
+
+
+		//Transition Out Loader -------------------------------
+
+		if App.status.loadState = 3
+			if abs(System.timing.timer - App.status.loadMusicMark) > 5000 / App.config.musicVolume
+				App.status.loadMusicMark = System.timing.timer
+				audio volume 1, get audio volume(1) - 1
+				if get audio volume(1) < 1
+					stop audio 1
+					App.status.loadState = 4
+					App.status.loadType = 0
+				endif
+			endif
+		endif
+
+
+		//Main Game Loop  -------------------------------------
+
+		if App.status.loadState >= 3
+
+			//process update queue
+			<?System_log("main.dbx", 2, "main", "  > Running update queue as main")?>
+			for i = 0 to array count(_App_UpdateQueue[])
+				if System.status.gamePauseState <> 1 or _App_updateQueue[i].ignorePause
+					result$ = App_callFunction(_App_updateQueue[i].functionName, "")
+				endif
+			next i
+
+			//AdvLighting Update
+			<?System_log("main.dbx", 2, "main", "Begin Update: AdvLighting")?>
+			updateMark as dword
+			updateMark = hitimer()
+
+			AdvLighting_Update()
+
+			<?
+			System.timing.alUpdate.last = hitimer() - updateMark
+			inc System.timing.alUpdate.total, System.timing.alUpdate.last
+			System_log("main.dbx", 2, "main", "End Update: AdvLighting," + str$(hitimer() - updateMark))
+			?>
+		endif
+
+		//CPU Sleep -------------------------------------------
+
+		if App.config.usePerfCap
+			System_cpuSleep()
+		endif
+
+		//Finish Main Loop ------------------------------------
+
+		//TEMP
+		if App.status.loadState >= 3
+			text 30, 0, "fps: " + str$(screen fps()) + " loop: " + str$(System.timing.msPerLoop)
+			text 30, 20, "loc: " + str$(MY_CHARACTER.baseData.posX, 2) + ", " + str$(MY_CHARACTER.baseData.posY, 2) + ", " + str$(MY_CHARACTER.baseData.posZ, 2)
+			text 30, 40, ""
+			text 30, 60, ""
+			text 30, 80, ""
+			text 30, 100, ""
+			text 30, 120, ""
+			text 30, 140, ""
+			text 30, 160, ""
+			text 30, 180, App.debug
+		endif
+		//TEMP END
+
+		//level reload/transition
+		if App.status.loadState = 5
+
+			//reload or scene change requested
+			App.status.loadState = 1
+			App.status.loadType = 2
+			App.status.loadStage = 0
+			App_updateSplashScreen("- Initializing Level")
+
+			d3d_box -10, -10, App.config.screenWidth + 10, App.config.screenHeight + 10, d3d_rgba(20, 20, 20, 255)
+			tCount = array count(_App_splashScreenResource[])
+			for i = 0 to tCount
+				paste image _App_splashScreenResource[i].imgNum, _App_splashScreenResource[i].pasteX, _App_splashScreenResource[i].pasteY, 1
+			next i
+			pasteY = App.config.screenHeight
+			if App.config.screenHeight > 1080
+				pasteY = ((App.config.screenHeight - 1080) / 2) + 1080
+			endif
+			<?System_log("main.dbx", 1, "main", "splashResourceCount: " + str$(tCount))?>
+
+			AdvLighting_Update()
+
+			World_unloadScene()
+			World_loadScene()
+			App.status.loadStage = 3
+			App_updateSplashScreen("- Finishing")
+
+		endif
+
+		inc System.timing.loopCount
+		System.timing.delta = hitimer() - System.timing.loopMark
+		System.timing.loopMark = hitimer()
+		<?System_log("main.dbx", 2, "main", "End main loop.," + str$(System.timing.delta))?>
+		<?System_log("main.dbx", 2, "main", "----------------------------")?>
+
+	endif
+
+endwhile
+
+end
+
+
+//==================================================================================================================================
+
+function _App_init()
+
+	//init general
+
+	App.status.loadState = 1
+	App.status.loadType = 1
+
+	set bitmap format 21
+	sync on
+	sync rate 0
+	hide mouse
+	autocam off
+	disable escapekey
+	randomize timer()
+
+	//init default config
+
+	App.config.screenWidth = 0
+	App.config.screenHeight = 0
+	App.config.isWindowed = FALSE
+	App.config.logLevel = 3
+	<?App.status.debugModeIsActive = FALSE?>
+
+	App.config.musicVolume = 30
+	App.config.soundVolume = 60
+
+	//process cmd line args
+
+	dim args[] as keyValueData
+
+	args$ = CL$()
+
+	if args$ > ""
+		array insert at bottom args[]
+		a$ = first token$(args$, " ")
+		split string a$, "="
+		args[].key = get split word$(1)
+		args[].value = get split word$(2)
+
+		repeat
+			a$ = next token$(" ")
+			if a$ > ""
+				array insert at bottom args[]
+				split string a$, "="
+				args[].key = get split word$(1)
+				args[].value = get split word$(2)
+			endif
+		until a$ = ""
+	endif
+
+	//valid args
+	for i = 0 to array count(args[])
+		select lower$(args[i].key)
+			case "sw": App.config.screenWidth = intval(args[i].value) : endcase
+			case "sh": App.config.screenHeight = intval(args[i].value) : endcase
+			case "win": App.config.isWindowed = intval(args[i].value) : endcase
+			case "log": App.config.logLevel = intval(args[i].value) : endcase
+			case "cap": App.config.usePerfCap = intval(args[i].value) : endcase
+		endselect
+	next i
+
+
+	//init screen
+
+	if App.config.screenWidth = 0
+		App.config.screenWidth = desktop width()
+		App.config.screenHeight = desktop height()
+	endif
+
+	if App.config.screenWidth < 1024 then App.config.screenWidth = 1024
+	if App.config.screenHeight < 768 then App.config.screenHeight = 768
+
+	App.config.screenCenterX = App.config.screenWidth / 2
+	App.config.screenCenterY = App.config.screenHeight / 2
+
+	set display mode App.config.screenWidth, App.config.screenHeight, 32, 0, 2, 0
+
+	if App.config.isWindowed
+		set window on
+		set window layout 0,0,4
+		set window size App.config.screenWidth, App.config.screenHeight
+		set window position (desktop width() - App.config.screenWidth) / 2, (desktop height() - App.config.screenHeight) / 2
+	endif
+
+	//init Cloggy's d3d
+
+	d3d_init
+	d3d_color 255, 255, 255, 255
+
+	//init fonts
+	//TODO: add fonts to font list for System to verify installs.
+	//TODO: preprocess the gui docs to dynamically build font list and font settings
+	d3d_font 1, "OpenSans-Regular", 40, 0, 0, 0 //title
+	d3d_font 2, "OpenSans-Regular", 26, 0, 0, 0 //subtitle / menu option
+	d3d_font 3, "OpenSans-Regular", 14, 0, 0, 0 //general
+	d3d_font 4, "OpenSans-Regular", 28, 1, 0, 0 //menu option pop
+	d3d_font 5, "OpenSans-Regular", 15, 1, 0, 0 //general pop
+
+	//init modules
+
+	updateMark as dword
+	updateMark = hitimer()
+
+	//general utilities - should not require game specific modifaction
+
+	$require("modules/std-constants.dbx")
+	$require("modules/dispatcher.dbx")
+
+	$require("modules/system.dbx")
+	gosub system_module_init
+
+	$require("modules/math.dbx")
+	gosub math_module_init
+
+	$require("modules/xml.dbx")
+	gosub xml_module_init
+
+	$require("modules/sqlite.dbx")
+	gosub sqlite_module_init
+
+	$require("modules/media.dbx")
+	gosub media_module_init
+
+	$require("modules/anim3d.dbx")
+	gosub anim3d_module_init
+
+	$require("modules/fx.dbx")
+	gosub fx_module_init
+
+	$require("modules/ui.dbx")
+	gosub ui_module_init
+
+	//UI docs
+	$require("modules/gui-controllers/common.dbx")
+	$require("modules/gui-controllers/titleMenu.dbx")
+
+	//game specific modules
+
+	<?
+		$require("modules/dev-controls.dbx")
+		gosub dev_controls_module_init
+	?>
+
+	$require("modules/controls.dbx")
+	gosub controls_module_init
+
+	$require("modules/world.dbx")
+	gosub world_module_init
+
+	$require("modules/events.dbx")
+	gosub events_module_init
+
+	$require("modules/characters.dbx")
+	gosub characters_module_init
+
+	_App_sortUpdateQueue()
+
+	<?System_log("main.dbx", 2, "main", "End module loading.," + str$(hitimer() - updateMark))?>
+
+endfunction
+
+
+function App_addUpdate(rName as string, rRequired as string, rPauseIgnore as boolean)
+	array insert at bottom _App_updateList[]
+	_App_updateList[].functionName = rName
+	_App_updateList[].required = rRequired
+	_App_updateList[].ignorePause = rPauseIgnore
+	<?System_log("main.dbx", 2, "main", "Added "+ rName +" to update list. Requires: "+ rRequired)?>
+endfunction
+
+
+function App_addRequiredToUpdate(rName as string, rRequired as string)
+//	anim3d (example) should not need to require the character module or really know anything about it.
+//	we should be able to call object animation updates even if there is no charactre module.
+//	thus anim3d should register an update with no required dependancies.
+// 	the character module, if/once present, later needs to add itself as a requirement to the existing anim3d update.
+	for i = 0 to array count(_App_updateList[])
+		if _App_updateList[i].functionName = rName
+			if _App_updateList[i].required <> ""
+				_App_updateList[i].required = _App_updateList[i].required + "," + rRequired
+			else
+				_App_updateList[i].required = rRequired
+			endif
+			exitfunction
+		endif
+	next i
+
+	//TODO: rName not found, throw error or warn?
+
+endfunction
+
+
+function _App_sortUpdateQueue()
+	empty array _App_updateQueue[]
+
+	//move updates with no requirements
+	array index to top _App_updateList[]
+	while array index valid(_App_updateList[])
+		if _App_updateList[].required = ""
+			array insert at bottom _App_updateQueue[]
+			_App_updateQueue[] = _App_updateList[]
+			array delete element _App_updateList[]
+			<?System_log("main.dbx", 2, "main", "Moved " + _App_UpdateQueue[].functionName + " from list to queue.")?>
+		else
+			next array index _App_updateList[]
+		endif
+	endwhile
+
+	//prioritize order by requirement chain
+	while array count(_App_updateList[]) > -1
+
+		array index to top _App_updateList[]
+		while array index valid(_App_updateList[])
+
+			split string _App_updateList[].required, ","
+			okCount = 0
+			reqCount = split count()
+
+			for r = 1 to reqCount
+				req$ = get split word$(r)
+				for c = 0 to array count(_App_updateQueue[])
+					if _App_updateQueue[c].functionName = req$
+						inc okCount
+					endif
+				next c
+			next r
+
+			if okCount = reqCount
+				array insert at bottom _App_UpdateQueue[]
+				_App_UpdateQueue[] = _App_updateList[]
+				array delete element _App_updateList[]
+				<?System_log("main.dbx", 2, "main", "Moved " + _App_UpdateQueue[].functionName + " from list to queue.")?>
+			else
+				next array index _App_updateList[]
+			endif
+
+		endwhile
+
+	endwhile
+
+endfunction
+
+
+function App_updateSplashScreen(rMessage as string)
+
+	if App.status.loadStage > 0
+
+		tCount = array count(_App_splashScreenResource[])
+
+		select App.status.loadType
+
+			case 1: //title loading
+
+				fadeLoading as float
+				tX as float
+				if App.status.loadStage = 1
+					fadeLoading = 255.0
+					tMark = timer()
+					while fadeLoading > 0.0
+						d3d_box -10, -10, App.config.screenWidth, App.config.screenHeight, d3d_rgba(0, 0, 0, 255)
+						for i = 0 to tCount
+							paste image _App_splashScreenResource[i].imgNum, _App_splashScreenResource[i].pasteX, _App_splashScreenResource[i].pasteY, 1
+						next i
+						fadeLoading = 255.0 - ((255.0 / 2000.0) * abs(timer() - tMark))
+						d3d_box 0, 0, App.config.screenWidth, App.config.screenHeight, d3d_rgba(0, 0, 0, fadeLoading)
+						if fadeLoading <= 0.0
+							App.status.loadStage = 2
+							exitfunction
+						endif
+						sync
+					endwhile
+				endif
+
+				if App.status.loadStage = 2
+					d3d_box -10, -10, App.config.screenWidth, App.config.screenHeight, d3d_rgba(0, 0, 0, 255)
+					for i = 0 to tCount
+						paste image _App_splashScreenResource[i].imgNum, _App_splashScreenResource[i].pasteX, _App_splashScreenResource[i].pasteY, 1
+					next i
+					sync
+				endif
+
+				if App.status.loadStage = 3
+					fadeLoading = 0.0
+					tMark = timer()
+					while fadeLoading < 255.0
+						d3d_box -10, -10, App.config.screenWidth, App.config.screenHeight, d3d_rgba(0, 0, 0, 255)
+						for i = 0 to tCount
+							paste image _App_splashScreenResource[i].imgNum, _App_splashScreenResource[i].pasteX, _App_splashScreenResource[i].pasteY, 1
+						next i
+						fadeLoading = 0.0 + ((255.0 / 2000.0) * abs(timer() - tMark))
+						d3d_box 0, 0, App.config.screenWidth, App.config.screenHeight, d3d_rgba(0, 0, 0, fadeLoading)
+						if fadeLoading >= 255.0
+							App.status.loadStage = 0
+							App.status.loadType = 0
+							App.status.loadState = 2 //start title loop
+							exitfunction
+						endif
+						sync
+					endwhile
+				endif
+
+			endcase
+
+			case 2: //level loading
+
+				d3d_box -10, -10, App.config.screenWidth + 10, App.config.screenHeight + 10, d3d_rgba(20, 20, 20, 255)
+
+				for i = 0 to tCount
+					paste image _App_splashScreenResource[i].imgNum, _App_splashScreenResource[i].pasteX, _App_splashScreenResource[i].pasteY, 1
+				next i
+
+				pasteY = App.config.screenHeight
+				if App.config.screenHeight > 1080
+					pasteY = ((App.config.screenHeight - 1080) / 2) + 1080
+				endif
+
+				/*
+				d3d_startText
+					d3d_text 3, 200, pasteY - 115, 1, rMessagex
+				d3d_endText
+				*/
+
+				if App.status.loadStage = 3
+					App.status.loadStage = 0
+					App.status.loadState = 3
+					App.status.loadMusicMark = timer()
+					exitfunction
+				endif
+
+			endcase
+		endselect
+
+	else
+
+		empty array _App_splashScreenResource[]
+
+		tX = 0
+		tY = 0
+		tX2 = App.config.screenWidth
+		tY2 = App.config.screenHeight
+
+		select App.status.loadType
+
+			case 1: //title loading
+
+				d3d_box tX, tY, tX2, tY2, d3d_rgba(0, 0, 0, 255)
+
+				tImg = find free image()
+				load image "resource/media/ui/banner-title-josh.png", tImg, 1
+				array insert at bottom _App_splashScreenResource[]
+				_App_splashScreenResource[].imgNum = tImg
+				_App_splashScreenResource[].pasteX = (tX2 / 2) - 246
+				_App_splashScreenResource[].pasteY = tY2 / 8
+				paste image tImg, _App_splashScreenResource[].pasteX, _App_splashScreenResource[].pasteY, 1
+
+				App.status.loadStage = 1
+
+				sync
+				sync
+			endcase
+
+			case 2:
+
+				d3d_box tX - 10, tY - 10, tX2 + 10, tY2 + 10, d3d_rgba(20, 20, 20, 255)
+
+				tImg = find free image()
+				load image "resource/media/ui/bg-fs-loading.jpg", tImg, 1
+				create bitmap 1, 1920, 1080
+				paste image tImg, 0, 0
+				create bitmap 2, App.config.screenWidth, App.config.screenHeight
+				copy bitmap 1, 0, 0, 1920, 1080, 2 , 0, 0, App.config.screenWidth, App.config.screenHeight
+				get image tImg, 0, 0, App.config.screenWidth, App.config.screenHeight
+				set current bitmap 0
+				delete bitmap 1
+				delete bitmap 2
+
+				if App.config.screenWidth > 1920
+					tX = (App.config.screenWidth - 1920) / 2
+					tX2 = tX + 1920
+				endif
+				if App.config.screenHeight > 1080
+					tY = (App.config.screenHeight - 1080) / 2
+					tY2 = tY + 1080
+				endif
+
+				//background
+				array insert at bottom _App_splashScreenResource[]
+				_App_splashScreenResource[].imgNum = tImg
+				_App_splashScreenResource[].pasteX = tX
+				_App_splashScreenResource[].pasteY = tY
+				paste image tImg, _App_splashScreenResource[].pasteX, _App_splashScreenResource[].pasteY, 1
+
+				//loading
+
+				//TODO: check for audio device, some versions of windows will throw an error if no speakers/headphones available.
+				load audio 1, "resource/media/audio/white_noise.ogg"
+				play audio 1
+				audio volume 1, App.config.musicVolume
+
+				App.status.loadStage = 1
+
+				sync
+			endcase
+		endselect
+
+	endif
+endfunction
+
+
+function App_closeGame(rError as boolean)
+	System_log("main.dbx", 255, "main", "Program end with code: " + str$(rError))
+	if rError
+		report error "Application has encountered an error. Check the log file for details. (Ignore reported line)", "Fatal Error"
+	endif
+	App.status.isRunning = FALSE
+endfunction

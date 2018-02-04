@@ -1,0 +1,2651 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	User Interface
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides handling for the construction and management of GUI components,
+		as well as handling of various generic user input events such as detection
+		of mouseclicks and keypress under the scope of the UI.
+
+		Does not provide handling for game controls such as character and camera
+		movement which are more specific to individual games and game mechanics.
+		See Control Module.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+		Matrix1Util_30.dll (IanM) - ?
+
+	*******************************************
+	Classes:
+
+		Requires system.dbx
+		Requires media.dbx
+		Requires xml.dbx
+
+		=========================================
+		Defines STATIC CLASS: UI
+
+			------------------------
+			public functions:
+
+				UI_updatePageFlow()
+					-
+
+				UI_getInterfaceInput()
+					-
+
+				UI_load(rDoc as string)
+					-
+
+				UI_unload()
+					-
+
+				UI_element_setStyleClass(rElementIndex as integer, rStyleClass as string)
+					-
+
+				UI_element_setStyleProp(rElementIndex as integer, rProp as string, rValue as string)
+					-
+
+				UI_styleClass_setStyleProp(rClassIndex as integer, rProp as string, rValue as string)
+					-
+
+			------------------------
+			public data
+
+				UI_elementsGroup[] as integer
+
+			------------------------
+			private functions
+
+				_UI_init()
+					-
+
+				_UI_parseSizeData(rData as string)
+					-
+
+				_UI_addElement(rElement as CLASS_ElementUI, rParentId as string)
+					-
+
+				_UI_removeElement(rID as string)
+					-
+
+				_UI_getElementById(rID as string) //TODO: make public ??
+					-
+
+				_UI_getElementsByName(rName as string)
+					-
+
+				_UI_getElementsByTagName(rName as string)
+					-
+
+				_UI_getElementsByClassName(rName as string)
+					-
+
+				_UI_elements_resetResolvedStyleProps()
+					-
+
+				_UI_elements_applyInheritedStyleProps(rElementIndex as integer, rParentIndex as integer)
+					-
+
+				_UI_elements_applyClassStyleProps(rElementIndex as integer, rClassIndex as integer)
+					-
+
+				_UI_elements_applyElementStyleProps(rElementIndex as integer)
+					-
+
+				_UI_elements_resolveFlowValues(rElementIndex as integer, rParentIndex as integer)
+					-
+
+				_UI_addClass(rClass as CLASS_StyleClassUI)
+					-
+
+				_UI_getStyleClassByName(rName as string)
+					-
+
+			------------------------
+			private data:
+
+				_UI_elements[] as CLASS_ElementUI
+					-
+
+				_UI_styleClasses[] as CLASS_StyleClassUI
+					-
+
+				_UI_selectBoxes[] as string
+					-
+
+		=========================================
+		Defines CLASS: ElementUI
+
+			------------------------
+			public functions:
+
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+
+
+			------------------------
+			private data:
+
+
+
+		=========================================
+		Defines CLASS: StyleClassUI
+
+			------------------------
+			public functions:
+
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+
+
+			------------------------
+			private data:
+
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+ui_module_init:
+
+	if UI_MODULE_LOADED = FALSE
+
+		<?System_log("ui.dbx", 2, "main", "Begin module load: ui.")?>
+		App_updateSplashScreen("- UI")
+
+		`Declare UI -----------------------------------------------------------
+
+		type UI_type_stylePropertyIdData
+			//flow properties:
+			positionAlignH as dword
+			positionAlignV as dword
+			position as dword
+			top as dword
+			left as dword
+			paddingTop as dword
+			paddingBottom as dword
+			paddingLeft as dword
+			paddingRight as dword
+			width as dword
+			height as dword
+			borderTop as dword
+			borderBottom as dword
+			borderLeft as dword
+			borderRight as dword
+			borderImage as dword
+			marginTop as dword
+			marginBottom as dword
+			marginRight as dword
+			marginLeft as dword
+			minWidth as dword
+			maxWidth as dword
+			minHeight as dword
+			maxHeight as dword
+			//visual properties:
+			backgroundColor as dword
+			backgroundOpacity as dword
+			backgroundImage as dword
+			backgroundRepeat as dword
+			backgroundAlignH as dword
+			backgroundAlignV as dword
+			display as dword
+			opacity as dword
+			zIndex as dword
+			cursor as dword
+			color as dword
+			font as dword
+			fontSize as dword
+			textDecoration as dword
+			textTransform as dword
+			textIndent as dword
+			textAlignH as dword
+			textAlignV as dword
+			d3dFont as dword
+		endtype
+
+		type UI_type_borderData
+			size as string //#px NOTE: % not valid for border width per css spec.
+			color as dword //0xff000000
+		endtype
+
+		type UI_type_sizeData
+			isPercent as boolean
+			value as integer
+		endtype
+
+		type UI_type_stylePropertyData
+			positionAlignH as string //left|right|center
+			positionAlignV as string //top|bottom|center
+			position as string //relative|absolute
+			top as string //#px|#%
+			left as string //#px|#%
+			paddingTop as string //#px|#%
+			paddingBottom as string //#px|#%
+			paddingLeft as string //#px|#%
+			paddingRight as string //#px|#%
+			width as string //#px|#%
+			height as string //#px|#%
+			borderTop as UI_type_borderData
+			borderBottom as UI_type_borderData
+			borderLeft as UI_type_borderData
+			borderRight as UI_type_borderData
+			//TODO: borderImage as UI_type_imageData
+			marginTop as string //TODO: not implemented in update / resolve position
+			marginBottom as string //TODO: not implemented in update / resolve position
+			marginRight as string //TODO: not implemented in update / resolve position
+			marginLeft as string //TODO: not implemented in update / resolve position
+			minWidth as string //TODO: not implemented in update / resolve position
+			maxWidth as string //TODO: not implemented in update / resolve position
+			minHeight as string //TODO: not implemented in update / resolve position
+			maxHeight as string //TODO: not implemented in update / resolve position
+			backgroundColor as dword
+			backgroundOpacity as byte //% as 0-100
+			backgroundImage as string //filepath
+			backgroundRepeat as string //no-repeat|repeat|repeat-x|repeat-y|cover
+			backgroundAlignH as string //left|right|center
+			backgroundAlignV as string //top|bottom|center
+			display as string //visible|hidden :: inheritable
+			opacity as byte //% as 0-100 :: inheritable
+			zIndex as dword // 0+ -> do not use negatives. larger values will increase render times (more passes) :: inheritable
+			cursor as string // :: inheritable
+			color as dword // :: inheritable
+			font as string // font name :: inheritable
+			fontSize as byte // :: inheritable
+			d3dFont as dword // :: inheritable
+			textDecoration as string //none|bold|italic|underline :: inheritable
+			textTransform as string //upper|lower|capitalize :: inheritable
+			textIndent as string //#px|#% first line indent :: inheritable
+			textAlignH as string //left|right|center :: inheritable
+			textAlignV as string //top|bottom|center :: inheritable
+			_finalX as integer //final resolved px coord :: private
+			_finalY as integer //final resolved px coord :: private
+			_finalW as integer
+			_finalH as integer
+			_innerX as integer
+			_innerY as integer
+			_innerW as integer
+			_innerH as integer
+			_isResolved as boolean
+			_flowPropertyEnabled as dword
+			_visualPropertyEnabled as dword
+		endtype
+
+		type UI_type_stylePropData
+			id as UI_type_stylePropertyIdData
+			default as UI_type_stylePropertyData
+			lastColor as dword
+			lastFont as string
+			lastFontSize as integer
+		endtype
+
+		type UI_type_statusData
+			mouseMode as string //ui|gameplay|disabled
+			keyMode as string //ui|gameplay|disabled
+			mouseModeForced as string
+			keyModeForced as string
+			inputMark as dword
+			inputReady as boolean
+			lastUpdate as integer
+		endtype
+
+		type UI_type_elementDragData
+			isActive as boolean
+			dragElementIndex as integer
+			targetElementIndex as integer
+			offsetX as integer
+			offsetY as integer
+		endtype
+
+		type UI_type_transitionData
+			elementIndex as integer
+			prop as string
+			initVal as string
+			targetVal as string
+			duration as integer
+			start as integer
+			callback as string
+		endtype
+
+		type STATIC_CLASS_UI
+			styleProp as UI_type_stylePropData
+			status as UI_type_statusData
+			elementDrag as UI_type_elementDragData
+			parsedSizeData as UI_type_sizeData
+		endtype
+
+		`Declare ElementUI -----------------------------------------------------------
+
+		type CLASS_ElementUI
+			id as string
+			name as string
+			tag as string
+			parent as dword //as index of element
+			parentID as string //element ID name to relink when elements are removed.
+			styleClassIndex as integer //unlike parent, we need to keep the class name in addition to the class index for use with getElementsByClassName
+			styleClass as string //currently only handles 1 class assignment per element.
+			style as UI_type_stylePropertyData
+			resolvedStyle as UI_type_stylePropertyData
+			value as string
+			scrollX as integer
+			scrollY as integer
+			onPress as string //name of callback function to execute on event
+			onRelease as string
+			onMouseIn as string
+			onMouseOut as string
+			mouseIsOver as boolean //mouse curser is within element bounds?
+			pressIsHeld as boolean //mouseclick or hotkey press is held down?
+			keyBind as dword //key id to act as hotkey to trigger onPress event
+			enableEvents as byte //0 disabled | 1 enabled mouse | 2 enabled keybind | 3 enabled mouse and keybind | 4 enable drag and drop
+			holdPause as boolean //gameplay is paused while element is visible
+			holdMouseFocus as boolean //gameplay ignores mouse input while element is visible
+			holdKeyFocus as boolean //gameplay ignores key input while element is visible
+			selectedIndex as integer
+			/*
+				if this is > -1, value will refer to the index of the select box list in UI_selectBoxes[] which is a list of csv strings. selectedIndex then indicates which split string contains the element's final value.
+				UI_selectBoxes[0] = "1,2,3,4,5"
+				e.value = 0
+				e.selectedIndex = 3
+				print ElementUI_getSelectedValue(e.value, e.selectedIndex) >> "4"
+			*/
+			//TODO:
+			enableMove as byte //0-disabled | 1-freely drag around within parent bounds | 2-freely drag parent around within parent's parent bounds | 3-drag and drop from sockets
+			enableSize as boolean //grabbing an edge (2px?) or border will allow to resize the width/height
+		endtype
+
+		`Declare StyleClassUI -----------------------------------------------------------
+
+		type CLASS_StyleClassUI
+			className as string
+			style as UI_type_stylePropertyData
+		endtype
+
+		`private data -------------------------------------------------------------
+
+		dim _UI_transitions[] as UI_type_transitionData
+
+		`setup holders for instances of ElementUI and StyleClassUI objects
+		dim _UI_elements[] as CLASS_ElementUI
+		dim _UI_styleClasses[] as CLASS_StyleClassUI
+
+		`setup holder for select box options
+		dim _UI_selectBoxes[] as string
+
+		`public data --------------------------------------------------------------
+
+		`setup holder for returned element collections (getElementsByName, getElementsByTagName etc)
+		dim UI_elementsGroup[] as integer //index of element within _UI_elements[] //TODO: make private? getter functions are all private.
+
+		`Init ---------------------------------------------------------------------
+
+		`==================================
+
+		GLOBAL UI as STATIC_CLASS_UI
+
+		`set id values
+		//flow properties:
+		UI.styleProp.id.positionAlignH = 1
+		UI.styleProp.id.positionAlignV = 2
+		UI.styleProp.id.position = 4
+		UI.styleProp.id.top = 8
+		UI.styleProp.id.left = 16
+		UI.styleProp.id.paddingTop = 32
+		UI.styleProp.id.paddingBottom = 64
+		UI.styleProp.id.paddingLeft = 128
+		UI.styleProp.id.paddingRight = 256
+		UI.styleProp.id.width = 512
+		UI.styleProp.id.height = 1024
+		UI.styleProp.id.borderTop = 2048
+		UI.styleProp.id.borderBottom = 4096
+		UI.styleProp.id.borderLeft = 8192
+		UI.styleProp.id.borderRight = 16384
+		UI.styleProp.id.borderImage = 32768
+		UI.styleProp.id.marginTop = 65536
+		UI.styleProp.id.marginBottom = 131072
+		UI.styleProp.id.marginRight = 262144
+		UI.styleProp.id.marginLeft = 524288
+		UI.styleProp.id.minWidth = 1048576
+		UI.styleProp.id.maxWidth = 2097152
+		UI.styleProp.id.minHeight = 4194304
+		UI.styleProp.id.maxHeight = 8388608
+		//visual properties:
+		UI.styleProp.id.backgroundColor = 1
+		UI.styleProp.id.backgroundOpacity = 2
+		UI.styleProp.id.backgroundImage = 4
+		UI.styleProp.id.backgroundRepeat = 8
+		UI.styleProp.id.backgroundAlignH = 16
+		UI.styleProp.id.backgroundAlignV = 32
+		UI.styleProp.id.display = 64
+		UI.styleProp.id.opacity = 128
+		UI.styleProp.id.zIndex = 256
+		UI.styleProp.id.cursor = 512
+		UI.styleProp.id.color = 1024
+		UI.styleProp.id.font = 2048
+		UI.styleProp.id.fontSize = 4096
+		UI.styleProp.id.textDecoration = 8192
+		UI.styleProp.id.textTransform = 16384
+		UI.styleProp.id.textIndent = 32768
+		UI.styleProp.id.textAlignH = 65536
+		UI.styleProp.id.textAlignV = 131072
+		UI.styleProp.id.d3dFont = 262144
+
+		`set style defaults
+		UI.styleProp.default.positionAlignH = "left"
+		UI.styleProp.default.positionAlignV = "top"
+		UI.styleProp.default.position = "relative"
+		UI.styleProp.default.top = "0px"
+		UI.styleProp.default.left = "0px"
+		UI.styleProp.default.paddingTop = "0px"
+		UI.styleProp.default.paddingBottom = "0px"
+		UI.styleProp.default.paddingLeft = "0px"
+		UI.styleProp.default.paddingRight = "0px"
+		UI.styleProp.default.width = "100%"
+		UI.styleProp.default.height = "100%"
+		UI.styleProp.default.borderTop.size = "0px"
+		UI.styleProp.default.borderTop.color = 0x00000000
+		UI.styleProp.default.borderBottom.size = "0px"
+		UI.styleProp.default.borderBottom.color = 0x00000000
+		UI.styleProp.default.borderRight.size = "0px"
+		UI.styleProp.default.borderRight.color = 0x00000000
+		UI.styleProp.default.borderLeft.size = "0px"
+		UI.styleProp.default.borderLeft.color = 0x00000000
+		//UI.styleProp.default.borderImage as UI_type_imageData
+		UI.styleProp.default.marginTop = "0px"
+		UI.styleProp.default.marginBottom = "0px"
+		UI.styleProp.default.marginRight = "0px"
+		UI.styleProp.default.marginLeft = "0px"
+		UI.styleProp.default.minWidth = "0px"
+		UI.styleProp.default.maxWidth = "100%"
+		UI.styleProp.default.minHeight = "0px"
+		UI.styleProp.default.maxHeight = "100%"
+		UI.styleProp.default.backgroundColor = 0x00000000
+		UI.styleProp.default.backgroundOpacity = 100
+		UI.styleProp.default.backgroundImage = ""
+		UI.styleProp.default.backgroundRepeat = "no-repeat"
+		UI.styleProp.default.backgroundAlignH = "left"
+		UI.styleProp.default.backgroundAlignV = "top"
+		UI.styleProp.default.display = "visible"
+		UI.styleProp.default.opacity = 100
+		UI.styleProp.default.zIndex = 0
+		UI.styleProp.default.cursor = "default"
+		UI.styleProp.default.color = 0xffffffff
+		UI.styleProp.default.font = "Arial"
+		UI.styleProp.default.fontSize = 18
+		UI.styleProp.default.d3dFont = 0
+		UI.styleProp.default.textDecoration = "none"
+		UI.styleProp.default.textTransform = "none"
+		UI.styleProp.default.textIndent = "0px"
+		UI.styleProp.default.textAlignH = "left"
+		UI.styleProp.default.textAlignV = "top"
+
+		$construct CLASS_ElementUI{
+			styleClassIndex = -1
+			selectedIndex = -1
+			keyBind = -1
+			style.positionAlignH = UI.styleProp.default.positionAlignH
+			style.positionAlignV = UI.styleProp.default.positionAlignV
+			style.position = UI.styleProp.default.position
+			style.top = UI.styleProp.default.top
+			style.left = UI.styleProp.default.left
+			style.paddingTop = UI.styleProp.default.paddingTop
+			style.paddingBottom = UI.styleProp.default.paddingBottom
+			style.paddingLeft = UI.styleProp.default.paddingLeft
+			style.paddingRight = UI.styleProp.default.paddingRight
+			style.width = UI.styleProp.default.width
+			style.height = UI.styleProp.default.height
+			style.borderTop.size = UI.styleProp.default.borderTop.size
+			style.borderTop.color = UI.styleProp.default.borderTop.color
+			style.borderBottom.size = UI.styleProp.default.borderBottom.size
+			style.borderBottom.color = UI.styleProp.default.borderBottom.color
+			style.borderRight.size = UI.styleProp.default.borderRight.size
+			style.borderRight.color = UI.styleProp.default.borderRight.color
+			style.borderLeft.size = UI.styleProp.default.borderLeft.size
+			style.borderLeft.color = UI.styleProp.default.borderLeft.color
+			//style.borderImage as UI_type_imageData
+			style.marginTop = UI.styleProp.default.marginTop
+			style.marginBottom = UI.styleProp.default.marginBottom
+			style.marginRight = UI.styleProp.default.marginRight
+			style.marginLeft = UI.styleProp.default.marginLeft
+			style.minWidth = UI.styleProp.default.minWidth
+			style.maxWidth = UI.styleProp.default.maxWidth
+			style.minHeight = UI.styleProp.default.minHeight
+			style.maxHeight = UI.styleProp.default.maxHeight
+			style.backgroundColor = UI.styleProp.default.backgroundColor
+			style.backgroundOpacity = UI.styleProp.default.backgroundOpacity
+			style.backgroundImage = UI.styleProp.default.backgroundImage
+			style.backgroundRepeat = UI.styleProp.default.backgroundRepeat
+			style.backgroundAlignH = UI.styleProp.default.backgroundAlignH
+			style.backgroundAlignV = UI.styleProp.default.backgroundAlignV
+			style.display = UI.styleProp.default.display
+			style.opacity = UI.styleProp.default.opacity
+			style.zIndex = UI.styleProp.default.zIndex
+			style.cursor = UI.styleProp.default.cursor
+			style.color = UI.styleProp.default.color
+			style.font = UI.styleProp.default.font
+			style.fontSize = UI.styleProp.default.fontSize
+			style.d3dFont = UI.styleProp.default.d3dFont
+			style.textDecoration = UI.styleProp.default.textDecoration
+			style.textTransform = UI.styleProp.default.textTransform
+			style.textIndent = UI.styleProp.default.textIndent
+			style.textAlignH = UI.styleProp.default.textAlignH
+			style.textAlignV = UI.styleProp.default.textAlignV
+		}
+
+		$construct CLASS_StyleClassUI{
+			style.positionAlignH = UI.styleProp.default.positionAlignH
+			style.positionAlignV = UI.styleProp.default.positionAlignV
+			style.position = UI.styleProp.default.position
+			style.top = UI.styleProp.default.top
+			style.left = UI.styleProp.default.left
+			style.paddingTop = UI.styleProp.default.paddingTop
+			style.paddingBottom = UI.styleProp.default.paddingBottom
+			style.paddingLeft = UI.styleProp.default.paddingLeft
+			style.paddingRight = UI.styleProp.default.paddingRight
+			style.width = UI.styleProp.default.width
+			style.height = UI.styleProp.default.height
+			style.borderTop.size = UI.styleProp.default.borderTop.size
+			style.borderTop.color = UI.styleProp.default.borderTop.color
+			style.borderBottom.size = UI.styleProp.default.borderBottom.size
+			style.borderBottom.color = UI.styleProp.default.borderBottom.color
+			style.borderRight.size = UI.styleProp.default.borderRight.size
+			style.borderRight.color = UI.styleProp.default.borderRight.color
+			style.borderLeft.size = UI.styleProp.default.borderLeft.size
+			style.borderLeft.color = UI.styleProp.default.borderLeft.color
+			//style.borderImage as UI_type_imageData
+			style.marginTop = UI.styleProp.default.marginTop
+			style.marginBottom = UI.styleProp.default.marginBottom
+			style.marginRight = UI.styleProp.default.marginRight
+			style.marginLeft = UI.styleProp.default.marginLeft
+			style.minWidth = UI.styleProp.default.minWidth
+			style.maxWidth = UI.styleProp.default.maxWidth
+			style.minHeight = UI.styleProp.default.minHeight
+			style.maxHeight = UI.styleProp.default.maxHeight
+			style.backgroundColor = UI.styleProp.default.backgroundColor
+			style.backgroundOpacity = UI.styleProp.default.backgroundOpacity
+			style.backgroundImage = UI.styleProp.default.backgroundImage
+			style.backgroundRepeat = UI.styleProp.default.backgroundRepeat
+			style.backgroundAlignH = UI.styleProp.default.backgroundAlignH
+			style.backgroundAlignV = UI.styleProp.default.backgroundAlignV
+			style.display = UI.styleProp.default.display
+			style.opacity = UI.styleProp.default.opacity
+			style.zIndex = UI.styleProp.default.zIndex
+			style.cursor = UI.styleProp.default.cursor
+			style.color = UI.styleProp.default.color
+			style.font = UI.styleProp.default.font
+			style.fontSize = UI.styleProp.default.fontSize
+			style.d3dFont = UI.styleProp.default.d3dFont
+			style.textDecoration = UI.styleProp.default.textDecoration
+			style.textTransform = UI.styleProp.default.textTransform
+			style.textIndent = UI.styleProp.default.textIndent
+			style.textAlignH = UI.styleProp.default.textAlignH
+			style.textAlignV = UI.styleProp.default.textAlignV
+		}
+
+		`==================================
+
+		_UI_init()
+
+		UI_MODULE_LOADED = TRUE
+
+		<?System_log("ui.dbx", 2, "main", "End module load: ui.")?>
+
+	endif
+return
+
+
+function _UI_init()
+	tElement = $new CLASS_ElementUI
+	tElement.id = "root"
+	tElement.style.width = str$(App.config.screenWidth) + "px"
+	tElement.style.height = str$(App.config.screenHeight) + "px"
+	tElement.resolvedStyle = tElement.style
+	e = _UI_addElement(tElement, "")
+
+	UI.status.mouseMode = "gameplay"
+	UI.status.keyMode = "gameplay"
+
+	//init timing marks
+	UI.status.inputMark = timer()
+	UI.status.lastUpdate = timer()
+
+	`register updates
+	App_addUpdate("UI_updatePageFlow", "", TRUE)
+	App_addUpdate("UI_getInterfaceInput", "UI_updatePageFlow", TRUE)
+
+endfunction
+
+
+function UI_updatePageFlow()
+
+	<?System_log("ui.dbx", 2, "main", "Begin Update: UI_updatePageFlow")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	totalElementCount = array count(_UI_elements[])
+
+	if totalElementCount = 0
+		exitfunction
+	endif
+
+	`Resolve element style properties and page flow -----------------------------------------------------------
+
+	<?System_log("ui.dbx", 1, "ui-update", "Begin resolve element properties")?>
+
+	_UI_updateTransitions()
+	_UI_elements_resetResolvedStyleProps()
+
+	keepResolvingDeferred = TRUE
+
+	while keepResolvingDeferred
+		keepResolvingDeferred = FALSE
+		for tElementIndex = 1 to totalElementCount
+
+			<?System_log("ui.dbx", 1, "ui-update", "Check resolve for element " + str$(tElementIndex))?>
+
+			resolveThis = TRUE
+
+			`skip if already resolved
+			if _UI_elements[tElementIndex].resolvedStyle._isResolved = TRUE
+				<?System_log("ui.dbx", 1, "ui-update", "   already resolved")?>
+				resolveThis = FALSE
+			endif
+
+			`defer if parent is not resolved
+			if resolveThis = TRUE
+				tParentIndex = _UI_elements[tElementIndex].parent
+				<?System_log("ui.dbx", 1, "ui-update", "   parent is " + str$(tParentIndex))?>
+
+				if _UI_elements[tParentIndex].resolvedStyle._isResolved = FALSE
+					<?System_log("ui.dbx", 1, "ui-update", "   parent is not resolved, defer")?>
+					resolveThis = FALSE
+					keepResolvingDeferred = TRUE
+				endif
+			endif
+
+			if resolveThis = TRUE
+				<?System_log("ui.dbx", 1, "ui-update", "   ready to resolve -> resolve it")?>
+
+				`apply inherited style props
+				_UI_elements_applyInheritedStyleProps(tElementIndex, tParentIndex)
+
+				`apply class style props
+				if _UI_elements[tElementIndex].styleClassIndex > -1
+					_UI_elements_applyClassStyleProps(tElementIndex, _UI_elements[tElementIndex].styleClassIndex)
+				endif
+
+				`apply self 'inline' style props
+				_UI_elements_applyElementStyleProps(tElementIndex)
+
+				`resolve flow values and finalize
+				_UI_elements_resolveFlowValues(tElementIndex, tParentIndex)
+			endif
+
+		next tElementIndex
+	endwhile
+
+	<?System_log("ui.dbx", 1, "ui-update", "End resolve element properties," + str$(hitimer(1000000) - updateMark) + "us")?>
+
+	`Render GUI ---------------------------------------------------------------------------------------------------------
+
+	renderMark as dword
+	renderMark = hitimer(1000000)
+	<?System_log("ui.dbx", 1, "ui-update", "Begin gui render: " + str$(totalElementCount) + " elements")?>
+
+	drawPass = 0
+	drawCount = 0
+
+	while drawCount < totalElementCount
+
+		for tElementIndex = 1 to totalElementCount
+
+			//GOTO: -----------------------
+			UI_updatePageFlow_nextElementRender:
+			//-----------------------------
+
+			`check if drawable this pass
+			if _UI_elements[tElementIndex].resolvedStyle.zIndex = drawPass
+
+				<?System_log("ui.dbx", 1, "ui-update", "Drawing element " + str$(tElementIndex) + " on pass " + str$(drawPass))?>
+
+				inc drawCount
+
+				`stop further processing of this element if not visible
+				if _UI_elements[tElementIndex].resolvedStyle.display = "hidden"
+					inc tElementIndex
+					if tElementIndex <= totalElementCount
+						goto UI_updatePageFlow_nextElementRender
+					else
+						exit
+					endif
+				endif
+
+				`get flow data
+				borderSizeT = intval(_UI_elements[tElementIndex].resolvedStyle.borderTop.size)
+				borderSizeB = intval(_UI_elements[tElementIndex].resolvedStyle.borderBottom.size)
+				borderSizeR = intval(_UI_elements[tElementIndex].resolvedStyle.borderRight.size)
+				borderSizeL = intval(_UI_elements[tElementIndex].resolvedStyle.borderLeft.size)
+				finalX = _UI_elements[tElementIndex].resolvedStyle._finalX
+				finalY = _UI_elements[tElementIndex].resolvedStyle._finalY
+				finalW = _UI_elements[tElementIndex].resolvedStyle._finalW
+				finalH = _UI_elements[tElementIndex].resolvedStyle._finalH
+				contentX = _UI_elements[tElementIndex].resolvedStyle._innerX
+				contentY = _UI_elements[tElementIndex].resolvedStyle._innerY
+				contentW = _UI_elements[tElementIndex].resolvedStyle._innerW
+				contentH = _UI_elements[tElementIndex].resolvedStyle._innerH
+
+				`render background
+				if _UI_elements[tElementIndex].resolvedStyle.backgroundOpacity > 0
+					//TODO: handle overflow and repeat
+					//	for now, just default to overflow:visible;repeat:no-repeat
+					if _UI_elements[tElementIndex].resolvedStyle.backgroundImage <> ""
+						//TODO: handle opacity, for now just force 100 -> alpha channel in images can still render statically
+						tImgNum = Media_getImageNumber(_UI_elements[tElementIndex].resolvedStyle.backgroundImage, 1, 0)
+						paste image tImgNum, contentX, contentY, 1
+					else
+						//TODO: apply opacity to color during apply / resolve. opacity should replace the alpha channel value in the color.
+						//TODO: we may be able to just apply here via bit.
+						d3d_box finalX, finalY, (finalX + finalW), (finalY + finalH), _UI_elements[tElementIndex].resolvedStyle.backgroundColor
+						<?System_log("ui.dbx", 1, "ui-update", "Draw d3d box: " + str$(contentX) + ". " + str$(contentY) + ". " + str$((contentX + contentW)) + ". " + str$((contentY + contentH)) + ". " + str$(_UI_elements[tElementIndex].resolvedStyle.backgroundColor))?>
+						<?System_log("ui.dbx", 1, "ui-update", "Draw complete d3d box element background")?>
+					endif
+				endif
+
+				`render borders
+				//TODO: apply opacity -> i think for handling opacity, we may want to draw element and its children to a separate bitmap, then just fade the whole thing and paste back into the main image.
+				if borderSizeT > 0 then d3d_box finalX, finalY, (finalX + finalW), (finalY + borderSizeT), _UI_elements[tElementIndex].resolvedStyle.borderTop.color
+				if borderSizeB > 0 then d3d_box finalX, (finalY + finalH - borderSizeB), (finalX + finalW), (finalY + finalH), _UI_elements[tElementIndex].resolvedStyle.borderBottom.color
+				if borderSizeR > 0 then d3d_box (finalX + finalW - borderSizeR), (finalY + borderSizeT), (finalX + finalW), (finalY + finalH - borderSizeB), _UI_elements[tElementIndex].resolvedStyle.borderRight.color
+				if borderSizeL > 0 then d3d_box finalX, (finalY + borderSizeT), (finalX + borderSizeL), (finalY + finalH - borderSizeB), _UI_elements[tElementIndex].resolvedStyle.borderLeft.color
+
+				`render text
+				//TODO: handle inline style changes and anchors (span color/ul/bold etc changes and hyperlinks)
+				if _UI_elements[tElementIndex].value <> ""
+					if _UI_elements[tElementIndex].resolvedStyle.d3dFont > 0
+						`get alignment value
+						textAlignH = 0
+						textAlignV = 0
+						select _UI_elements[tElementIndex].resolvedStyle.textAlignH
+							case "left": textAlignH = 0 : endcase
+							case "center": textAlignH = 1 : endcase
+							case "right": textAlignH = 2 : endcase
+						endselect
+						select _UI_elements[tElementIndex].resolvedStyle.textAlignV
+							case "top": textAlignV = 0 : endcase
+							case "center": textAlignV = 1 : endcase
+							case "bottom": textAlignV = 2 : endcase
+						endselect
+
+						//TODO: text alpha and element opacity.
+						d3d_color (_UI_elements[tElementIndex].resolvedStyle.color >> 16) && 0xff, (_UI_elements[tElementIndex].resolvedStyle.color >> 8) && 0xff, _UI_elements[tElementIndex].resolvedStyle.color && 0xff, 255//(_UI_elements[tElementIndex].resolvedStyle.color >> 24) && 0xff
+						d3d_startText
+							d3d_boxText _UI_elements[tElementIndex].resolvedStyle.d3dFont, contentX, contentY, contentW, contentH, textAlignH, textAlignV, _UI_elements[tElementIndex].value
+						d3d_endText
+
+					else
+						`old style, manually position and wrap
+						//STUB:
+					endif
+				endif
+
+			endif
+		next tElementIndex
+
+		inc drawPass
+
+	endwhile
+
+	UI.status.lastUpdate = timer()
+
+	<?System_log("ui.dbx", 1, "ui-update", "End gui render," + str$(hitimer(1000000) - renderMark) + "us")?>
+
+	<?System_log("ui.dbx", 2, "main", "End Update: UI_updatePageFlow," + str$(hitimer(1000000) - updateMark) + "us")?>
+
+endfunction
+
+
+function UI_getInterfaceInput()
+
+	<?System_log("ui.dbx", 2, "main", "Begin Update: UI_getInterfaceInput")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	`check interface input lockout timer
+	if abs(timer() - UI.status.inputMark) > 200
+		UI.status.inputReady = TRUE
+	else
+		UI.status.inputReady = FALSE
+	endif
+
+	`check element holds
+	<?System_log("ui.dbx", 1, "ui", "    pre ui clear pauseHold: " + str$(System.timing.pauseHold))?>
+	if System.timing.pauseHold && System.timing.pauseHoldIdUI
+		System.timing.pauseHold = System.timing.pauseHold ~~ System.timing.pauseHoldIdUI
+	endif
+	<?System_log("ui.dbx", 1, "ui", "    post ui clear pauseHold: " + str$(System.timing.pauseHold))?>
+
+	UI.status.mouseMode = "gameplay"
+	UI.status.keyMode = "gameplay"
+
+	totalElementCount = array count(_UI_elements[])
+
+	if totalElementCount = 0
+		exitfunction
+	endif
+
+	for i = 1 to totalElementCount
+		if _UI_elements[i].resolvedStyle.display <> "hidden"
+
+			if _UI_elements[i].holdPause
+				<?System_log("ui.dbx", 1, "ui", "  > element " + _UI_elements[i].id + " is holding pause")?>
+				System.timing.pauseHold = System.timing.pauseHold || System.timing.pauseHoldIdUI
+			endif
+
+			if _UI_elements[i].holdMouseFocus
+				<?System_log("ui.dbx", 1, "ui", "  > element " + _UI_elements[i].id + " is holding mouse focus")?>
+				UI.status.mouseMode = "ui"
+			endif
+
+			if _UI_elements[i].holdKeyFocus
+				<?System_log("ui.dbx", 1, "ui", "  > element " + _UI_elements[i].id + " is holding key focus")?>
+				UI.status.keyMode = "ui"
+			endif
+
+		endif
+
+		`if each hold has been set, skip processing the rest
+		if System.timing.pauseHold && System.timing.pauseHoldIdUI
+			if UI.status.mouseMode = "ui" and UI.status.keyMode = "ui"
+				exit
+			endif
+		endif
+
+	next i
+
+	<?System_log("ui.dbx", 1, "ui", "    post ui pause hold element check, pauseHold: " + str$(System.timing.pauseHold))?>
+
+	if UI.status.mouseModeForced <> "" then UI.status.mouseMode = UI.status.mouseModeForced
+	if UI.status.keyModeForced <> "" then UI.status.keyMode = UI.status.keyModeForced
+
+	if UI.status.mouseMode = "ui"
+		show mouse
+	else
+		hide mouse
+	endif
+
+	`handle input events. only process the first detected event and skip/discard the rest
+	if UI.status.inputReady
+		for i = 1 to totalElementCount
+
+			<?System_log("ui.dbx", 1, "ui-update", "Get interface input for element: " + str$(i))?>
+
+			`mouse events
+			//TODO: callback handling should be able to parse/pass additional parameters
+			//TODO: we need to handle z-index blocking!! only top element should fire!
+			if UI.status.mouseMode = "ui"
+				if _UI_elements[i].resolvedStyle.display <> "hidden"
+					if _UI_elements[i].enableEvents = 1 or _UI_elements[i].enableEvents = 3 or (_UI_elements[i].enableEvents = 4 and UI.elementDrag.isActive)
+
+						oldPressHold = _UI_elements[i].pressIsHeld
+						_UI_elements[i].pressIsHeld = FALSE
+
+						oldMouseOver = _UI_elements[i].mouseIsOver
+						_UI_elements[i].mouseIsOver = FALSE
+
+						`drag element
+						if UI.elementDrag.dragElementIndex = i
+							oldMouseOver = TRUE
+							_UI_elements[i].mouseIsOver = TRUE
+						endif
+
+						`other elements - get content bounds
+						x1 = _UI_elements[i].resolvedStyle._innerX
+						x2 = x1 + _UI_elements[i].resolvedStyle._innerW
+
+						y1 = _UI_elements[i].resolvedStyle._innerY
+						y2 = y1 + _UI_elements[i].resolvedStyle._innerH
+
+						`check mouse in / mouse press / mouse release
+						if Math2d_isPointInBox(System.mouseInput.posX, System.mouseInput.posY, x1, y1, x2, y2)
+
+							_UI_elements[i].mouseIsOver = TRUE
+
+							`is this a move in event?
+							if oldMouseOver = FALSE
+								`mouse came in, trigger event
+								if _UI_elements[i].onMouseIn <> ""
+									<?System_log("ui.dbx", 2, "ui-event", "Fire mouse onMouseIn: " + _UI_elements[i].onMouseIn + " for element " + str$(i))?>
+									App_callFunction(_UI_elements[i].onMouseIn, str$(i))
+									exitfunction
+								endif
+							endif
+
+							`is there a press event?
+							if System.mouseInput.leftBtn.isDown
+								_UI_elements[i].pressIsHeld = TRUE
+
+								if oldPressHold = FALSE
+									`new press, trigger event
+									UI.status.inputMark = timer()
+									if _UI_elements[i].onPress <> ""
+										<?System_log("ui.dbx", 2, "ui-event", "Fire mouse onPress: " + _UI_elements[i].onPress + " for element " + str$(i))?>
+										App_callFunction(_UI_elements[i].onPress, str$(i))
+										exitfunction
+									endif
+								endif
+							else
+								if oldPressHold = TRUE
+									`new release, trigger event
+									if _UI_elements[i].onRelease <> ""
+										<?System_log("ui.dbx", 2, "ui-event", "Fire mouse onRelease: " + _UI_elements[i].onRelease + " for element " + str$(i))?>
+										App_callFunction(_UI_elements[i].onRelease, str$(i))
+										exitfunction
+									endif
+								endif
+							endif
+						endif
+
+						`check mouse out
+						if oldMouseOver = TRUE and _UI_elements[i].mouseIsOver = FALSE
+							`mouse went out, trigger event
+							if _UI_elements[i].onMouseOut <> ""
+								<?System_log("ui.dbx", 2, "ui-event", "Fire mouse onMouseOut: " + _UI_elements[i].onMouseOut + " for element " + str$(i))?>
+								App_callFunction(_UI_elements[i].onMouseOut, str$(i))
+								exitfunction
+							endif
+						endif
+					endif
+				else
+					`element is hidden, if mouse was over, trigger onMouseOut
+					if _UI_elements[i].mouseIsOver
+						_UI_elements[i].mouseIsOver = FALSE
+						_UI_elements[i].pressIsHeld = FALSE
+						if _UI_elements[i].onMouseOut <> ""
+							<?System_log("ui.dbx", 2, "ui-event", "Fire mouse onMouseOut: " + _UI_elements[i].onMouseOut + " for element " + str$(i))?>
+							App_callFunction(_UI_elements[i].onMouseOut, str$(i))
+							exitfunction
+						endif
+					endif
+				endif
+			else
+				`mouse is bound to gameplay, if mouse was over, trigger onMouseOut
+				if _UI_elements[i].mouseIsOver
+					_UI_elements[i].mouseIsOver = FALSE
+					_UI_elements[i].pressIsHeld = FALSE
+					if _UI_elements[i].onMouseOut <> ""
+						<?System_log("ui.dbx", 2, "ui-event", "Fire mouse onMouseOut: " + _UI_elements[i].onMouseOut + " for element " + str$(i))?>
+						App_callFunction(_UI_elements[i].onMouseOut, str$(i))
+						exitfunction
+					endif
+				endif
+			endif
+
+			`key events
+			if UI.status.keyMode = "ui"
+				//STUB:
+				//this handles things like entering text into a chatbox where keys should not trigger regular ui events or character control
+				//this would include such events as enter key to finalize an input, escape to cancel an input etc
+				//alphanumerics go to entry buffer, and buffer content will be set to the active element's value.
+			else
+				`check for keybind press /release events
+				if _UI_elements[i].enableEvents = 2 or _UI_elements[i].enableEvents = 3
+
+					<?System_log("ui.dbx", 1, "ui-event", "element " + str$(i) + " is key event enabled for key " + str$(_UI_elements[i].keyBind))?>
+
+					oldPressHold = _UI_elements[i].pressIsHeld
+					_UI_elements[i].pressIsHeld = FALSE
+
+					if _UI_elements[i].keyBind > 0
+						if System_keyInput[_UI_elements[i].keyBind].isDown
+
+							<?System_log("ui.dbx", 1, "ui-event", "key is down")?>
+
+							_UI_elements[i].pressIsHeld = TRUE
+
+							if oldPressHold = FALSE
+								`new press, trigger event
+								UI.status.inputMark = timer()
+								if _UI_elements[i].onPress <> ""
+									<?System_log("ui.dbx", 2, "ui-event", "Fire keyboard onPress: " + _UI_elements[i].onPress + " for element " + str$(i))?>
+									App_callFunction(_UI_elements[i].onPress, str$(i))
+									exitfunction
+								endif
+							endif
+						else
+							if oldPressHold = TRUE
+								`new release, trigger event
+								if _UI_elements[i].onRelease <> ""
+									<?System_log("ui.dbx", 2, "ui-event", "Fire keyboard onRelease: " + _UI_elements[i].onRelease + " for element " + str$(i))?>
+									App_callFunction(_UI_elements[i].onRelease, str$(i))
+									exitfunction
+								endif
+							endif
+						endif
+					endif
+				endif
+			endif
+
+		next i
+	endif
+
+	<?System_log("ui.dbx", 2, "main", "End Update: UI_getInterfaceInput," + str$(hitimer(1000000) - updateMark) + "us")?>
+endfunction
+
+
+function UI_load(rDoc as string)
+
+	rDoc = "resource/gui/" + rDoc + ".xml"
+
+	<?System_log("ui.dbx", 2, "ui", "Begin requested document load: " + rDoc)?>
+
+	XML_loadFile(rDoc)
+
+	<?System_log("ui.dbx", 2, "ui", "Finished XML load -> create UI elements.")?>
+
+	totalCountXML = array count(XML_elements[])
+
+	<?
+		System_log("ui.dbx", 2, "ui", "----------")
+		System_log("ui.dbx", 2, "ui", "XML_elements[]:")
+		for i = 0 to array count(XML_elements[])
+			System_log("ui.dbx", 2, "ui", "xml element: " + str$(i) + ": " + XML_elements[i].tagName + " :: " + "#attributes: " + str$(XML_getAttributeCount(i)))
+		next i
+		for a = 0 to array count(_XML_attributes[])
+			System_log("ui.dbx", 2, "ui", "xml attribute: " + str$(a) + ": " + _XML_attributes[a].attribute + " :: " + _XML_attributes[a].value + " > for xml element: " + str$(_XML_attributes[a].elementIndex))
+		next a
+		System_log("ui.dbx", 2, "ui", "----------")
+	?>
+
+	for i = 0 to totalCountXML
+
+		<?System_log("ui.dbx", 1, "ui", "Processing UI tag: " + XML_elements[i].tagName)?>
+
+		select XML_elements[i].tagName
+
+			case "element":
+				parentID as string
+				parentID = XML_getAttributeValue(XML_elements[i].parent, "id")
+
+				tElement = $new CLASS_ElementUI
+
+				tElement.id = XML_getAttributeValue(i, "id")
+				tElement.name = XML_getAttributeValue(i, "name")
+				tElement.tag = XML_getAttributeValue(i, "type")
+				tElement.styleClass = XML_getAttributeValue(i, "class")
+				tElement.value = XML_getAttributeValue(i, "value")
+				tElement.onPress = XML_getAttributeValue(i, "onPress")
+				tElement.onRelease = XML_getAttributeValue(i, "onRelease")
+				tElement.onMouseIn = XML_getAttributeValue(i, "onMouseIn")
+				tElement.onMouseOut = XML_getAttributeValue(i, "onMouseOut")
+				//tElement.onTransition = XML_getAttributeValue(i, "onTransition")
+        tElement.keyBind = intval(XML_getAttributeValue(i, "keyBind"))
+        tElement.enableEvents = intval(XML_getAttributeValue(i, "enableEvents"))
+        tElement.holdPause = intval(XML_getAttributeValue(i, "holdPause"))
+        tElement.holdMouseFocus = intval(XML_getAttributeValue(i, "holdMouseFocus"))
+        tElement.holdKeyFocus = intval(XML_getAttributeValue(i, "holdKeyFocus"))
+
+				tElementIndex = _UI_addElement(tElement, parentID)
+				<?System_log("ui.dbx", 2, "ui", "Added UI element: " + str$(tElementIndex))?>
+			endcase
+
+			case "element_style":
+				//NOTE: style tags must be nested within an element or class node and must be defined before any child element nodes.
+				// thus when this case is active, we will have a reference to the element it applies to via the last tElementIndex (tStyleClassIndex in case of styleClass nodes)
+				totalCountAttrs = XML_getAttributeCount(i)
+				if totalCountAttrs > -1
+					tAttr as string
+					for a = 0 to totalCountAttrs
+						tAttr = XML_getAttributeByIndex(i, a)
+						UI_element_setStyleProp(tElementIndex, tAttr, XML_getAttributeValue(i, tAttr))
+					next a
+				endif
+			endcase
+
+			case "class":
+				tClass = $new CLASS_StyleClassUI
+				tClass.className = XML_getAttributeValue(i, "name")
+				tStyleClassIndex = _UI_addClass(tClass)
+				<?System_log("ui.dbx", 2, "ui", "Added UI styleClass: " + str$(tStyleClassIndex))?>
+			endcase
+
+			case "class_style":
+				totalCountAttrs = XML_getAttributeCount(i)
+				if totalCountAttrs > -1
+					tAttr as string
+					for a = 0 to totalCountAttrs
+						tAttr = XML_getAttributeByIndex(i, a)
+						UI_styleClass_setStyleProp(tStyleClassIndex, tAttr, XML_getAttributeValue(i, tAttr))
+					next a
+				endif
+			endcase
+
+			case "repeater":
+				//STUB:
+			endcase
+
+		endselect
+	next i
+
+endfunction
+
+
+function UI_unload()
+	empty array _UI_styleClasses[]
+	empty array _UI_elements[]
+	`append root element
+	tElement = $new CLASS_ElementUI
+	tElement.id = "root"
+	tElement.style.width = str$(App.config.screenWidth) + "px"
+	tElement.style.height = str$(App.config.screenHeight) + "px"
+	tElement.resolvedStyle = tElement.style
+	e = _UI_addElement(tElement, "")
+endfunction
+
+
+function UI_loadMedia()
+	for i = 0 to array count(_UI_styleClasses[])
+		if _UI_styleClasses[i].style.backgroundImage > ""
+			Media_getImageNumber(_UI_styleClasses[i].style.backgroundImage, 1, 0)
+		endif
+	next i
+	for i = 0 to array count(_UI_elements[])
+		if _UI_elements[i].style.backgroundImage > ""
+			Media_getImageNumber(_UI_elements[i].style.backgroundImage, 1, 0)
+		endif
+	next i
+	//TODO: pre-load non background images also?
+endfunction
+
+
+function _UI_parseSizeData(rData as string)
+	//<?System_log("ui.dbx", 1, "ui", "> Parse size for: " + rData)?>
+	if rData = ""
+		rData = "0px"
+	endif
+	lastChar$ = fast right$(rData, 1)
+	if lastChar$ = "%"
+		UI.parsedSizeData.isPercent = TRUE
+		UI.parsedSizeData.value = intval(fast left$(rData, fast len(rData) - 1))
+	else
+		if lastChar$ = "x"
+			UI.parsedSizeData.isPercent = FALSE
+			UI.parsedSizeData.value = intval(fast left$(rData, fast len(rData) - 2))
+		else
+			UI.parsedSizeData.isPercent = FALSE
+			UI.parsedSizeData.value = intval(rData)
+		endif
+	endif
+endfunction
+
+
+function _UI_addElement(rElement as CLASS_ElementUI, rParentId as string)
+	res = -1
+
+	`append to parent (default or parent not found = 0 = root)
+	if rParentId > ""
+		for i = 0 to array count(_UI_elements[])
+			if _UI_elements[i].id = rParentId
+				rElement.parent = i
+				rElement.parentID = rParentId
+				exit
+			endif
+		next i
+	endif
+
+	`get style class index
+	<?System_log("ui.dbx", 1, "ui", "retrieve class index for class: " + rElement.styleClass + " on add element: " + rElement.id)?>
+	if rElement.styleClass > ""
+		for i = 0 to array count(_UI_styleClasses[])
+			if _UI_styleClasses[i].className = rElement.styleClass
+				rElement.styleClassIndex = i
+				<?System_log("ui.dbx", 1, "ui", "found class index :" + str$(i))?>
+				exit
+			endif
+		next i
+	endif
+
+	array insert at bottom _UI_elements[]
+	_UI_elements[] = rElement
+	res = array count(_UI_elements[])
+endfunction res
+
+
+function _UI_cleanElementList()
+	//garbage collect
+	GCcount = 0
+	GCindex = -1
+
+	for i = 1 to array count(_UI_elements[])
+		if _UI_elements[i].id = "GC_THIS"
+			inc GCcount
+			GCindex = i
+		endif
+	next i
+
+	<?System_log("ui.dbx", 1, "ui", "Cleaning element list. Garbage count: " + str$(GCcount))?>
+
+	if GCcount > 0
+		if GCcount > 1
+			for c = 1 to GCcount
+				for i = 1 to array count(_UI_elements[])
+					if _UI_elements[i].id = "GC_THIS"
+						<?System_log("ui.dbx", 1, "ui", " GC index: " + str$(i))?>
+						array delete element _UI_elements[], i
+						exit
+					endif
+				next i
+			next c
+		else
+			<?System_log("ui.dbx", 1, "ui", " GC index: " + str$(GCindex))?>
+			array delete element _UI_elements[], GCindex
+		endif
+	endif
+
+	//relink parent index references
+	for tElementIndex = 1 to array count(_UI_elements[])
+		if _UI_elements[tElementIndex].parentID > ""
+			for i = 1 to array count(_UI_elements[])
+				if _UI_elements[i].id = _UI_elements[tElementIndex].parentID
+					<?System_log("ui.dbx", 1, "ui", " >> parentID '" + _UI_elements[tElementIndex].parentID + "' of index " + str$(tElementIndex) + " matched to ID " + _UI_elements[i].id + " of index " + str$(i) + " set parent of " + str$(tElementIndex) + " to " + str$(i))?>
+					_UI_elements[tElementIndex].parent = i
+					exit
+				endif
+			next i
+		else
+			_UI_elements[tElementIndex].parent = 0
+		endif
+	next tElementIndex
+endfunction
+
+
+function _UI_removeElementByIndex(rElementIndex as integer)
+
+	<?System_log("ui.dbx", 1, "ui", "Request remove element index: " + str$(rElementIndex))?>
+	tElementID$ = _UI_elements[rElementIndex].id
+	<?System_log("ui.dbx", 1, "ui", "  ID: " + tElementID$)?>
+
+	_UI_elements[rElementIndex].id = "GC_THIS"
+	_UI_elements[rElementIndex].parentID = "GC_THIS"
+
+	//recursively remove all children of requested element
+	keepLooking = TRUE
+	while keepLooking
+		keepLooking = FALSE
+		for i = 1 to array count(_UI_elements[])
+			if _UI_elements[i].parentID = tElementID$
+				<?System_log("ui.dbx", 1, "ui", "  Found child of: " + tElementID$ + " at index " + str$(i))?>
+				keepLooking = TRUE
+				_UI_removeElementByIndex(i)
+				exit
+			endif
+		next i
+	endwhile
+
+	//_UI_updateElementParentLinks()
+endfunction
+
+
+function _UI_getElementById(rID as string)
+	res = -1
+	for i = 0 to array count(_UI_elements[])
+		if _UI_elements[i].id = rID
+			res = i
+			exitfunction res
+		endif
+	next i
+endfunction res
+
+
+function _UI_getElementsByName(rName as string)
+	empty array UI_elementsGroup[]
+	for i = 0 to array count(_UI_elements[])
+		if _UI_elements[i].name = rName
+			array insert at bottom UI_elementsGroup[]
+			UI_elementsGroup[] = i
+		endif
+	next i
+endfunction
+
+
+function _UI_getElementsByTagName(rName as string)
+	empty array UI_elementsGroup[]
+	for i = 0 to array count(_UI_elements[])
+		if _UI_elements[i].tag = rName
+			array insert at bottom UI_elementsGroup[]
+			UI_elementsGroup[] = i
+		endif
+	next i
+endfunction
+
+
+function _UI_getElementsByClassName(rName as string)
+	empty array UI_elementsGroup[]
+	for i = 0 to array count(_UI_elements[])
+		if _UI_elements[i].styleClass = rName
+			array insert at bottom UI_elementsGroup[]
+			UI_elementsGroup[] = i
+		endif
+	next i
+endfunction
+
+
+function _UI_updateTransitions()
+	//TODO: allow styleClass transitions also?
+	GCcount = 0
+	GCindex = -1
+	for i = 0 to array count(_UI_transitions[])
+		tElapsed# = System.timing.timer - _UI_transitions[i].start * 1.0
+		if instr(_UI_transitions[i].initVal, "px")
+			tInit# = val(fast left$(_UI_transitions[i].initVal, fast len(_UI_transitions[i].initVal) - 2))
+		else
+			if instr(_UI_transitions[i].initVal, "%")
+				tInit# = val(fast left$(_UI_transitions[i].initVal, fast len(_UI_transitions[i].initVal) - 1))
+			else
+				tInit# = val(_UI_transitions[i].initVal)
+			endif
+		endif
+		if instr(_UI_transitions[i].targetVal, "px")
+			tTarget# = val(fast left$(_UI_transitions[i].targetVal, fast len(_UI_transitions[i].targetVal) - 2))
+		else
+			if instr(_UI_transitions[i].targetVal, "%")
+				tTarget# = val(fast left$(_UI_transitions[i].targetVal, fast len(_UI_transitions[i].targetVal) - 1))
+			else
+				tTarget# = val(_UI_transitions[i].targetVal)
+			endif
+		endif
+		if tElapsed# < _UI_transitions[i].duration
+			tVal# = tInit# + (((tTarget# - tInit#) / _UI_transitions[i].duration) * tElapsed#)
+			UI_element_setStyleProp(_UI_transitions[i].elementIndex, _UI_transitions[i].prop, str$(tVal#))
+			//check for completion -> we might can drop this and just let the duration limit handle things. this might cause a slight 'bounce' though...
+			if tTarget# > tInit#
+				if tVal# >= tTarget#
+					if _UI_transitions[i].callback > "" then App_callFunction(_UI_transitions[i].callback, str$(_UI_transitions[i].elementIndex))
+					_UI_transitions[i].elementIndex = -1
+					inc GCcount
+					GCindex = i
+				endif
+			else
+				if tVal# <= tTarget#
+					if _UI_transitions[i].callback > "" then App_callFunction(_UI_transitions[i].callback, str$(_UI_transitions[i].elementIndex))
+					_UI_transitions[i].elementIndex = -1
+					inc GCcount
+					GCindex = i
+				endif
+			endif
+		else
+			//set val to target val and end it
+			UI_element_setStyleProp(_UI_transitions[i].elementIndex, _UI_transitions[i].prop, _UI_transitions[i].targetVal)
+			if _UI_transitions[i].callback > "" then App_callFunction(_UI_transitions[i].callback, str$(_UI_transitions[i].elementIndex))
+			_UI_transitions[i].elementIndex = -1
+			inc GCcount
+			GCindex = i
+		endif
+	next i
+	//garbage collect
+	if GCcount > 0
+		if GCcount > 1
+			for c = 1 to GCcount
+				for i = 0 to array count(_UI_transitions[])
+					if _UI_transitions[i].elementIndex = -1
+						array delete element _UI_transitions[], i
+						exit
+					endif
+				next i
+			next c
+		else
+			array delete element _UI_transitions[], GCindex
+		endif
+	endif
+endfunction
+
+
+function _UI_elements_resetResolvedStyleProps()
+
+	//TODO: optimize resolve process - only reset if style props changed, class changed, parent inheritable style prop changed, parent resolved flow changed, element or ancester is active drag
+	//	most elements always resolve to the same final values. no need to keep resolving if no change.
+
+	for i = 1 to array count(_UI_elements[])
+		_UI_elements[i].resolvedStyle.positionAlignH = UI.styleProp.default.positionAlignH
+		_UI_elements[i].resolvedStyle.positionAlignV = UI.styleProp.default.positionAlignV
+		_UI_elements[i].resolvedStyle.position = UI.styleProp.default.position
+		_UI_elements[i].resolvedStyle.top = UI.styleProp.default.top
+		_UI_elements[i].resolvedStyle.left = UI.styleProp.default.left
+		_UI_elements[i].resolvedStyle.paddingTop = UI.styleProp.default.paddingTop
+		_UI_elements[i].resolvedStyle.paddingBottom = UI.styleProp.default.paddingBottom
+		_UI_elements[i].resolvedStyle.paddingLeft = UI.styleProp.default.paddingLeft
+		_UI_elements[i].resolvedStyle.paddingRight = UI.styleProp.default.paddingRight
+		_UI_elements[i].resolvedStyle.width = UI.styleProp.default.width
+		_UI_elements[i].resolvedStyle.height = UI.styleProp.default.height
+		_UI_elements[i].resolvedStyle.borderTop.size = UI.styleProp.default.borderTop.size
+		_UI_elements[i].resolvedStyle.borderTop.color = UI.styleProp.default.borderTop.color
+		_UI_elements[i].resolvedStyle.borderBottom.size = UI.styleProp.default.borderBottom.size
+		_UI_elements[i].resolvedStyle.borderBottom.color = UI.styleProp.default.borderBottom.color
+		_UI_elements[i].resolvedStyle.borderRight.size = UI.styleProp.default.borderRight.size
+		_UI_elements[i].resolvedStyle.borderRight.color = UI.styleProp.default.borderRight.color
+		_UI_elements[i].resolvedStyle.borderLeft.size = UI.styleProp.default.borderLeft.size
+		_UI_elements[i].resolvedStyle.borderLeft.color = UI.styleProp.default.borderLeft.color
+		//_UI_elements[i].resolvedStyle. = //UI.styleProp.default.borderImage as UI_type_imageData
+		_UI_elements[i].resolvedStyle.marginTop = UI.styleProp.default.marginTop
+		_UI_elements[i].resolvedStyle.marginBottom = UI.styleProp.default.marginBottom
+		_UI_elements[i].resolvedStyle.marginRight = UI.styleProp.default.marginRight
+		_UI_elements[i].resolvedStyle.marginLeft = UI.styleProp.default.marginLeft
+		_UI_elements[i].resolvedStyle.minWidth = UI.styleProp.default.minWidth
+		_UI_elements[i].resolvedStyle.maxWidth = UI.styleProp.default.maxWidth
+		_UI_elements[i].resolvedStyle.minHeight = UI.styleProp.default.minHeight
+		_UI_elements[i].resolvedStyle.maxHeight = UI.styleProp.default.maxHeight
+		_UI_elements[i].resolvedStyle.backgroundColor = UI.styleProp.default.backgroundColor
+		_UI_elements[i].resolvedStyle.backgroundOpacity = UI.styleProp.default.backgroundOpacity
+		_UI_elements[i].resolvedStyle.backgroundImage = UI.styleProp.default.backgroundImage
+		_UI_elements[i].resolvedStyle.backgroundRepeat = UI.styleProp.default.backgroundRepeat
+		_UI_elements[i].resolvedStyle.backgroundAlignH = UI.styleProp.default.backgroundAlignH
+		_UI_elements[i].resolvedStyle.backgroundAlignV = UI.styleProp.default.backgroundAlignV
+		_UI_elements[i].resolvedStyle.display = UI.styleProp.default.display
+		_UI_elements[i].resolvedStyle.opacity = UI.styleProp.default.opacity
+		_UI_elements[i].resolvedStyle.zIndex = UI.styleProp.default.zIndex
+		_UI_elements[i].resolvedStyle.cursor = UI.styleProp.default.cursor
+		_UI_elements[i].resolvedStyle.color = UI.styleProp.default.color
+		_UI_elements[i].resolvedStyle.font = UI.styleProp.default.font
+		_UI_elements[i].resolvedStyle.fontSize = UI.styleProp.default.fontSize
+		_UI_elements[i].resolvedStyle.d3dFont = UI.styleProp.default.d3dFont
+		_UI_elements[i].resolvedStyle.textDecoration = UI.styleProp.default.textDecoration
+		_UI_elements[i].resolvedStyle.textTransform = UI.styleProp.default.textTransform
+		_UI_elements[i].resolvedStyle.textIndent = UI.styleProp.default.textIndent
+		_UI_elements[i].resolvedStyle.textAlignH = UI.styleProp.default.textAlignH
+		_UI_elements[i].resolvedStyle.textAlignV = UI.styleProp.default.textAlignV
+
+		_UI_elements[i].resolvedStyle._isResolved = FALSE
+	next i
+	`root element is always = app window dimensions, this provides context for all child %
+	_UI_elements[0].resolvedStyle.width = str$(App.config.screenWidth)
+	_UI_elements[0].resolvedStyle.height = str$(App.config.screenHeight)
+	_UI_elements[0].resolvedStyle._finalX = 0
+	_UI_elements[0].resolvedStyle._finalY = 0
+	_UI_elements[0].resolvedStyle._finalW = App.config.screenWidth
+	_UI_elements[0].resolvedStyle._finalH = App.config.screenHeight
+	_UI_elements[0].resolvedStyle._innerX = 0
+	_UI_elements[0].resolvedStyle._innerY = 0
+	_UI_elements[0].resolvedStyle._innerW = App.config.screenWidth
+	_UI_elements[0].resolvedStyle._innerH = App.config.screenHeight
+	_UI_elements[0].resolvedStyle._isResolved = TRUE
+endfunction
+
+
+function _UI_elements_applyInheritedStyleProps(rElementIndex as integer, rParentIndex as integer)
+	`set resolved value = parent resolved value for inheritable props
+	_UI_elements[rElementIndex].resolvedStyle.display = _UI_elements[rParentIndex].resolvedStyle.display
+	_UI_elements[rElementIndex].resolvedStyle.opacity = _UI_elements[rParentIndex].resolvedStyle.opacity
+	_UI_elements[rElementIndex].resolvedStyle.zIndex = _UI_elements[rParentIndex].resolvedStyle.zIndex
+	_UI_elements[rElementIndex].resolvedStyle.cursor = _UI_elements[rParentIndex].resolvedStyle.cursor
+	_UI_elements[rElementIndex].resolvedStyle.color = _UI_elements[rParentIndex].resolvedStyle.color
+	_UI_elements[rElementIndex].resolvedStyle.font = _UI_elements[rParentIndex].resolvedStyle.font
+	_UI_elements[rElementIndex].resolvedStyle.fontSize = _UI_elements[rParentIndex].resolvedStyle.fontSize
+	_UI_elements[rElementIndex].resolvedStyle.d3dFont = _UI_elements[rParentIndex].resolvedStyle.d3dFont
+	_UI_elements[rElementIndex].resolvedStyle.textDecoration = _UI_elements[rParentIndex].resolvedStyle.textDecoration
+	_UI_elements[rElementIndex].resolvedStyle.textTransform = _UI_elements[rParentIndex].resolvedStyle.textTransform
+	_UI_elements[rElementIndex].resolvedStyle.textIndent = _UI_elements[rParentIndex].resolvedStyle.textIndent
+	_UI_elements[rElementIndex].resolvedStyle.textAlignH = _UI_elements[rParentIndex].resolvedStyle.textAlignH
+	_UI_elements[rElementIndex].resolvedStyle.textAlignV = _UI_elements[rParentIndex].resolvedStyle.textAlignV
+endfunction
+
+
+function _UI_elements_applyClassStyleProps(rElementIndex as integer, rClassIndex as integer)
+
+	<?System_log("ui.dbx", 2, "ui-update", "Apply enabled style props for class " + str$(rClassIndex) + " on element " + str$(rElementIndex) + " enabled: " + str$(_UI_styleClasses[rClassIndex].style._visualPropertyEnabled))?>
+
+	//flow properties:
+	if UI.styleProp.id.positionAlignH && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.positionAlignH = _UI_styleClasses[rClassIndex].style.positionAlignH
+	endif
+	if UI.styleProp.id.positionAlignV && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.positionAlignV = _UI_styleClasses[rClassIndex].style.positionAlignV
+	endif
+	if UI.styleProp.id.position && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.position = _UI_styleClasses[rClassIndex].style.position
+	endif
+	if UI.styleProp.id.top && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.top = _UI_styleClasses[rClassIndex].style.top
+	endif
+	if UI.styleProp.id.left && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.left = _UI_styleClasses[rClassIndex].style.left
+	endif
+	if UI.styleProp.id.paddingTop && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.paddingTop = _UI_styleClasses[rClassIndex].style.paddingTop
+	endif
+	if UI.styleProp.id.paddingBottom && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.paddingBottom = _UI_styleClasses[rClassIndex].style.paddingBottom
+	endif
+	if UI.styleProp.id.paddingLeft && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.paddingLeft = _UI_styleClasses[rClassIndex].style.paddingLeft
+	endif
+	if UI.styleProp.id.paddingRight && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.paddingRight = _UI_styleClasses[rClassIndex].style.paddingRight
+	endif
+	if UI.styleProp.id.width && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.width = _UI_styleClasses[rClassIndex].style.width
+	endif
+	if UI.styleProp.id.height && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.height = _UI_styleClasses[rClassIndex].style.height
+	endif
+	if UI.styleProp.id.borderTop && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.borderTop.size = _UI_styleClasses[rClassIndex].style.borderTop.size
+		_UI_elements[rElementIndex].resolvedStyle.borderTop.color = _UI_styleClasses[rClassIndex].style.borderTop.color
+	endif
+	if UI.styleProp.id.borderBottom && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.borderBottom.size = _UI_styleClasses[rClassIndex].style.borderBottom.size
+		_UI_elements[rElementIndex].resolvedStyle.borderBottom.color = _UI_styleClasses[rClassIndex].style.borderBottom.color
+	endif
+	if UI.styleProp.id.borderLeft && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.borderLeft.size = _UI_styleClasses[rClassIndex].style.borderLeft.size
+		_UI_elements[rElementIndex].resolvedStyle.borderLeft.color = _UI_styleClasses[rClassIndex].style.borderLeft.color
+	endif
+	if UI.styleProp.id.borderRight && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.borderRight.size = _UI_styleClasses[rClassIndex].style.borderRight.size
+		_UI_elements[rElementIndex].resolvedStyle.borderRight.color = _UI_styleClasses[rClassIndex].style.borderRight.color
+	endif
+	/*
+	if UI.styleProp.id.borderImage && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+
+	endif
+	*/
+	if UI.styleProp.id.marginTop && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.marginTop = _UI_styleClasses[rClassIndex].style.marginTop
+	endif
+	if UI.styleProp.id.marginBottom && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.marginBottom = _UI_styleClasses[rClassIndex].style.marginBottom
+	endif
+	if UI.styleProp.id.marginLeft && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.marginLeft = _UI_styleClasses[rClassIndex].style.marginLeft
+	endif
+	if UI.styleProp.id.marginRight && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.marginRight = _UI_styleClasses[rClassIndex].style.marginRight
+	endif
+	if UI.styleProp.id.minWidth && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.minWidth = _UI_styleClasses[rClassIndex].style.minWidth
+	endif
+	if UI.styleProp.id.maxWidth && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.maxWidth = _UI_styleClasses[rClassIndex].style.maxWidth
+	endif
+	if UI.styleProp.id.minHeight && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.minHeight = _UI_styleClasses[rClassIndex].style.minHeight
+	endif
+	if UI.styleProp.id.maxHeight && _UI_styleClasses[rClassIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.maxHeight = _UI_styleClasses[rClassIndex].style.maxHeight
+	endif
+
+	//visual properties:
+	if UI.styleProp.id.backgroundColor && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundColor = _UI_styleClasses[rClassIndex].style.backgroundColor
+	endif
+	if UI.styleProp.id.backgroundOpacity && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundOpacity = _UI_styleClasses[rClassIndex].style.backgroundOpacity
+	endif
+	if UI.styleProp.id.backgroundImage && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundImage = _UI_styleClasses[rClassIndex].style.backgroundImage
+	endif
+	if UI.styleProp.id.backgroundRepeat && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundRepeat = _UI_styleClasses[rClassIndex].style.backgroundRepeat
+	endif
+	if UI.styleProp.id.backgroundAlignH && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundAlignH = _UI_styleClasses[rClassIndex].style.backgroundAlignH
+	endif
+	if UI.styleProp.id.backgroundAlignV && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundAlignV = _UI_styleClasses[rClassIndex].style.backgroundAlignV
+	endif
+	if UI.styleProp.id.display && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.display = _UI_styleClasses[rClassIndex].style.display
+	endif
+	if UI.styleProp.id.opacity && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.opacity = _UI_styleClasses[rClassIndex].style.opacity
+	endif
+	if UI.styleProp.id.zIndex && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.zIndex = _UI_styleClasses[rClassIndex].style.zIndex
+	endif
+	if UI.styleProp.id.cursor && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.cursor = _UI_styleClasses[rClassIndex].style.cursor
+	endif
+	if UI.styleProp.id.color && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.color = _UI_styleClasses[rClassIndex].style.color
+	endif
+	if UI.styleProp.id.font && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.font = _UI_styleClasses[rClassIndex].style.font
+	endif
+	if UI.styleProp.id.fontSize && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.fontSize = _UI_styleClasses[rClassIndex].style.fontSize
+	endif
+	if UI.styleProp.id.d3dFont && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.d3dFont = _UI_styleClasses[rClassIndex].style.d3dFont
+	endif
+	if UI.styleProp.id.textDecoration && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textDecoration = _UI_styleClasses[rClassIndex].style.textDecoration
+	endif
+	if UI.styleProp.id.textTransform && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textTransform = _UI_styleClasses[rClassIndex].style.textTransform
+	endif
+	if UI.styleProp.id.textIndent && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textIndent = _UI_styleClasses[rClassIndex].style.textIndent
+	endif
+	if UI.styleProp.id.textAlignH && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textAlignH = _UI_styleClasses[rClassIndex].style.textAlignH
+	endif
+	if UI.styleProp.id.textAlignV && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textAlignV = _UI_styleClasses[rClassIndex].style.textAlignV
+	endif
+endfunction
+
+
+function _UI_elements_applyElementStyleProps(rElementIndex as integer)
+
+	<?System_log("ui.dbx", 2, "ui-update", "Apply enabled style props on element " + str$(rElementIndex) + " enabled: " + str$(_UI_elements[rElementIndex].style._flowPropertyEnabled))?>
+
+	//flow properties:
+	if UI.styleProp.id.positionAlignH && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.positionAlignH = _UI_elements[rElementIndex].style.positionAlignH
+	endif
+	if UI.styleProp.id.positionAlignV && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.positionAlignV = _UI_elements[rElementIndex].style.positionAlignV
+	endif
+	if UI.styleProp.id.position && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.position = _UI_elements[rElementIndex].style.position
+	endif
+	if UI.styleProp.id.top && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.top = _UI_elements[rElementIndex].style.top
+	endif
+	if UI.styleProp.id.left && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.left = _UI_elements[rElementIndex].style.left
+	endif
+	if UI.styleProp.id.paddingTop && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.paddingTop = _UI_elements[rElementIndex].style.paddingTop
+	endif
+	if UI.styleProp.id.paddingBottom && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.paddingBottom = _UI_elements[rElementIndex].style.paddingBottom
+	endif
+	if UI.styleProp.id.paddingLeft && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.paddingLeft = _UI_elements[rElementIndex].style.paddingLeft
+	endif
+	if UI.styleProp.id.paddingRight && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.paddingRight = _UI_elements[rElementIndex].style.paddingRight
+	endif
+	if UI.styleProp.id.width && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.width = _UI_elements[rElementIndex].style.width
+	endif
+	if UI.styleProp.id.height && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.height = _UI_elements[rElementIndex].style.height
+	endif
+	if UI.styleProp.id.borderTop && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.borderTop.size = _UI_elements[rElementIndex].style.borderTop.size
+		_UI_elements[rElementIndex].resolvedStyle.borderTop.color = _UI_elements[rElementIndex].style.borderTop.color
+	endif
+	if UI.styleProp.id.borderBottom && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.borderBottom.size = _UI_elements[rElementIndex].style.borderBottom.size
+		_UI_elements[rElementIndex].resolvedStyle.borderBottom.color = _UI_elements[rElementIndex].style.borderBottom.color
+	endif
+	if UI.styleProp.id.borderLeft && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.borderLeft.size = _UI_elements[rElementIndex].style.borderLeft.size
+		_UI_elements[rElementIndex].resolvedStyle.borderLeft.color = _UI_elements[rElementIndex].style.borderLeft.color
+	endif
+	if UI.styleProp.id.borderRight && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.borderRight.size = _UI_elements[rElementIndex].style.borderRight.size
+		_UI_elements[rElementIndex].resolvedStyle.borderRight.color = _UI_elements[rElementIndex].style.borderRight.color
+	endif
+	/*
+	if UI.styleProp.id.borderImage && _UI_elements[rElementIndex].style._flowPropertyEnabled
+
+	endif
+	*/
+	if UI.styleProp.id.marginTop && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.marginTop = _UI_elements[rElementIndex].style.marginTop
+	endif
+	if UI.styleProp.id.marginBottom && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.marginBottom = _UI_elements[rElementIndex].style.marginBottom
+	endif
+	if UI.styleProp.id.marginLeft && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.marginLeft = _UI_elements[rElementIndex].style.marginLeft
+	endif
+	if UI.styleProp.id.marginRight && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.marginRight = _UI_elements[rElementIndex].style.marginRight
+	endif
+	if UI.styleProp.id.minWidth && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.minWidth = _UI_elements[rElementIndex].style.minWidth
+	endif
+	if UI.styleProp.id.maxWidth && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.maxWidth = _UI_elements[rElementIndex].style.maxWidth
+	endif
+	if UI.styleProp.id.minHeight && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.minHeight = _UI_elements[rElementIndex].style.minHeight
+	endif
+	if UI.styleProp.id.maxHeight && _UI_elements[rElementIndex].style._flowPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.maxHeight = _UI_elements[rElementIndex].style.maxHeight
+	endif
+
+	//visual properties:
+	if UI.styleProp.id.backgroundColor && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundColor = _UI_elements[rElementIndex].style.backgroundColor
+	endif
+	if UI.styleProp.id.backgroundOpacity && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundOpacity = _UI_elements[rElementIndex].style.backgroundOpacity
+	endif
+	if UI.styleProp.id.backgroundImage && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundImage = _UI_elements[rElementIndex].style.backgroundImage
+	endif
+	if UI.styleProp.id.backgroundRepeat && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundRepeat = _UI_elements[rElementIndex].style.backgroundRepeat
+	endif
+	if UI.styleProp.id.backgroundAlignH && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundAlignH = _UI_elements[rElementIndex].style.backgroundAlignH
+	endif
+	if UI.styleProp.id.backgroundAlignV && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.backgroundAlignV = _UI_elements[rElementIndex].style.backgroundAlignV
+	endif
+	if UI.styleProp.id.display && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.display = _UI_elements[rElementIndex].style.display
+	endif
+	if UI.styleProp.id.opacity && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.opacity = _UI_elements[rElementIndex].style.opacity
+	endif
+	if UI.styleProp.id.zIndex && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.zIndex = _UI_elements[rElementIndex].style.zIndex
+	endif
+	if UI.styleProp.id.cursor && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.cursor = _UI_elements[rElementIndex].style.cursor
+	endif
+	if UI.styleProp.id.color && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.color = _UI_elements[rElementIndex].style.color
+	endif
+	if UI.styleProp.id.font && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.font = _UI_elements[rElementIndex].style.font
+	endif
+	if UI.styleProp.id.fontSize && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.fontSize = _UI_elements[rElementIndex].style.fontSize
+	endif
+	if UI.styleProp.id.d3dFont && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.d3dFont = _UI_elements[rElementIndex].style.d3dFont
+	endif
+	if UI.styleProp.id.textDecoration && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textDecoration = _UI_elements[rElementIndex].style.textDecoration
+	endif
+	if UI.styleProp.id.textTransform && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textTransform = _UI_elements[rElementIndex].style.textTransform
+	endif
+	if UI.styleProp.id.textIndent && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textIndent = _UI_elements[rElementIndex].style.textIndent
+	endif
+	if UI.styleProp.id.textAlignH && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textAlignH = _UI_elements[rElementIndex].style.textAlignH
+	endif
+	if UI.styleProp.id.textAlignV && _UI_elements[rElementIndex].style._visualPropertyEnabled
+		_UI_elements[rElementIndex].resolvedStyle.textAlignV = _UI_elements[rElementIndex].style.textAlignV
+	endif
+endfunction
+
+
+function _UI_elements_resolveFlowValues(rElementIndex as integer, rParentIndex as integer)
+
+	<?System_log("ui.dbx", 1, "ui-update", "Resolve flow values for element: " + str$(rElementIndex) + " " + _UI_elements[rElementIndex].id)?>
+
+	`if position:absolute -> use root as parent for calculations
+	if _UI_elements[rElementIndex].resolvedStyle.position = "absolute"
+		rParentIndex = 0
+	endif
+
+	`get parent values
+	parentW = intval(_UI_elements[rParentIndex].resolvedStyle.width)
+	parentH = intval(_UI_elements[rParentIndex].resolvedStyle.height)
+
+	parentContentW = _UI_elements[rParentIndex].resolvedStyle._innerW
+	parentContentH = _UI_elements[rParentIndex].resolvedStyle._innerH
+
+	parentX = _UI_elements[rParentIndex].resolvedStyle._finalX
+	parentY = _UI_elements[rParentIndex].resolvedStyle._finalY
+
+	parentContentX = _UI_elements[rParentIndex].resolvedStyle._innerX
+	parentContentY = _UI_elements[rParentIndex].resolvedStyle._innerY
+
+	parentVisible$ = _UI_elements[rParentIndex].resolvedStyle.display
+
+	`get element values
+	`width
+	<?System_log("ui.dbx", 1, "ui-update", "get width: " + _UI_elements[rElementIndex].resolvedStyle.width + " :: " + _UI_elements[rElementIndex].style.width)?>
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.width)
+	resolvedW = UI.parsedSizeData.value
+	resolvedContentW = resolvedW
+	if UI.parsedSizeData.isPercent
+		`remove parent padding from child final width if child width is % of parent
+		//NOTE: when the parent was resolved, it's padding gets added to its width making the resolved width larger than its content width.
+		//	child % needs to look at the parents final content width.
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedW = parentContentW * tFactor#
+		resolvedContentW = resolvedW
+	endif
+
+	`height
+	<?System_log("ui.dbx", 1, "ui-update", "get height: " + _UI_elements[rElementIndex].resolvedStyle.height + " :: " + _UI_elements[rElementIndex].style.height)?>
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.height)
+	resolvedH = UI.parsedSizeData.value
+	resolvedContentH = resolvedH
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedH = parentContentH * tFactor#
+		resolvedContentH = resolvedH
+	endif
+
+	<?System_log("ui.dbx", 1, "ui-update", "Resolved dimensions " + str$(resolvedW) + "'" + str$(resolvedH) + " : " + str$(resolvedContentW) + "'" + str$(resolvedContentH))?>
+	`TODO: handle overflow (visible, hidden, scroll)
+
+	`padding
+	//NOTE: padding will expand the final resolved width/height of an element, % is based on the elements parent content dimensions per css spec.
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.paddingTop)
+	resolvedPadT = UI.parsedSizeData.value
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedPadT = parentContentH * tFactor#
+		inc resolvedH, resolvedPadT
+	endif
+
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.paddingBottom)
+	resolvedPadB = UI.parsedSizeData.value
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedPadB = parentContentH * tFactor#
+		inc resolvedH, resolvedPadB
+	endif
+
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.paddingRight)
+	resolvedPadR = UI.parsedSizeData.value
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedPadR = parentContentW * tFactor#
+		inc resolvedW, resolvedPadR
+	endif
+
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.paddingLeft)
+	resolvedPadL = UI.parsedSizeData.value
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedPadL = parentContentW * tFactor#
+		inc resolvedW, resolvedPadL
+	endif
+
+	`margin
+	//NOTE: margin will push element away from parent content position based on elements position alignment.
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.marginTop)
+	resolvedMargT = UI.parsedSizeData.value
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedMargT = parentContentH * tFactor#
+	endif
+
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.marginBottom)
+	resolvedMargB = UI.parsedSizeData.value
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedMargB = parentContentH * tFactor#
+	endif
+
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.marginRight)
+	resolvedMargR = UI.parsedSizeData.value
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedMargR = parentContentW * tFactor#
+	endif
+
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.marginLeft)
+	resolvedMargL = UI.parsedSizeData.value
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedMargL = parentContentW * tFactor#
+	endif
+
+	`border-width
+	//NOTE: border can be specified only in px per css spec. % not allowed.
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.borderTop.size)
+	resolvedBorderT = UI.parsedSizeData.value
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.borderBottom.size)
+	resolvedBorderB = UI.parsedSizeData.value
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.borderRight.size)
+	resolvedBorderR = UI.parsedSizeData.value
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.borderLeft.size)
+	resolvedBorderL = UI.parsedSizeData.value
+
+	`text-indent
+	_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.textIndent)
+	resolvedTextIndent = UI.parsedSizeData.value
+	if UI.parsedSizeData.isPercent
+		tFactor# = UI.parsedSizeData.value * 0.01
+		resolvedTextIndent = parentContentW * tFactor#
+	endif
+
+	if UI.elementDrag.isActive and UI.elementDrag.dragElementIndex = rElementIndex
+		resolvedTop = 0
+		resolvedLeft = 0
+		resolvedX = System.mouseInput.posX - UI.elementDrag.offsetX
+		resolvedY = System.mouseInput.posY - UI.elementDrag.offsetY
+	else
+		`position offset
+		_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.top)
+		resolvedTop = UI.parsedSizeData.value
+		if UI.parsedSizeData.isPercent
+			tFactor# = UI.parsedSizeData.value * 0.01
+			resolvedTop = parentContentH * tFactor#
+		endif
+
+		_UI_parseSizeData(_UI_elements[rElementIndex].resolvedStyle.left)
+		resolvedLeft = UI.parsedSizeData.value
+		if UI.parsedSizeData.isPercent
+			tFactor# = UI.parsedSizeData.value * 0.01
+			resolvedLeft = parentContentW * tFactor#
+		endif
+
+		`final coordinates
+		<?System_log("ui.dbx", 1, "ui-update", "Resolve position with alignH=" + _UI_elements[rElementIndex].resolvedStyle.positionAlignH)?>
+		select _UI_elements[rElementIndex].resolvedStyle.positionAlignH
+			case "left":
+				resolvedX = parentContentX + resolvedMargL + resolvedBorderL + resolvedLeft
+			endcase
+			case "right":
+				resolvedX = (parentContentX + parentContentW) - (resolvedMargR + resolvedW + resolvedBorderR) + resolvedLeft
+			endcase
+			case "center":
+				resolvedX = (parentContentX + (parentContentW * 0.5)) - (resolvedMargR + (resolvedW * 0.5) + resolvedBorderR) + resolvedLeft
+			endcase
+		endselect
+		select _UI_elements[rElementIndex].resolvedStyle.positionAlignV
+			case "top":
+				resolvedY = parentContentY + resolvedMargT + resolvedBorderT + resolvedTop
+			endcase
+			case "bottom":
+				resolvedY = (parentContentY + parentContentH) - (resolvedMargB + resolvedH + resolvedBorderB) + resolvedTop
+			endcase
+			case "center":
+				resolvedY = (parentContentY + (parentContentH * 0.5)) - (resolvedMargB + (resolvedH * 0.5) + resolvedBorderB) + resolvedTop
+			endcase
+		endselect
+	endif
+
+	`apply to resolvedStyle
+	//TODO: this leaves off the + "px" ending and leaves us with just a pixel integer
+	//	-> this should be better as we wont need to re-parse them in the render update, we can just intval them.
+	_UI_elements[rElementIndex].resolvedStyle.width = str$(resolvedW)
+	_UI_elements[rElementIndex].resolvedStyle.height = str$(resolvedH)
+	_UI_elements[rElementIndex].resolvedStyle.paddingTop = str$(resolvedPadT)
+	_UI_elements[rElementIndex].resolvedStyle.paddingBottom = str$(resolvedPadB)
+	_UI_elements[rElementIndex].resolvedStyle.paddingRight = str$(resolvedPadR)
+	_UI_elements[rElementIndex].resolvedStyle.paddingLeft = str$(resolvedPadL)
+	_UI_elements[rElementIndex].resolvedStyle.marginTop = str$(resolvedMargT)
+	_UI_elements[rElementIndex].resolvedStyle.marginBottom = str$(resolvedMargB)
+	_UI_elements[rElementIndex].resolvedStyle.marginRight = str$(resolvedMargR)
+	_UI_elements[rElementIndex].resolvedStyle.marginLeft = str$(resolvedMargL)
+	_UI_elements[rElementIndex].resolvedStyle.borderTop.size = str$(resolvedBorderT)
+	_UI_elements[rElementIndex].resolvedStyle.borderBottom.size = str$(resolvedBorderB)
+	_UI_elements[rElementIndex].resolvedStyle.borderRight.size = str$(resolvedBorderR)
+	_UI_elements[rElementIndex].resolvedStyle.borderLeft.size = str$(resolvedBorderL)
+	_UI_elements[rElementIndex].resolvedStyle.textIndent = str$(resolvedTextIndent)
+	_UI_elements[rElementIndex].resolvedStyle.top = str$(resolvedTop)
+	_UI_elements[rElementIndex].resolvedStyle.left = str$(resolvedLeft)
+	_UI_elements[rElementIndex].resolvedStyle._finalX = resolvedX
+	_UI_elements[rElementIndex].resolvedStyle._finalY = resolvedY
+	_UI_elements[rElementIndex].resolvedStyle._finalW = resolvedW
+	_UI_elements[rElementIndex].resolvedStyle._finalH = resolvedH
+	_UI_elements[rElementIndex].resolvedStyle._innerX = resolvedX + resolvedPadL
+	_UI_elements[rElementIndex].resolvedStyle._innerY = resolvedY + resolvedPadT
+	_UI_elements[rElementIndex].resolvedStyle._innerW = resolvedContentW
+	_UI_elements[rElementIndex].resolvedStyle._innerH = resolvedContentH
+	_UI_elements[rElementIndex].resolvedStyle._isResolved = TRUE
+
+	//enforce hide if parent is hidden
+	if parentVisible$ = "hidden"
+		_UI_elements[rElementIndex].resolvedStyle.display = "hidden"
+	endif
+
+	<?System_log("ui.dbx", 2, "ui-update", "Resolved position " + str$(resolvedX) + "." + str$(resolvedY) + " : " + str$(resolvedX + resolvedPadL) + "." + str$(resolvedY + resolvedPadT))?>
+
+endfunction
+
+
+function _UI_addClass(rClass as CLASS_StyleClassUI)
+	res = -1
+	array insert at bottom _UI_styleClasses[]
+	_UI_styleClasses[] = rClass
+	res = array count(_UI_styleClasses[])
+endfunction res
+
+
+function _UI_getStyleClassByName(rName as string)
+	res = -1
+	for i = 0 to array count(_UI_styleClasses[])
+		if _UI_styleClasses[i].className = rName
+			res = i
+			exitfunction res
+		endif
+	next i
+endfunction res
+
+
+
+`====================================================================================================================================================
+
+
+
+function UI_element_setStyleClass(rElementIndex as integer, rStyleClass as string)
+	for i = 0 to array count(_UI_styleClasses[])
+		if _UI_styleClasses[i].className = rStyleClass
+			_UI_elements[rElementIndex].styleClassIndex = i
+			_UI_elements[rElementIndex].styleClass = rStyleClass
+			exitfunction
+		endif
+	next i
+endfunction
+
+
+function UI_element_hide(rElementIndex as string)
+	UI_element_setStyleProp(intval(rElementIndex), "display", "hidden")
+endfunction
+
+
+function UI_element_setStyleProp(rElementIndex as integer, rProp as string, rValue as string)
+
+	<?System_log("ui.dbx", 1, "ui", "setting ui prop: " + rProp + " to " + rValue + " for element: " + str$(rElementIndex))?>
+
+	`resolve color values
+	if instr(rProp, "color") <> 0
+		valFirstChar$ = fast left$(rValue, 1)
+		valLen = fast len(rValue)
+		if valFirstChar$ = "#"
+			if valLen = 4
+				`process short form hex #000
+				valR$ = mid$(rValue, 2, 1)
+				valG$ = mid$(rValue, 3, 1)
+				valB$ = mid$(rValue, 4, 1)
+				rValue = "0xff" + valR$ + valR$ + valG$ + valG$ + valB$ + valB$
+				rValue = str$(hex to decimal(rValue))
+			else
+				if valLen = 7
+					`process rgb hex #000000
+					rValue = "0xff" + fast right$(rValue, valLen - 1)
+					rValue = str$(hex to decimal(rValue))
+				else
+					`process argb hex #ff000000
+					rValue = "0x" + fast right$(rValue, valLen - 1)
+					rValue = str$(hex to decimal(rValue))
+				endif
+			endif
+		else
+			if valFirstChar$ = "r"
+				`process rgb cast rgb(0,0,0)
+				rValue = fast left$(rValue, valLen - 1)
+				rValue = fast right$(rValue, valLen - 4)
+				valR = intval(first token$(rValue, ","))
+				valG = intval(next token$(","))
+				valB = intval(next token$(","))
+				rValue = str$(rgb(valR, valG, valB))
+			endif
+		endif
+	endif
+
+	select rProp
+
+		//flow properties:
+
+		case "position-alignH":
+			<?System_log("ui.dbx", 1, "ui", "Set style prop: position-alignH=" + rValue + " for element " + str$(rElementIndex) + " alignH id = " + str$(UI.styleProp.id.positionAlignH))?>
+			_UI_elements[rElementIndex].style.positionAlignH = rValue
+			<?System_log("ui.dbx", 1, "ui", "flow enabled pre: " + str$(_UI_elements[rElementIndex].style._flowPropertyEnabled))?>
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.positionAlignH
+			<?System_log("ui.dbx", 1, "ui", "flow enabled post: " + str$(_UI_elements[rElementIndex].style._flowPropertyEnabled))?>
+		endcase
+		case "position-alignV":
+			_UI_elements[rElementIndex].style.positionAlignV = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.positionAlignV
+		endcase
+		case "position":
+			_UI_elements[rElementIndex].style.position = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.position
+		endcase
+		case "top":
+			_UI_elements[rElementIndex].style.top = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.top
+		endcase
+		case "left":
+			_UI_elements[rElementIndex].style.left = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.left
+		endcase
+		case "padding":
+			_UI_elements[rElementIndex].style.paddingTop = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingTop
+			_UI_elements[rElementIndex].style.paddingBottom = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingBottom
+			_UI_elements[rElementIndex].style.paddingLeft = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingLeft
+			_UI_elements[rElementIndex].style.paddingRight = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingRight
+		endcase
+		case "padding-top":
+			_UI_elements[rElementIndex].style.paddingTop = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingTop
+		endcase
+		case "padding-bottom":
+			_UI_elements[rElementIndex].style.paddingBottom = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingBottom
+		endcase
+		case "padding-left":
+			_UI_elements[rElementIndex].style.paddingLeft = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingLeft
+		endcase
+		case "padding-right":
+			_UI_elements[rElementIndex].style.paddingRight = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingRight
+		endcase
+		case "width":
+			<?System_log("ui.dbx", 1, "ui", "Set style prop: width=" + rValue + " for element " + str$(rElementIndex) + " width id = " + str$(UI.styleProp.id.width))?>
+			_UI_elements[rElementIndex].style.width = rValue
+			<?System_log("ui.dbx", 1, "ui", "flow enabled pre: " + str$(_UI_elements[rElementIndex].style._flowPropertyEnabled))?>
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.width
+			<?System_log("ui.dbx", 1, "ui", "flow enabled post: " + str$(_UI_elements[rElementIndex].style._flowPropertyEnabled))?>
+		endcase
+		case "height":
+			_UI_elements[rElementIndex].style.height = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.height
+		endcase
+		case "border-width":
+			_UI_elements[rElementIndex].style.borderTop.size = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderTop
+			_UI_elements[rElementIndex].style.borderBottom.size = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderBottom
+			_UI_elements[rElementIndex].style.borderLeft.size = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderLeft
+			_UI_elements[rElementIndex].style.borderRight.size = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderRight
+		endcase
+		case "border-top-width":
+			_UI_elements[rElementIndex].style.borderTop.size = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderTop
+		endcase
+		case "border-bottom-width":
+			_UI_elements[rElementIndex].style.borderBottom.size = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderBottom
+		endcase
+		case "border-left-width":
+			_UI_elements[rElementIndex].style.borderLeft.size = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderLeft
+		endcase
+		case "border-right-width":
+			_UI_elements[rElementIndex].style.borderRight.size = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderRight
+		endcase
+		case "border-color":
+			_UI_elements[rElementIndex].style.borderTop.color = intval(rValue)
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderTop
+			_UI_elements[rElementIndex].style.borderBottom.color = intval(rValue)
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderBottom
+			_UI_elements[rElementIndex].style.borderLeft.color = intval(rValue)
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderLeft
+			_UI_elements[rElementIndex].style.borderRight.color = intval(rValue)
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderRight
+		endcase
+		case "border-top-color":
+			_UI_elements[rElementIndex].style.borderTop.color = intval(rValue)
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderTop
+		endcase
+		case "border-bottom-color":
+			_UI_elements[rElementIndex].style.borderBottom.color = intval(rValue)
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderBottom
+		endcase
+		case "border-left-color":
+			_UI_elements[rElementIndex].style.borderLeft.color = intval(rValue)
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderLeft
+		endcase
+		case "border-right-color":
+			_UI_elements[rElementIndex].style.borderRight.color = intval(rValue)
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.borderRight
+		endcase
+		//TODO: border image
+		case "margin":
+			_UI_elements[rElementIndex].style.marginTop = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.marginTop
+			_UI_elements[rElementIndex].style.marginBottom = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.marginBottom
+			_UI_elements[rElementIndex].style.marginLeft = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.marginLeft
+			_UI_elements[rElementIndex].style.marginRight = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.marginRight
+		endcase
+		case "margin-top":
+			_UI_elements[rElementIndex].style.marginTop = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.marginTop
+		endcase
+		case "margin-bottom":
+			_UI_elements[rElementIndex].style.marginBottom = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.marginBottom
+		endcase
+		case "margin-left":
+			_UI_elements[rElementIndex].style.marginLeft = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.marginLeft
+		endcase
+		case "margin-right":
+			_UI_elements[rElementIndex].style.marginRight = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.marginRight
+		endcase
+		case "min-width":
+			_UI_elements[rElementIndex].style.minWidth = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.minWidth
+		endcase
+		case "max-width":
+			_UI_elements[rElementIndex].style.maxWidth = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.maxWidth
+		endcase
+		case "min-height":
+			_UI_elements[rElementIndex].style.minHeight = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.minHeight
+		endcase
+		case "max-height":
+			_UI_elements[rElementIndex].style.maxHeight = rValue
+			_UI_elements[rElementIndex].style._flowPropertyEnabled = _UI_elements[rElementIndex].style._flowPropertyEnabled || UI.styleProp.id.maxHeight
+		endcase
+
+		//visual properties:
+		case "background-color":
+			_UI_elements[rElementIndex].style.backgroundColor = intval(rValue)
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundColor
+		endcase
+		case "background-opacity":
+			_UI_elements[rElementIndex].style.backgroundOpacity = intval(rValue)
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundOpacity
+		endcase
+		case "background-image":
+			_UI_elements[rElementIndex].style.backgroundImage = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundImage
+			if UI.styleProp.id.backgroundOpacity && _UI_elements[rElementIndex].style._visualPropertyEnabled = FALSE
+				_UI_elements[rElementIndex].style.backgroundOpacity = 100
+				_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundOpacity
+			endif
+		endcase
+		case "background-repeat":
+			_UI_elements[rElementIndex].style.backgroundRepeat = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundRepeat
+		endcase
+		case "background-alignH":
+			_UI_elements[rElementIndex].style.backgroundAlignH = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundAlignH
+		endcase
+		case "background-alignV":
+			_UI_elements[rElementIndex].style.backgroundAlignV = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundAlignV
+		endcase
+		case "display":
+			_UI_elements[rElementIndex].style.display = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.display
+		endcase
+		case "opacity":
+			_UI_elements[rElementIndex].style.opacity = intval(rValue)
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.opacity
+		endcase
+		case "z-index":
+			_UI_elements[rElementIndex].style.zIndex = intval(rValue)
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.zIndex
+		endcase
+		case "cursor":
+			_UI_elements[rElementIndex].style.cursor = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.cursor
+		endcase
+		case "color":
+			_UI_elements[rElementIndex].style.color = intval(rValue)
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.color
+		endcase
+		case "font":
+			_UI_elements[rElementIndex].style.font = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.font
+		endcase
+		case "font-size":
+			_UI_elements[rElementIndex].style.fontSize = intval(rValue)
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.fontSize
+		endcase
+		case "d3d-font":
+			_UI_elements[rElementIndex].style.d3dFont = intval(rValue)
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.d3dFont
+		endcase
+		case "text-decoration":
+			_UI_elements[rElementIndex].style.textDecoration = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.textDecoration
+		endcase
+		case "text-transform":
+			_UI_elements[rElementIndex].style.textTransform = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.textTransform
+		endcase
+		case "text-indent":
+			_UI_elements[rElementIndex].style.textIndent = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.textIndent
+		endcase
+		case "text-alignH":
+			_UI_elements[rElementIndex].style.textAlignH = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.textAlignH
+		endcase
+		case "text-alignV":
+			_UI_elements[rElementIndex].style.textAlignV = rValue
+			_UI_elements[rElementIndex].style._visualPropertyEnabled = _UI_elements[rElementIndex].style._visualPropertyEnabled || UI.styleProp.id.textAlignV
+		endcase
+	endselect
+endfunction
+
+
+`====================================================================================================================================================
+
+
+function UI_styleClass_setStyleProp(rClassIndex as integer, rProp as string, rValue as string)
+
+	`resolve color values
+	if instr(rProp, "color") <> 0
+		valFirstChar$ = fast left$(rValue, 1)
+		valLen = fast len(rValue)
+		if valFirstChar$ = "#"
+			if valLen = 4
+				`process short form hex #000
+				valR$ = mid$(rValue, 2, 1)
+				valG$ = mid$(rValue, 3, 1)
+				valB$ = mid$(rValue, 4, 1)
+				rValue = "0xff" + valR$ + valR$ + valG$ + valG$ + valB$ + valB$
+				rValue = str$(hex to decimal(rValue))
+			else
+				if valLen = 7
+					`process rgb hex #000000
+					rValue = "0xff" + fast right$(rValue, valLen - 1)
+					rValue = str$(hex to decimal(rValue))
+				else
+					`process argb hex #ff000000
+					rValue = "0x" + fast right$(rValue, valLen - 1)
+					rValue = str$(hex to decimal(rValue))
+				endif
+			endif
+		else
+			if valFirstChar$ = "r"
+				`process rgb cast rgb(0,0,0)
+				rValue = fast left$(rValue, valLen - 1)
+				rValue = fast right$(rValue, valLen - 4)
+				valR = intval(first token$(rValue, ","))
+				valG = intval(next token$(","))
+				valB = intval(next token$(","))
+				rValue = str$(rgb(valR, valG, valB))
+			endif
+		endif
+	endif
+
+	select rProp
+
+		//flow properties:
+
+		case "position-alignH":
+			_UI_styleClasses[rClassIndex].style.positionAlignH = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.positionAlignH
+		endcase
+		case "position-alignV":
+			_UI_styleClasses[rClassIndex].style.positionAlignV = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.positionAlignV
+		endcase
+		case "position":
+			_UI_styleClasses[rClassIndex].style.position = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.position
+		endcase
+		case "top":
+			_UI_styleClasses[rClassIndex].style.top = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.top
+		endcase
+		case "left":
+			_UI_styleClasses[rClassIndex].style.left = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.left
+		endcase
+		case "padding":
+			_UI_styleClasses[rClassIndex].style.paddingTop = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingTop
+			_UI_styleClasses[rClassIndex].style.paddingBottom = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingBottom
+			_UI_styleClasses[rClassIndex].style.paddingLeft = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingLeft
+			_UI_styleClasses[rClassIndex].style.paddingRight = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingRight
+		endcase
+		case "padding-top":
+			_UI_styleClasses[rClassIndex].style.paddingTop = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingTop
+		endcase
+		case "padding-bottom":
+			_UI_styleClasses[rClassIndex].style.paddingBottom = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingBottom
+		endcase
+		case "padding-left":
+			_UI_styleClasses[rClassIndex].style.paddingLeft = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingLeft
+		endcase
+		case "padding-right":
+			_UI_styleClasses[rClassIndex].style.paddingRight = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.paddingRight
+		endcase
+		case "width":
+			_UI_styleClasses[rClassIndex].style.width = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.width
+		endcase
+		case "height":
+			_UI_styleClasses[rClassIndex].style.height = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.height
+		endcase
+		case "border-width":
+			_UI_styleClasses[rClassIndex].style.borderTop.size = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderTop
+			_UI_styleClasses[rClassIndex].style.borderBottom.size = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderBottom
+			_UI_styleClasses[rClassIndex].style.borderLeft.size = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderLeft
+			_UI_styleClasses[rClassIndex].style.borderRight.size = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderRight
+		endcase
+		case "border-top-width":
+			_UI_styleClasses[rClassIndex].style.borderTop.size = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderTop
+		endcase
+		case "border-bottom-width":
+			_UI_styleClasses[rClassIndex].style.borderBottom.size = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderBottom
+		endcase
+		case "border-left-width":
+			_UI_styleClasses[rClassIndex].style.borderLeft.size = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderLeft
+		endcase
+		case "border-right-width":
+			_UI_styleClasses[rClassIndex].style.borderRight.size = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderRight
+		endcase
+		case "border-color":
+			_UI_styleClasses[rClassIndex].style.borderTop.color = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderTop
+			_UI_styleClasses[rClassIndex].style.borderBottom.color = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderBottom
+			_UI_styleClasses[rClassIndex].style.borderLeft.color = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderLeft
+			_UI_styleClasses[rClassIndex].style.borderRight.color = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderRight
+		endcase
+		case "border-top-color":
+			_UI_styleClasses[rClassIndex].style.borderTop.color = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderTop
+		endcase
+		case "border-bottom-color":
+			_UI_styleClasses[rClassIndex].style.borderBottom.color = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderBottom
+		endcase
+		case "border-left-color":
+			_UI_styleClasses[rClassIndex].style.borderLeft.color = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderLeft
+		endcase
+		case "border-right-color":
+			_UI_styleClasses[rClassIndex].style.borderRight.color = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.borderRight
+		endcase
+		//TODO: border image
+		case "margin":
+			_UI_styleClasses[rClassIndex].style.marginTop = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.marginTop
+			_UI_styleClasses[rClassIndex].style.marginBottom = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.marginBottom
+			_UI_styleClasses[rClassIndex].style.marginLeft = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.marginLeft
+			_UI_styleClasses[rClassIndex].style.marginRight = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.marginRight
+		endcase
+		case "margin-top":
+			_UI_styleClasses[rClassIndex].style.marginTop = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.marginTop
+		endcase
+		case "margin-bottom":
+			_UI_styleClasses[rClassIndex].style.marginBottom = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.marginBottom
+		endcase
+		case "margin-left":
+			_UI_styleClasses[rClassIndex].style.marginLeft = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.marginLeft
+		endcase
+		case "margin-right":
+			_UI_styleClasses[rClassIndex].style.marginRight = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.marginRight
+		endcase
+		case "min-width":
+			_UI_styleClasses[rClassIndex].style.minWidth = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.minWidth
+		endcase
+		case "max-width":
+			_UI_styleClasses[rClassIndex].style.maxWidth = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.maxWidth
+		endcase
+		case "min-height":
+			_UI_styleClasses[rClassIndex].style.minHeight = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.minHeight
+		endcase
+		case "max-height":
+			_UI_styleClasses[rClassIndex].style.maxHeight = rValue
+			_UI_styleClasses[rClassIndex].style._flowPropertyEnabled = _UI_styleClasses[rClassIndex].style._flowPropertyEnabled || UI.styleProp.id.maxHeight
+		endcase
+
+		//visual properties:
+		case "background-color":
+			_UI_styleClasses[rClassIndex].style.backgroundColor = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundColor
+		endcase
+		case "background-opacity":
+			_UI_styleClasses[rClassIndex].style.backgroundOpacity = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundOpacity
+		endcase
+		case "background-image":
+			_UI_styleClasses[rClassIndex].style.backgroundImage = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundImage
+			if UI.styleProp.id.backgroundOpacity && _UI_styleClasses[rClassIndex].style._visualPropertyEnabled = FALSE
+				_UI_styleClasses[rClassIndex].style.backgroundOpacity = 100
+				_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundOpacity
+			endif
+		endcase
+		case "background-repeat":
+			_UI_styleClasses[rClassIndex].style.backgroundRepeat = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundRepeat
+		endcase
+		case "background-alignH":
+			_UI_styleClasses[rClassIndex].style.backgroundAlignH = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundAlignH
+		endcase
+		case "background-alignV":
+			_UI_styleClasses[rClassIndex].style.backgroundAlignV = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.backgroundAlignV
+		endcase
+		case "display":
+			_UI_styleClasses[rClassIndex].style.display = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.display
+		endcase
+		case "opacity":
+			_UI_styleClasses[rClassIndex].style.opacity = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.opacity
+		endcase
+		case "z-index":
+			_UI_styleClasses[rClassIndex].style.zIndex = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.zIndex
+		endcase
+		case "cursor":
+			_UI_styleClasses[rClassIndex].style.cursor = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.cursor
+		endcase
+		case "color":
+			_UI_styleClasses[rClassIndex].style.color = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.color
+		endcase
+		case "font":
+			_UI_styleClasses[rClassIndex].style.font = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.font
+		endcase
+		case "font-size":
+			_UI_styleClasses[rClassIndex].style.fontSize = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.fontSize
+		endcase
+		case "d3d-font":
+			_UI_styleClasses[rClassIndex].style.d3dFont = intval(rValue)
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.d3dFont
+		endcase
+		case "text-decoration":
+			_UI_styleClasses[rClassIndex].style.textDecoration = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.textDecoration
+		endcase
+		case "text-transform":
+			_UI_styleClasses[rClassIndex].style.textTransform = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.textTransform
+		endcase
+		case "text-indent":
+			_UI_styleClasses[rClassIndex].style.textIndent = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.textIndent
+		endcase
+		case "text-alignH":
+			_UI_styleClasses[rClassIndex].style.textAlignH = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.textAlignH
+		endcase
+		case "text-alignV":
+			_UI_styleClasses[rClassIndex].style.textAlignV = rValue
+			_UI_styleClasses[rClassIndex].style._visualPropertyEnabled = _UI_styleClasses[rClassIndex].style._visualPropertyEnabled || UI.styleProp.id.textAlignV
+		endcase
+	endselect
+endfunction

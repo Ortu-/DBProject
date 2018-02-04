@@ -1,0 +1,152 @@
+rem Camera Functionality
+autocam on
+
+gosub _setupmatrix
+gosub _simplecamera
+gosub _freeflightcamera
+gosub _mouselookcamera
+gosub _modifycamera
+gosub _trackercamera
+gosub _followcamera
+gosub _usingvectors
+gosub _cameradata
+
+rem End of program
+autocam off
+end
+
+_setupmatrix:
+ make matrix 1,1000,1000,100,100
+ set matrix height 1,50,50,500
+ update matrix 1
+return
+
+_simplecamera:
+
+while mouseclick()<>1
+ set cursor 0,0 : print "SIMPLE CAMERA (EULER) (Left Mouse Button To Continue)"
+ print "USE ARROW KEYS TO MOVE / A+Z XRotate / S+X ZRotate"
+ print "SPACE/RETURN To Toggle Rotation Order"
+ if upkey()=1 then move camera 5.0
+ if downkey()=1 then move camera -5.0
+ if leftkey()=1 then y#=y#-1
+ if rightkey()=1 then y#=y#+1
+ if inkey$()="a" then x#=x#-1
+ if inkey$()="z" then x#=x#+1
+ if inkey$()="s" then z#=z#-1
+ if inkey$()="x" then z#=z#+1
+ if spacekey()=1 then set camera rotation zyx
+ if returnkey()=1 then set camera rotation xyz
+ xrotate camera x#
+ yrotate camera y#
+ zrotate camera z#
+endwhile
+while mouseclick()=1 : endwhile
+
+return
+
+_freeflightcamera:
+
+while mouseclick()<>1
+ set cursor 0,0 : print "FREE FLIGHT CAMERA (Left Mouse Button To Continue)"
+ print "USE ARROW KEYS TO ROTATE / A+Z Roll Camera"
+ if upkey()=1 then pitch camera up 1
+ if downkey()=1 then pitch camera down 1
+ if leftkey()=1 then turn camera left 1
+ if rightkey()=1 then turn camera right 1
+ if inkey$()="a" then roll camera left 1
+ if inkey$()="z" then roll camera right 1
+endwhile
+while mouseclick()=1 : endwhile
+
+return
+
+_mouselookcamera:
+
+backdrop off
+point camera 0,0,0
+while mouseclick()<>1
+ set cursor 0,0 : print "MOUSELOOK CAMERA (Left Mouse Button To Continue)"
+ x#=x#+mousemovey() : y#=y#+mousemovex() : z#=z#+mousemovez()
+ rotate camera x#,y#,z#
+endwhile
+while mouseclick()=1 : endwhile
+color backdrop rgb(128,0,0)
+backdrop on
+
+return
+
+_modifycamera:
+
+rem 22 Degrees Field of View
+set camera fov 22
+set camera range 1,750
+set camera view 10,10,640-10,480-130
+
+return
+
+_trackercamera:
+
+set camera rotation xyz
+position camera 0,100,-500
+while mouseclick()<>1
+ center text 320,30,"TRACKER CAMERA (Left Mouse Button To Continue)"
+ x#=cos(a#)*500 : z#=sin(a#)*500
+ a#=a#+1.0 : if a#>359 then a#=a#-360
+ position camera x#,100,z#
+ point camera 500,0,500
+endwhile
+while mouseclick()=1 : endwhile
+
+return
+
+_followcamera:
+
+make object sphere 1,10
+set camera rotation xyz
+set camera range 1,3000
+while mouseclick()<>1
+ center text 320,30,"FOLLOW CAMERA (Left Mouse Button To Continue)"
+ a#=a#+1 : if a#>359 then a#=a#-360
+ x#=500+(cos(a#)*100) : z#=500+(sin(a#)*500)
+ distance#=200.0 : height#=100.0 : smooth#=25.0
+ dx#=x#-camera position x()
+ dz#=z#-camera position z()
+ angle#=atanfull(dx#,dz#)
+ set camera to follow x#,0,z#,angle#,distance#,height#,smooth#,0
+ set camera to object orientation 1
+endwhile
+while mouseclick()=1 : endwhile
+
+return
+
+_usingvectors:
+
+VectorNumber=1 : CameraNumber=0
+result==make vector3(VectorNumber)
+set vector3 VectorNumber, 500, 10, 500
+position camera CameraNumber, VectorNumber
+set vector3 VectorNumber, 0, 45, 0
+rotate camera CameraNumber, VectorNumber
+set vector3 to camera position VectorNumber, CameraNumber
+set vector3 to camera rotation VectorNumber, CameraNumber
+x#=x vector3(VectorNumber)
+y#=y vector3(VectorNumber)
+result=delete vector3(VectorNumber)
+
+return
+
+_cameradata:
+
+while inkey$()<>"x"
+ set cursor 0,0 : print : print "  CAMERA DATA (Press X to Exit)" : print
+ print "  angle x:";camera angle x()
+ print "  angle y:";camera angle y()
+ print "  angle z:";camera angle z()
+ print "  position x:";camera position x()
+ print "  position y:";camera position y()
+ print "  position z:";camera position z()
+ x#=x#+mousemovey() : y#=y#+mousemovex() : rotate camera x#,y#,0
+endwhile
+
+return

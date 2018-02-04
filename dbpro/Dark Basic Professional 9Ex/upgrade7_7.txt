@@ -1,0 +1,105 @@
+Upgrade 7.7
+===========
+
+General
+-------
+Rebuilt all DLLs after resolving DBO size problem (moved clipplane handle to meshradius handle)
+
+Sprite
+------
+New parameters for SET SPRITE RESIZE autosize, global X offset, global X scale (0.0-1.0)
+
+Core
+----
+Added new function PERFFREQ by request. 
+Updated PERFTIMER function
+ARRAY COUNT of undefined array now returns -1 instead of 0 (which would be identical to an array with a single item)
+
+
+Input
+-----
+Small tweak to input system (Touch Gesture, but not used)
+Fixed touch code so it does not mess up regular click code
+Additional flag added to CHANGE MOUSE Pointer Index, Touch Friendly (1-allow touch to persist 250ms)
+
+Image
+-----
+You can now open an existing imageblock to continue writing to it. Delete the imageblock file to start again
+
+Sound
+-----
+Fixed issue with OGG sounds not detecting end of loop or end of sound (sound playing()=0)
+When pausing and then unpausing a looped sound, the sound would stop playing at the end - this has been corrected
+
+Further tweaked OGG file end detection to handle more OGG types
+
+Music
+-----
+Major reorganisation of the Music plug-in - separation of the 3 different music player types into classes
+
+Math
+----
+Reserve vector/matrix 0 for library use, in line with other libraries - currently protect unavailable id's from update
+Re-engineer structures of the vector classes - now safely polymorphic, and no larger than before
+
+Basic2D
+-------
+Gradient box now restores AA setting when done
+
+Light
+-----
+Replace CData class with std::map within the Light libraries
+Cache pointer to last light found
+Minor code cleanup within light library
+
+Sprite
+------
+Tweaks to the sprite code
+
+File
+----
+Extra info in SET DIR error 
+
+Object
+------
+Now clip the end of an OBJECT animation
+Fixed bug causing ray cast material artitary value to reset too late (inside loop)
+Added parameter to SET OBJECT EFFECT called Force CPU Animation - ideal for bone detection
+Added MaxAnistropic render state setting to detect best card can provide (filter mode 2)
+
+Terrain
+-------
+Fixed Delete Terrain crash
+
+ODE
+---
+Fixed bug causing ODE to force the player borble hack (65534) down when a reasonable character controller should only push back and up
+
+Internal Work
+-------------
+Replace CData class with std::map
+
+Replaced dual containers with a single container and a class structure
+
+Pretty much rewrote every command
+Accidentally missed committing the Bitmap/Bitmap.vcproj file:
+Replace CData class with std::map
+Clean-up and reorganisation of code
+Replace CData class with std::map
+Clean-up and reorganisation of code
+Replace CData class with std::map
+Clean-up and reorganisation of code
+Replace CData class with std::map
+Clean-up and reorganisation of code
+Warning free compile in both Plug-in and GDK compile modes
+Fixed stack corruption when some runtime errors are flagged
+
+Removed redundant copies of CError.cpp - only needed in one .lib file
+
+Added various missing function declarations to header files
+
+Corrected link errors that occurred with some functions
+
+Simplified fog colour in Light.cpp and corrected storing of colour in one of the functions
+Added safety code to Basic3D and Particles to ensure that rendering settings are reset every time when rendering is complete
+Reinstated fog colour restore in Particles for the GDK

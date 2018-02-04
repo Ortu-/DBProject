@@ -1,0 +1,16 @@
+Upgrade 6.3
+===========
+
+Basic3D
+-------
+
+ * SET FRAME recalc bounds now requires mode 2 to recalculate ALL the frames bounds (slow)
+ * SET OBJECT RADIUS when given a radius of -1.0 will cause the object not to be visually culled
+ * Added new param: LOAD EFFECT XXX , DoNotGenerateExtraData (1-dont generate tangents)
+
+Camera
+------
+
+ * When a new camera is created it is internally sorted by index (rather than instance order)
+ * Fixed SYNC MASK bug which caused secondary cameras to wipe out cameras masked out
+ * Removed the power of two limit on the SET CAMERA TO IMAGE command, supporting newer cards

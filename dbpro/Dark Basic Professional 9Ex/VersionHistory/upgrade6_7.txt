@@ -1,0 +1,72 @@
+Upgrade 6.7
+===========
+
+Compiler
+--------
+
+ * Now dumps out DBM and EXB from the compiling process (as requested at the TGC 2007 CON)
+ * Above feature added for third party debugger experimentation
+ * Amended DirectX detection to check for 'D3DX_31.DLL' (October 2006 required)
+
+Core
+----
+
+ * Moved 'sound, music and animation' processing from internal process messaging to its proper FASTSYNC location
+ * Above amendment allows tight loops to run faster and allows monitoring of resources to happen once per cycle
+ * Fixed bug in UNDIM and REDIM so string arrays release all memory to avoid string array memory leak
+
+Bitmap
+------
+
+ * Added new forth parameter to CREATE BITMAP which when set to 1 will create bitmap in SYSTEM MEMORY (performance)
+
+Basic3D
+-------
+
+ * Added four undocumented commands below (as requested at the TGC 2007 CON)
+ * AMBIENT LIGHT() - gets the current level of ambient light level
+ * EXCLUDE LIMB ON Object Number, Limb Number - exclude per limb code
+ * EXCLUDE LIMB OFF Object Number, Limb Number - include per limb code
+ * PERFORM CHECKLIST FOR ONSCREEN OBJECTS Mode - mode zero checklists object number draw order in valuea
+ * Ensured DLL remains October 2006 DirectX compatible
+ * Fixed bug that reported object in screen as zero if pass 'through' it
+ * Fixed bug causing DISABLE OBJECT ZBIAS to fail
+ * Fixed bug causing MAKE OBJECT command to report 'mesh not loaded' instead of correct 'object already exists'
+ * Fixed bug causing objects with sphere collision to respond correctly to rotated boxes (sphere uses non-rotating bound box for sliding)
+ * SET OBJECT TRANSPARENCY can now affect the rendering order of instanced objects the same as cloned and original objects
+ * Fixed problem of double-radius object in screen reporting object out of view
+
+Sprite
+------
+
+ * Sprites no longer blank out after 100 sprites are created, and sprite data is retained as sprite bank is resized internally
+ * Fixed flipped orientation of an animated sprite so that it does not perform a mirror instead of a flip
+ * Fixed bug that caused the SCALE SPRITE command on animated sprites to overwrite width and height from previously correct values
+ * Fixed SPRITE FRAME to return the correct frame, even when the animated sprite has its frame set manually
+ * Fixed SPRITE HIT command so it only reports initial contact, not constant collision value as from SPRITE COLLISION
+ * Fixed bug causing PLAY SPRITE to have influence over SET SPRITE FRAME, true frame now returned
+
+Camera
+------
+
+ * CAMERA POSITION and CAMERA ANGLE now respond to the SET CURRENT CAMERA when the camera value is not specified
+ * CLEAR CAMERA VIEW RGB now responds to the custom colour passed in through red, green and blue
+ * Further amended CLEAR CAMERA VIEW so the cleared area corresponds to the viewport set with SET CAMERA VIEW
+
+3DMath
+------
+
+ * View and Projection matrices data are now gathered from the current camera, not camera zero
+
+Setup
+-----
+
+ * Added CALLBACK code so when DBP app loses device and regains device, '?D3DDeviceLost@@YAXXZ' and '?D3DDeviceNotReset@@YAXXZ' are called
+ * Added CALLBACK code so when DBP app successfully resets device, then '?D3DDeviceReset@@YAXXZ' is called
+ * Above addition can be used by TPC DLL authors to instantly detect when the user ALT+TAB out of a full screen exclusive application
+ * Below code can be added to an existing TPC DLL code to export the 3 decorated functions required for the new callback system:
+
+   #define MYDLL __declspec ( dllexport )
+   MYDLL void D3DDeviceLost ( void );
+   MYDLL void D3DDeviceNotReset ( void );
+   MYDLL void D3DDeviceReset ( void );

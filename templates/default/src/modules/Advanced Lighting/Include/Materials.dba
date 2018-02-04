@@ -1,0 +1,486 @@
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+`Material data
+type AL_MaterialsData
+   TextureName as string
+   DetailMapping as boolean
+   ShaderPath as string
+   TexturePath0 as string
+   TextureType0 as integer
+   TexturePath1 as string
+   TextureType1 as integer
+   TexturePath2 as string
+   TextureType2 as integer
+   TexturePath3 as string
+   TextureType3 as integer
+   TexturePath4 as string
+   TextureType4 as integer
+   TexturePath5 as string
+   TextureType5 as integer
+endtype
+
+`Material data
+type AL_MaterialData
+   Name as string
+   Number as integer
+   DetailMapping as boolean
+endtype
+
+`--------------
+` Load Material
+`--------------
+function Materials_Load(iFile as string)
+   if file exist(iFile)=1
+      if AL_MaterialsEnabled=0
+         global AL_MaterialsEnabled as boolean
+         global AL_MaterialTextureDivide as float
+         global AL_MaterialsCount as integer
+         global AL_MaterialShaderCount as integer
+         global AL_MaterialTextureCount as integer
+         global AL_MaterialDetailMapping as boolean
+         global dim AL_Materials() as AL_MaterialsData
+         global dim AL_MaterialShader(1) as AL_MaterialData
+         global dim AL_MaterialTexture(1) as AL_MaterialData
+         AL_MaterialTextureDivide=1
+         AL_MaterialsEnabled=1
+      endif
+      local tName as string
+      local tKeyValue as string
+      local tKey as string
+      local tValue as string
+      local tFile as integer
+      tFile=find free file()
+      open to read tFile,iFile
+      repeat
+      read string tFile,tName
+      if Materials_GetKeyValue(tName)=1
+      if Materials_ExtractKey(tName)="texturename"
+         array insert at bottom AL_Materials()
+         AL_Materials(AL_MaterialsCount).TextureName=Materials_ExtractValue(tName)
+         read string tFile,tKeyValue
+            if tKeyValue="{"
+               repeat
+               read string tFile,tKeyValue
+               tKeyValue=lower$(tKeyValue)
+               if Materials_GetKeyValue(tKeyValue)=1
+                  tKey=Materials_ExtractKey(tKeyValue)
+                  tValue=Materials_ExtractValue(tKeyValue)
+                  if lower$(right$(tValue,12))<>"lightmap.png" and tValue<>""
+                     if tKey="shader"
+                        AL_Materials(AL_MaterialsCount).ShaderPath=tValue
+                     endif
+                     if tKey="stage0"
+                        AL_Materials(AL_MaterialsCount).TexturePath0=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType0=0
+                     endif
+                     if tKey="stage0cube"
+                        AL_Materials(AL_MaterialsCount).TexturePath0=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType0=2
+                     endif
+                     if tKey="stage0volume"
+                        AL_Materials(AL_MaterialsCount).TexturePath0=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType0=3
+                     endif
+                     if tKey="stage1"
+                        AL_Materials(AL_MaterialsCount).TexturePath1=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType1=0
+                     endif
+                     if tKey="stage1cube"
+                        AL_Materials(AL_MaterialsCount).TexturePath1=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType1=2
+                     endif
+                     if tKey="stage1volume"
+                        AL_Materials(AL_MaterialsCount).TexturePath1=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType1=3
+                     endif
+                     if tKey="stage2"
+                        AL_Materials(AL_MaterialsCount).TexturePath2=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType2=0
+                     endif
+                     if tKey="stage2cube"
+                        AL_Materials(AL_MaterialsCount).TexturePath2=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType2=2
+                     endif
+                     if tKey="stage2volume"
+                        AL_Materials(AL_MaterialsCount).TexturePath2=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType2=3
+                     endif
+                     if tKey="stage3"
+                        AL_Materials(AL_MaterialsCount).TexturePath3=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType3=0
+                     endif
+                     if tKey="stage3cube"
+                        AL_Materials(AL_MaterialsCount).TexturePath3=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType3=2
+                     endif
+                     if tKey="stage3volume"
+                        AL_Materials(AL_MaterialsCount).TexturePath3=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType3=3
+                     endif
+                     if tKey="stage4"
+                        AL_Materials(AL_MaterialsCount).TexturePath4=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType4=0
+                     endif
+                     if tKey="stage4cube"
+                        AL_Materials(AL_MaterialsCount).TexturePath4=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType4=2
+                     endif
+                     if tKey="stage4volume"
+                        AL_Materials(AL_MaterialsCount).TexturePath4=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType4=3
+                     endif
+                     if tKey="stage5"
+                        AL_Materials(AL_MaterialsCount).TexturePath5=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType5=0
+                     endif
+                     if tKey="stage5cube"
+                        AL_Materials(AL_MaterialsCount).TexturePath5=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType5=2
+                     endif
+                     if tKey="stage5volume"
+                        AL_Materials(AL_MaterialsCount).TexturePath5=tValue
+                        AL_Materials(AL_MaterialsCount).TextureType5=3
+                     endif
+                  endif
+               endif
+               if tKeyValue="detailmapping=1" then AL_Materials(AL_MaterialsCount).DetailMapping=1
+               until tKeyValue="" or tKeyValue="}"
+            endif
+         inc AL_MaterialsCount
+      endif
+      endif
+      until tName=""
+      close file tFile
+   endif
+endfunction
+
+`--------------
+` Get key/Val
+`--------------
+function Materials_GetKeyValue(iStr as string)
+   for s=0 to len(iStr)
+      if mid$(iStr,s)="=" then exitfunction 1
+   next s
+endfunction 0
+
+`--------------
+` Extract key
+`--------------
+function Materials_ExtractKey(iStr as string)
+   local tMid as integer
+   repeat
+      inc tMid
+   until mid$(iStr,tMid)="=" or mid$(iStr,tMid)=";" or mid$(iStr,tMid)=""
+   rStr as string
+   rStr=left$(iStr,tMid-1)
+   if right$(rStr,1)=";" then rStr=left$(rStr,len(rStr)-1)
+endfunction rStr
+
+`--------------
+` Extract Value
+`--------------
+function Materials_ExtractValue(iStr as string)
+   local tMid as integer
+   repeat
+      inc tMid
+   until mid$(iStr,tMid)="=" or mid$(iStr,tMid)=";" or mid$(iStr,tMid)=""
+   rStr as string
+   rStr=Right$(iStr,(len(iStr)-1)-(tMid-1))
+   if right$(rStr,1)=";" then rStr=left$(rStr,len(rStr)-1)
+endfunction rStr
+
+`--------------
+` Extract Parameter
+`--------------
+function Materials_ExtractParameter(iStr as string,i as integer)
+   local tMid as integer
+   local tStr as string
+   for t=0 to i
+      tStr=""
+      repeat
+         tStr=tStr+mid$(iStr,tMid)
+         inc tMid
+      until mid$(iStr,tMid)="," or mid$(iStr,tMid)=";" or mid$(iStr,tMid)=""
+      tMid=tMid+1
+   next t
+   rfloat as float
+   rfloat=val(tStr)
+endfunction rfloat
+
+`--------------
+` Delete Materials
+`--------------
+function Materials_Delete()
+   if AL_MaterialsEnabled=1
+      for s=AL_MaterialShaderStart to AL_MaterialShaderEnd-1
+         if effect exist(s)=1
+            Effect_Remove(s)
+            delete effect s
+         endif
+      next s
+      for t=AL_MaterialTextureStart to AL_MaterialTextureEnd-1
+         if image exist(t)=1 then delete image t
+      next t
+      AL_MaterialsEnabled=0
+      AL_MaterialsCount=0
+      AL_MaterialShaderStart=0
+      AL_MaterialShaderEnd=0
+      AL_MaterialTextureStart=0
+      AL_MaterialTextureEnd=0
+      AL_MaterialDetailMapping=0
+      undim AL_Materials()
+      undim AL_MaterialShader()
+      undim AL_MaterialTexture()
+   endif
+endfunction
+
+`--------------
+` Apply Materials to Object
+`--------------
+function Materials_Apply(iObject as integer)
+   if AL_MaterialsEnabled=1
+      local tLimb as integer
+      repeat
+         Materials_ApplyToLimb(iObject,tLimb)
+         inc tLimb
+      until limb exist(iObject,tLimb)=0
+   endif
+endfunction
+
+`--------------
+` Apply Materials To Limb
+`--------------
+function Materials_ApplyToLimb(iObject as integer,iLimb as integer)
+   if AL_MaterialsEnabled=1
+      local tName as string
+      local tMid as integer
+      tName=limb texture name(iObject,iLimb)
+      tMid=0
+      repeat
+         inc tMid
+      until mid$(tName,len(tName)-tMid)="/" or mid$(tName,len(tName)-tMid)="\" or mid$(tName,len(tName)-tMid)=""
+      tName=lower$(Right$(tName,tMid))
+      for m=0 to AL_MaterialsCount-1
+         if AL_Materials(m).TextureName=Tname
+            if AL_Materials(m).ShaderPath<>""
+               Shader=0
+               for s=0 to AL_MaterialShaderCount-1
+                   if AL_MaterialShader(s).Name=AL_Materials(m).ShaderPath
+                      set limb effect iObject,iLimb,AL_MaterialShader(s).Number
+                      Shader=1
+                      exit
+                   endif
+               next s
+               if Shader=0
+                  array insert at bottom AL_MaterialShader()
+                  AL_MaterialShader(AL_MaterialShaderCount).Name=AL_Materials(m).ShaderPath
+                  AL_MaterialShader(AL_MaterialShaderCount).Number=find free effect()
+                  AL_MaterialShader(AL_MaterialShaderCount).DetailMapping=AL_Materials(m).DetailMapping
+                  load effect AL_MaterialShader(AL_MaterialShaderCount).Name,AL_MaterialShader(AL_MaterialShaderCount).Number,0
+                  Effect_Add(AL_MaterialShader(AL_MaterialShaderCount).Number)
+                  if AL_MaterialDetailMapping=1
+                     if AL_MaterialShader(AL_MaterialShaderCount).DetailMapping=1
+                        Effect_SetDetailMapping(AL_MaterialShader(AL_MaterialShaderCount).Number,1)
+                     endif
+                  endif
+                  set limb effect iObject,iLimb,AL_MaterialShader(AL_MaterialShaderCount).Number
+                  inc AL_MaterialShaderCount
+               endif
+            endif
+            if AL_Materials(m).TexturePath0<>""
+               Texture=0
+               for t=0 to  AL_MaterialTextureCount-1
+                   if AL_MaterialTexture(t).Name=AL_Materials(m).TexturePath0
+                      texture limb iObject,iLimb,0,AL_MaterialTexture(t).Number
+                      Texture=1
+                      exit
+                   endif
+               next t
+               if Texture=0
+                  array insert at bottom AL_MaterialTexture()
+                  AL_MaterialTexture(AL_MaterialTextureCount).Name=AL_Materials(m).TexturePath0
+                  AL_MaterialTexture(AL_MaterialTextureCount).Number=find free image()
+                  load image AL_MaterialTexture(AL_MaterialTextureCount).Name,AL_MaterialTexture(AL_MaterialTextureCount).Number,AL_Materials(m).TextureType0,AL_MaterialTextureDivide
+                  texture limb iObject,iLimb,0,AL_MaterialTexture(AL_MaterialTextureCount).Number
+                  inc AL_MaterialTextureCount
+               endif
+            endif
+            if AL_Materials(m).TexturePath1<>""
+               Texture=0
+               for t=0 to  AL_MaterialTextureCount-1
+                   if AL_MaterialTexture(t).Name=AL_Materials(m).TexturePath1
+                      texture limb iObject,iLimb,1,AL_MaterialTexture(t).Number
+                      Texture=1
+                      exit
+                   endif
+               next t
+               if Texture=0
+                  array insert at bottom AL_MaterialTexture()
+                  AL_MaterialTexture(AL_MaterialTextureCount).Name=AL_Materials(m).TexturePath1
+                  AL_MaterialTexture(AL_MaterialTextureCount).Number=find free image()
+                  load image AL_MaterialTexture(AL_MaterialTextureCount).Name,AL_MaterialTexture(AL_MaterialTextureCount).Number,AL_Materials(m).TextureType1,AL_MaterialTextureDivide
+                  texture limb iObject,iLimb,1,AL_MaterialTexture(AL_MaterialTextureCount).Number
+                  inc AL_MaterialTextureCount
+               endif
+            endif
+            if AL_Materials(m).TexturePath2<>""
+               Texture=0
+               for t=0 to  AL_MaterialTextureCount-1
+                   if AL_MaterialTexture(t).Name=AL_Materials(m).TexturePath2
+                      texture limb iObject,iLimb,2,AL_MaterialTexture(t).Number
+                      Texture=1
+                      exit
+                   endif
+               next t
+               if Texture=0
+                  array insert at bottom AL_MaterialTexture()
+                  AL_MaterialTexture(AL_MaterialTextureCount).Name=AL_Materials(m).TexturePath2
+                  AL_MaterialTexture(AL_MaterialTextureCount).Number=find free image()
+                  load image AL_MaterialTexture(AL_MaterialTextureCount).Name,AL_MaterialTexture(AL_MaterialTextureCount).Number,AL_Materials(m).TextureType2,AL_MaterialTextureDivide
+                  texture limb iObject,iLimb,2,AL_MaterialTexture(AL_MaterialTextureCount).Number
+                  inc AL_MaterialTextureCount
+               endif
+            endif
+            if AL_Materials(m).TexturePath3<>""
+               Texture=0
+               for t=0 to  AL_MaterialTextureCount-1
+                   if AL_MaterialTexture(t).Name=AL_Materials(m).TexturePath3
+                      texture limb iObject,iLimb,3,AL_MaterialTexture(t).Number
+                      Texture=1
+                      exit
+                   endif
+               next t
+               if Texture=0
+                  array insert at bottom AL_MaterialTexture()
+                  AL_MaterialTexture(AL_MaterialTextureCount).Name=AL_Materials(m).TexturePath3
+                  AL_MaterialTexture(AL_MaterialTextureCount).Number=find free image()
+                  load image AL_MaterialTexture(AL_MaterialTextureCount).Name,AL_MaterialTexture(AL_MaterialTextureCount).Number,AL_Materials(m).TextureType3,AL_MaterialTextureDivide
+                  texture limb iObject,iLimb,3,AL_MaterialTexture(AL_MaterialTextureCount).Number
+                  inc AL_MaterialTextureCount
+               endif
+            endif
+            if AL_Materials(m).TexturePath4<>""
+               Texture=0
+               for t=0 to  AL_MaterialTextureCount-1
+                   if AL_MaterialTexture(t).Name=AL_Materials(m).TexturePath4
+                      texture limb iObject,iLimb,4,AL_MaterialTexture(t).Number
+                      Texture=1
+                      exit
+                   endif
+               next t
+               if Texture=0
+                  array insert at bottom AL_MaterialTexture()
+                  AL_MaterialTexture(AL_MaterialTextureCount).Name=AL_Materials(m).TexturePath4
+                  AL_MaterialTexture(AL_MaterialTextureCount).Number=find free image()
+                  load image AL_MaterialTexture(AL_MaterialTextureCount).Name,AL_MaterialTexture(AL_MaterialTextureCount).Number,AL_Materials(m).TextureType4,AL_MaterialTextureDivide
+                  texture limb iObject,iLimb,4,AL_MaterialTexture(AL_MaterialTextureCount).Number
+                  inc AL_MaterialTextureCount
+               endif
+            endif
+            if AL_Materials(m).TexturePath5<>""
+               Texture=0
+               for t=0 to  AL_MaterialTextureCount-1
+                   if AL_MaterialTexture(t).Name=AL_Materials(m).TexturePath5
+                      texture limb iObject,iLimb,5,AL_MaterialTexture(t).Number
+                      Texture=1
+                      exit
+                   endif
+               next t
+               if Texture=0
+                  array insert at bottom AL_MaterialTexture()
+                  AL_MaterialTexture(AL_MaterialTextureCount).Name=AL_Materials(m).TexturePath5
+                  AL_MaterialTexture(AL_MaterialTextureCount).Number=find free image()
+                  load image AL_MaterialTexture(AL_MaterialTextureCount).Name,AL_MaterialTexture(AL_MaterialTextureCount).Number,AL_Materials(m).TextureType5,AL_MaterialTextureDivide
+                  texture limb iObject,iLimb,5,AL_MaterialTexture(AL_MaterialTextureCount).Number
+                  inc AL_MaterialTextureCount
+               endif
+            endif
+         endif
+      next m
+   endif
+endfunction
+
+`--------------
+` Materials Detail Mapping
+`--------------
+function Materials_DetailMapping(iDetail as boolean)
+   if AL_MaterialsEnabled=1
+      if iDetail=1
+         AL_MaterialDetailMapping=1
+         for s=0 to AL_MaterialShaderCount-1
+            if AL_MaterialShader(s).DetailMapping=1
+               Effect_SetDetailMapping(AL_MaterialShader(s).Number,1)
+            endif
+         next s
+      else
+         AL_MaterialDetailMapping=0
+         for s=0 to AL_MaterialShaderCount-1
+            if AL_MaterialShader(s).DetailMapping=1
+               Effect_SetDetailMapping(AL_MaterialShader(s).Number,0)
+            endif
+         next s
+      endif
+   endif
+endfunction
+
+`--------------
+` Save Static Cube Map
+`--------------
+function Materials_SaveStaticCubeMap(iPosX as float,iPosY as float,iPosZ as float,iSize as integer,iFace1 as string,iFace2 as string,iFace3 as string,iFace4 as string,iFace5 as string,iFace6 as string)
+   if AL_Enabled=1
+      local tImage as integer
+      local dim tCameraData(10) as float
+      for e=0 to AL_FrameTargetCount-1
+         if effect exist(AL_FrameTarget(e).Effect)=1 then set effect technique AL_FrameTarget(e).Effect,"Disable"
+      next e
+      tCameraData(1)=AL_CameraData(1)
+      tCameraData(2)=AL_CameraData(2)
+      tCameraData(3)=AL_CameraData(3)
+      tCameraData(4)=AL_CameraData(4)
+      tCameraData(5)=Camera position x(AL_CurrentCamera)
+      tCameraData(6)=Camera position y(AL_CurrentCamera)
+      tCameraData(7)=Camera position z(AL_CurrentCamera)
+      tCameraData(8)=Camera angle x(AL_CurrentCamera)
+      tCameraData(9)=Camera angle y(AL_CurrentCamera)
+      tCameraData(10)=Camera angle z(AL_CurrentCamera)
+      tImage=find free image()
+      AdvLighting_SetCamera(tCameraData(1),tCameraData(2),90,1)
+      set camera to image AL_Camera(8),tImage,iSize,iSize
+      set camera aspect AL_Camera(8),1
+      position camera AL_CurrentCamera,iPosX,iPosY,iPosZ
+      point camera AL_CurrentCamera,iPosX+1,iPosY,iPosZ
+      AdvLighting_Update()
+      save image iFace1,tImage
+      point camera AL_CurrentCamera,iPosX-1,iPosY,iPosZ
+      AdvLighting_Update()
+      save image iFace2,tImage
+      point camera AL_CurrentCamera,iPosX,iPosY+1,iPosZ
+      AdvLighting_Update()
+      save image iFace3,tImage
+      point camera AL_CurrentCamera,iPosX,iPosY-1,iPosZ
+      AdvLighting_Update()
+      save image iFace4,tImage
+      point camera AL_CurrentCamera,iPosX,iPosY,iPosZ+1
+      AdvLighting_Update()
+      save image iFace5,tImage
+      point camera AL_CurrentCamera,iPosX,iPosY,iPosZ-1
+      AdvLighting_Update()
+      save image iFace6,tImage
+      delete camera AL_Camera(8)
+      make camera AL_Camera(8)
+      backdrop off AL_Camera(8)
+      if AL_Camera(7)=AL_Camera(8) then backdrop on AL_Camera(7):color backdrop AL_Camera(7),0
+      position camera AL_CurrentCamera,tCameraData(5),tCameraData(6),tCameraData(7)
+      rotate camera AL_CurrentCamera,tCameraData(8),tCameraData(9),tCameraData(10)
+      AdvLighting_SetCamera(tCameraData(1),tCameraData(2),tCameraData(3),tCameraData(4))
+      delete image tImage
+      for e=0 to AL_FrameTargetCount-1
+         if effect exist(AL_FrameTarget(e).Effect)=1 then set effect technique AL_FrameTarget(e).Effect,"FinalComp"
+      next e
+   endif
+endfunction
+
+

@@ -1,0 +1,100 @@
+rem Input Functionality
+
+rem Prepare Force Feedback (if available)
+ForcePresent=0
+empty checklist
+PERFORM CHECKLIST FOR CONTROL DEVICES
+for c=1 to checklist quantity()
+ if checklist value a(c)=1
+  SET CONTROL DEVICE checklist string$(c)
+  ForcePresent=1
+ endif
+next c
+
+rem Test loop
+do
+
+rem Produce random values
+String$="hello world "+str$(rnd(99))
+XValue=rnd(640)
+YValue=rnd(480)
+MagnitudeValue=rnd(100)
+AngleValue=rnd(360)
+DelayValue=rnd(1000)
+FireButtonValueID=rnd(31)
+HatID=rnd(3)
+
+rem Try each command at random
+if rnd(500)=1 then CLEAR ENTRY BUFFER
+if rnd(500)=1 then WRITE TO CLIPBOARD String$
+if rnd(5)=1 then WRITE TO REGISTRY "App","Field",42
+if rnd(5)=1 then HIDE MOUSE
+if rnd(5)=1 then SHOW MOUSE
+if rnd(5000)=1 then POSITION MOUSE XValue, YValue
+if ForcePresent=1
+ if rnd(5)=1 then FORCE UP MagnitudeValue
+ if rnd(5)=1 then FORCE DOWN MagnitudeValue
+ if rnd(5)=1 then FORCE LEFT MagnitudeValue
+ if rnd(5)=1 then FORCE RIGHT MagnitudeValue
+ if rnd(5)=1 then FORCE ANGLE MagnitudeValue, AngleValue, DelayValue
+ if rnd(5)=1 then FORCE NO EFFECT
+ if rnd(5)=1 then FORCE WATER EFFECT MagnitudeValue, DelayValue
+ if rnd(5)=1 then FORCE SHOOT MagnitudeValue, DelayValue
+ if rnd(5)=1 then FORCE CHAINSAW MagnitudeValue, DelayValue
+ if rnd(5)=1 then FORCE IMPACT MagnitudeValue, DelayValue
+ if rnd(5)=1 then FORCE AUTO CENTER ON
+ if rnd(5)=1 then FORCE AUTO CENTER OFF
+endif
+
+rem Display data
+cls
+print "INPUT EXPRESSION DATA"
+print
+print "scancode:";SCANCODE();
+print " keystate1:";KEYSTATE(1);
+print " entry$:";ENTRY$()
+print "up:";UPKEY();
+print " down:";DOWNKEY();
+print " left:";LEFTKEY();
+print " right:";RIGHTKEY()
+print "control:";CONTROLKEY();
+print " shift:";SHIFTKEY();
+print " return:";RETURNKEY();
+print " escape:";ESCAPEKEY();
+print " space:";SPACEKEY()
+print "clipboard:";GET CLIPBOARD$()
+print "registry:";GET REGISTRY("App","Field")
+print "mouseclick:";MOUSECLICK()
+print "mousex:";MOUSEX();
+print " mousey:";MOUSEY();
+print " mousez:";MOUSEZ()
+print "mouse movex:";MOUSEMOVEX();
+print " movey:";MOUSEMOVEY();
+print " movez:";MOUSEMOVEZ()
+print "joystick up:";JOYSTICK UP();
+print " down:";JOYSTICK DOWN();
+print " left:";JOYSTICK LEFT();
+print " right:";JOYSTICK RIGHT();
+print " x:";JOYSTICK X();
+print " y:";JOYSTICK Y();
+print " z:";JOYSTICK Z()
+print "joystick fire a:";JOYSTICK FIRE A();
+print " b:";JOYSTICK FIRE B();
+print " c:";JOYSTICK FIRE C();
+print " d:";JOYSTICK FIRE D();
+print " firex:";JOYSTICK FIRE X(FireButtonValueID)
+print "joystick slider a:";JOYSTICK SLIDER A();
+print " b:";JOYSTICK SLIDER B();
+print " c:";JOYSTICK SLIDER C();
+print " d:";JOYSTICK SLIDER D()
+print "joystick twist x:";JOYSTICK TWIST X();
+print " y:";JOYSTICK TWIST Y();
+print " z:";JOYSTICK TWIST Z()
+print "joystick hat angle:";JOYSTICK HAT ANGLE(HatID)
+print "ForcePresent:";ForcePresent
+print "control device name:";CONTROL DEVICE NAME$()
+print "control device x:";CONTROL DEVICE X();
+print " y:";CONTROL DEVICE Y();
+print " z:";CONTROL DEVICE Z()
+
+loop

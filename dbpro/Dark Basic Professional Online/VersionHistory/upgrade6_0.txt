@@ -1,0 +1,353 @@
+Upgrade 6.0 (180406)
+====================
+
+Information
+-----------
+
+ * Updated all DLLs to use the new December 2005 runtime version of DirectX
+ * On average 250% smaller executables on builds that include 3D commands (when exclusions used)
+ * Open the SETUP.INI in the compiler folder to specify which DLLs to exclude to reduce your executable size (no exclusions by default)
+ * If you have problems double clicking DBPRO files to indirectly open the editor, simply re-associate the file to the IDE
+ * If you want to load 'ADPCM' based WAV files, use LOAD MUSIC and PLAY MUSIC/STOP MUSIC (as it is codec based)
+ * The standard DBPro Windows Mode is 32-bit by default. Use SET DISPLAY MODE to change this default setting
+ * Some changes have been made to the window creation and display updating code to allow for cleaner operations
+ * Executables are now compatible with igLoader, so as long as the original initial window size is maintained
+ * Be aware that if you are using Windows XP, you must have the Service Pack 2 installed for correct functionality
+ * Due to changes in DirectX shaders, VSH and PSH files are no longer encouraged for use (removed from Basci3D-2 example)
+ * The 3DS parser and loader now restricts the texture filename to 255 character max to avoid buffer overruns in related systems
+ * Added new SETUP.INI directive field called 'LocalTempFolder' when when set to 'Yes', causes the executable to create all TEMP files locally
+ * Recompiled the new MD5.DLL under Win98 to increase compatibility to that platform
+ * Registry information improved on install, removed associator from install process (DBPRO files can now be fully double clicked)
+ * Compiler now prevents trial versions from being used if upgraded by U6 onwards
+
+Help System
+-----------
+
+ * Improved Help System and updated text to U6.0 commands
+ * Fixed filenames of #constant and #include so they link correctly for HTML viewing. Changes to keywords.ini and keywords105
+ * KEYWORDS file updated in the Editor folders FRONTEND and KEYWORDS
+ * Extra V100 commands added to keyword files to cover such highlights as 'AS STRING'
+
+Compiler
+--------
+
+ * Assignment operators that accidently have a comma delimited R-value will produce the correct error message
+ * When global var1 as integer = 2 : global var2 as integer = 5 used, the second global declaration was ignored
+ * To further support legacy behaviour, DIM and GLOBAL DIM inside functions are treated as global (LOCAL DIM is local)
+ * Can no longer accept $#£ and other strange names as variables, confusing the compiler
+ * CONSTANT command can now handle ' comments after the declaration of the value
+ * The NOT condition operator no longer operates on the first bit. It acts in reverse of IF X, so X=0 is true, else false. Conditional operator ONLY!
+ * Compiler no longer confuses CALL DLL with and without brackets, allowing no possible return value corruption
+ * Compiler will no longer allow type B to be part of type A declaration if type B declaration is below type A
+ * Using arrays for subscripts into other arrays no longer gets confused with multi-dimensional subscript arrays
+ * Icon management overhauled to use 256 colour icons only (32x32 and 16x16) - no icon corruption now
+ * Conditional X XOR Y operand now parses okay
+ * Sometimes the compiler would crash from memory-read-failure when making the executable, now fixed
+ * Error is produced when duplicated CONSTANT name is used
+ * If ENDTYPE not terminating TYPE declaration, the compiler will report its absense rather than continue compiling
+ * Comment symbol or REMARK inside speech marks whilst traversing for constant replacements no longer errors
+ * Using an open bracket inside a speech mark of a condition that comprises of other brackets no longer confuses compiler
+ * If your program hits a FUNCTION declaration mid-execution, an error will now report to warn you of this illegal activity
+ * Have updated the activation code use a new MD5.DLL in the compiler folder, and is not longer MFC80 dependent
+ * Added extra check to ensure FOR NEXT variables are not complex data types, which are not allowed to be used in this way
+ * Can no longer add #CONSTANTINE without the compiler detecting it and reporting an error
+ * Added more error trapping around the executable creation area to detail bug reports in this regard
+ * Removed dependence on any class or window name for the compiler to provide feedback throug the "DBPROEDITORMESSAGE" filemap
+ * Speech marks in code comments using '`' symbol no longer confuse the compiler declaration section
+ * Error reporting for duplicate commands in two compiler DLLs improved to show the two DLLs conflicting, and full command description
+ * Two new error traps added in cast left and right operands throw a low-level error via the 'DoValue::' internal message
+ * Types are incompatible strings reformatted to mark temp variables using 'TEMP' and removed the confusing @ symbol
+ * Compiler can handle more aggressive use of REM and REMARK comments, for example inside CASE statements
+ * Added extra check for numerical first character of function name which is not allowed
+ * Added support to detect if RESTORE and other label parameter commands, and report the need for a label type
+ * Fixed bug which caused the executable icon to only copy the first half of the 16x16 version mask, fixed now
+ * Increased compiler checks to stop UDT arrays from being passed into functions that declare UDT datatypes. Can only pass UDT variables.
+ * Obscure and deep bug causing some literals of -1 not to be converted to 0xFFFFFFFF (as it used the atoi - possible MSVC8 symptom)
+ * DWORD conditional operator comparisons re-introduced so that 0xFF < 0x00 returns false
+ * Compiler now throws error when two ENDCASE statements found in SELECT statement, rather than freezing inside the compiler
+ * Made sure colon inside speech marks used for the initialization value of a global declaration compiles okay
+ * Line number error integrity restored when using REMSTART and REMEND in your programs
+ * TYPE declarations saturated with REM and comment markers no longer fails to construct a valid type when compiling
+ * Compiler throws a compiler error now if strings are attempted to be subtracted from each other, or other math operations excluding addition
+ * FOR NEXT loop step value now codes a fast ASM for literal step values and a slower, double-expression ASM for dynamic step values
+ * Added extra code to protect against icon replacement code not supported in Win98/ME native operating systems (BeginUpdateResource)
+ * Colons can now seperate constant declarations again
+ * Array names can no longer be the same as functions, commands or reserved words
+ * DATA statements now support HEX, OCT and BIN
+ * Compiler no longer parses a DATA item twice if they match multiple data type formats
+
+General
+-------
+
+ * New Compiler supporting new licensed plugins
+ * DBO Format Changed - Variety of small bugfixes may impact on prior program functionality
+ * Fixed INPUT command to detect BACKSPACE key to restore it to correct functionality
+ * when DIM twice (redim) the size of the array remains the same if an identical size is passed in
+ * If try to create a LOCAL DIM, sometimes corrupt stack data can cause a crash, now fixed
+ * EXECUTE FILE last parameter now continues without waiting for end of process if set to zero
+ * READ BYTE, READ WORD and READ LONG can now accept byte, word and dword arrays respectively
+ * Updated the SETUP.INI so that no DLLs are added to the EXCLUSION group
+ * MOD operator now allows floating point values to be passed in as parameters (internally uses the FMOD function)
+ * CEIL() and FLOOR() functions added for greater math management
+ * SET DISPLAY MODE now has an additional property to force VSYNC on or off (cap to 60fps or not)
+ * DBPro Executables now check whether DirectX has been installed, and reports an error if not present or old version
+ * Updated KEYWORDS.INI in original editor keywords file (since updated in keywords105.ini) for the NET MESSAGE STRING$()
+ * Changed DBO writer to correct the size of the DWORDS for tokens 117, 118 and 119 (no functional impact)
+ * Added SYNC SLEEP Flag command, where a Flag of one will force a Sleep(1) command within the DBP windows message pump
+ * Added runtime error to prevent multidimensional arrays from being used by stacks and queue based commands
+ * DBP no longer tries to decrypt local files if mixed with encrypted files attached to an executable
+
+Basic3D
+-------
+
+ * Fixed Shader Parser to recognise RESOURCENAME and RESOURCETYPE fields adding more compatibility with DXSAS
+ * MAKE MESH FROM OBJECT no longer crashes randomly (fixed in ResizeRawMeshList)
+ * OBJECT SIZE (x/y/z) reverts to the original behaviour
+ * ADD/REMOVE LIMB no longer leakes 8K per transaction - such applications will not slow down due to this
+ * Commands which modify the UV data of objects does so perminantly - so CLONE OBJECT will reflect the latest UV data
+ * Officially added SaveAnimation, AppendAnimation and SetAnimationMode to the 'obsolete commands' list
+ * Fixed collision bug causing loaded offset objects to collide/hit even if rescaled
+ * Loading X files now supports two additional UV layers through the FVFData token (for lightmap/detail mapping)
+ * Extended the SCALE AND SCROLL TEXTURE commands to include a stage parameter for access to the UV data at stages 1 and 2
+ * Added additional parameter to TEXTURE OBJECT called 'Ignore Sorting' - TEXTURE OBJECT Obj,Stage,Tex,NoSort
+ * CHANGE MESH no longer destroys texture and material information
+ * Shadows improved for more accurate CPU shadows and added a stencil shadow shader for animated meshes
+ * CLONE OBJECT now handles multi-material meshes as well as regular single texture per mesh structures
+ * SET OBJECT DIFFUSE can now be used on INSTANCED OBJECTS, but if ALPHA MAPPING used, carry alpha in diffuse value
+ * Extra optional added to SET OBJECT DIFFUSE Obj,RGB,Mode, where a mode of 1 will force vertex data diffuse change
+ * Fixed collision so that POLYGON vs SPHERE works correctly, even if polygon is second and sphere is first object specified
+ * Repeated SCALE OBJECT commands no longer interfere with object radius max size and culling operations
+ * LOCK VERTEXDATA FOR LIMB now has an extra mode 2, which will update the internal 'good' copy of the data (for saving DBO)
+ * LOAD OBJECT has an additional parameter to control whether the textures internally load are a reduced size than original
+ * EXCLUDE OBJECT can make DELETE OBJECT fail, now deletes the object completely
+ * Added new error to warn if an object creation attempt resulted an object that was too large (MAKE OBJECT SPHERE 1,1,200,200)
+ * MAKE OBJECT can now handle raw meshes passed in that exceed the 65535 vertex index limit (by not using an index buffer)
+ * SCROLL and SCALE OBJECT TEXTURE no longer affects texture stage data that does not exist, causing strange scaling issues
+ * SET SHADOW ON now handled the Mesh Number and casts a shadow using the passed in mesh as the original casting geometry
+ * Two optional new parameter additions to GET LIMB TEXTURE and LIMB TEXTURE NAME to specify the texture stage
+ * Fixed leak in INSTANCE OBJECT which failed to release a memory allocation used for storing mesh visibility
+ * OBJECT HIT command would get confused and constantly report a HIT if two collision hit checks happened in the same cycle
+ * SAVE MESH now reports an error if a mesh greater than 65535 vertices are used for a single mesh
+ * LOAD MESH is almost direct wrap to the DirectX function 'D3DXLoadMeshFromX', and any failures in loading is the fault of DirectX
+ * PICK OBJECT now has an additional parameter to ignore the current camera view and position (ideal for locked object picking)
+ * SMOOTHING an OBJECT no longer interferes with the vertex positions of the geometry
+ * When models are loaded, the animation based keyframed bounds (mostly skipped by earlier speed-up), is not filled with viable data
+ * When use the MAKE OBJECT COLLISION BOX command on an animated model, the box specified is retained for collision use
+ * Added new command SYNC MASK which acts as a filter to render or ignore any of the first 32 cameras starting with camera zero
+ * Fixed several Basic3D Example bugs, including the sticking automatic camera and object collision from the added rotation-bug-fix
+ * Fixed the creation of the 3D pyramid from automatic effect loading of shaders that pre-date the declaration of the vertex format
+ * Added error and avoided crash where extremely large object numbers are used (22 million plus)
+ * APPEND OBJECT now handles Matrix Data as well as position, scale and rotation. Code missing before and including U59
+ * Shadow for a stencil rendering no longer is affected by a FOG setting, which causes visual artifacts
+ * LIMB TEXTURE NAME now returns a blank string rather than NULL when nothing found (better print formatting)
+ * LIMB TEXTURE NAME returns texture name data for each material within the mesh if multi-material texturing used
+ * Fixed GHOST OBJECT ON command so that ghost mode 1 now works exactly like DB Classic (src=None and Dst=SRCOLOR)
+ * Fixed cartoon shading command so that if boned model was animating, the model does not corrupt and distort
+ * Prevented bump mapping command from crashing when specify a bone based model where the bone vertex data was scewed when the mesh was converted
+ * LOAD IMAGE now places resources in MANAGED memory, rather than the default
+ * Amended the automatic collision system so that rotate does not try to assume a sliding logic, and prevents the rotate for clean collision
+ * Added extra runtime error if the user tries to save a DBPro object without the .DBO extension so vital in allowing the object to be reload okay
+ * When restoring the mesh of a former object under an effect influence, the old orig-data is released to avoid re-effect corruption
+ * MAKE OBJECT FROM LIMB now handles the correct mesh from the correct source frame, rather than the biggest mesh from the object
+ * CHANGE MESH now has new runtime error which does not allow limbs to be specified that do not carry their own mesh data
+ * The LOAD OBJECT command can now handle very old DBO files saved before the introduction of the additional custom data token (caused crashes)
+ * Added code for object creation which allows an object with bone information to apply those bone modifications initially (bone stretching by default)
+ * Resources deallocated when object deleted more aggressively performed to detect and release stray mesh references (make object from limb issue)
+ * All objects now have instance check so only appropriate commands will work with instanced objects - RE-CHECK YOUR INSTANCE OBJECT code
+ * Unrotated collision box checks now account for scale, so MAKE OBJECT COLLISION BOX will be affected by SCALE OBJECT
+ * Bounds calculated on animated models that have a scaling inside the frame hierarhcy now report the accurate size on the X, Y and Z
+ * Models with a large number of multimaterials and texture stages no longer corrupts the internal render states (causing culling problems)
+ * No restriction in using Excluded Objects with regular commands, it now only affects the actual rendering of the objects. 
+ * Some 3DS files contain material names that are illegal in X files, converted correctly so more 3DS files can be imported
+ * Layers for ghosts and locked objects are now seperated so that ghosts can be rendered inside a reflection, for shiny floor trick
+ * When objects casting shadows are culled off-screen, SCALE OBJECT no longer removes the additional radius factor for shadows cast out of view
+ * OBJECT SIZE now reports its values as positive, irrespective of whether pivot object transforms the dimensions of the object
+ * The MAKE OBJECT FROM LIMB command now copies all the texture data information from the source object
+ * INSTANCED OBJECTS can now again be affected by GHOST OBJECT and ZDEPTH commands
+ * Models that contain bone information that does not completely tally with frame name data, no longer crashes loader
+ * CLONE OBJECT now clones all collision and visibility data from the original, including any scale adjusted radius for visibility
+ * SHOW OBJECT BOUNDS can now revert to box only representation after being used to represent the sphere bounds previously
+ * EXCLUDED objects no longer receive collision, or interfere with the collision system
+ * Once more instance and clone objects can be part of the collision system
+
+Image
+-----
+
+ * The LOAD IMAGE now uses the D3D FORMAT specified in the DDS file, rather than converting to A8R8G8B8 (or equvil)
+
+Input
+-----
+
+ * ENTRY$() command reverts to pre-U58 state where backspaces are treated as regular asc characters
+ * Added ENTRY$(1) new parameter which switches the entry$() command to automatically delete if backspace pressed
+ * When using INPUT commands, expect a 32K chunk of memory to be consumed every few seconds while the buffers fill up
+ * SET CONTROL DEVICE now has an additional parameter to select based on index as well as name (same-name joysticks)
+ * STR$(x,decimal places) additional parameter to control how many decimal places should be returned in the value string
+
+Advanced Matrix
+---------------
+
+ * Restored position functions (by removing legacy EX additions to the decorated names in the string table)
+
+Animation
+---------
+
+ * Restored the SET ANIMATION VOLUME to the original code (0-100) - remember that only a range of 85-100 is audiable
+
+Memblock
+--------
+
+ * Fixed a bug that caused MAKE MEMBLOCK FROM X not release the last memblock if it existed at the time
+
+Multiplayer
+-----------
+
+ * Fixed bug caused by checklist that cannot find net sessions crashing whilst attempting to fill a null string
+ * Passing an unitialised sting to several MP commands no longer crashes the program
+
+Light
+-----
+
+ * When SET DISPLAY MODE used, the light default settings where different, now fixed to align to the Basic3D light setting
+ * Added default value of 1.0 to th falloff, which corrects an error in spot lights in the latest DX version
+
+Music
+-----
+
+ * SET MUSIC VOLUME now works fine with CD Music (by controlling the master mixer volume of the primary device)
+
+Matrix
+------
+
+ * Fixed SCROLL MATRIX commands to wrap height data perfectly in all four directions, does not skip a line of data now
+
+Particles
+---------
+ 
+ * Changed particle size attenuation, now works with distance from camera, may cause size change behaviour in U59 programs
+ * SET PARTICLE EMISSIONS now works with drift particles such as FIRE and SNOW effects
+ * An error is now produced if a particle is created with no emission value
+
+Terrain
+-------
+ 
+ * Added new command DESTROY TERRAIN (the inverse of BUILD TERRAIN), not to be confused with DELETE TERRAIN
+ * Added new command called UPDATE TERRAIN 1 (optional parameter which switches off the high-level culling of terrain) for multiple camera use
+
+Setup
+-----
+
+ * SET WINDOW ON and OFF now only change the entire screen resolution if transitioning from FULL to WINDOW or back to FULL
+ * Default changed to ON, allowing the SET DISPLAY MODE to be used to switch off the VSYNC mode, window modes are VSYNC OFF by default
+ * When SET WINDOW ON and SET DISPLAY MODE used to change the window mode to regular, this behaviour is retained even if wasnt in fullscreen mode
+ * Windows own resolution (non-32bit) is now stored in the screendepth field in case a task switch or set window on forces a re-capture of device
+
+Sprite
+------
+
+ * SPRITE WIDTH/HEIGHT now report correct size if SIZE SPRITE used, and also if GET IMAGE changes image used by sprite
+ * SPRITE 'blue' backdrop can now be changed colour using the COLOR BACKDROP command to increase this functionality
+ 
+Sound
+-----
+
+ * Added support for ADPCM WAV format (microsoft compressed WAV) using ACM conversion (other formats too)
+ * Added internal debug markers to the LOAD SOUND command in case the DMEM issue surfaces in the future
+
+System
+------
+
+ * When using SYSTEM DMEM AVAILABLE(), be aware that it uses the DXDIAG framework, which can be slow to initialise
+ * Added extra error checks in SYSTEM DMEM AVAILABLE() in case DXDIAG info not availabe
+
+Text
+----
+
+ * MID, LEFT and RIGHT commands now throw a runtime error if a negative or zero value is provided
+
+Advanced Terrain (free plugin)
+----------------
+
+ * The AdvancecTerrain Plug-in DLL is included with this Upgrade, as it internally requires new DBO structure to function
+ * Important change/fix. Texture Map and Height Map where not aligned. In U59, you had to rotate your heightmap 90 degrees anticlockwise!
+ * When making a lightweight terrain and saving it (minus detail map index), no longer crashes on reloading it
+ * Additional parameter for BUILD TERRAIN allows the automatica filtering to be switched off (no smoothing) - good for tiling terrains
+ * GET TERRAIN SIZE X and Z now function normally, and reports the correct width and depth of the terrain
+ * Make sure that your old AdvancedTerrain DLL in uninstalled and removed from the plugins-user folder, and placed in the licensed folder
+
+Enhancement Pack (add-on plugin upgrade)
+----------------
+
+ * ENSURE FOR SURE that the installer does not mess up the V1.06 version number in the editor, and that the free FPSC enhancement DLL DO NOT CONFLICT!
+ * The Speech and EAX commands of the free expansion pack DLL are not supported, and will result in a missing function if used
+ * When installing the full expansion pack/upgrade, ensure the free expansion pack is removed from the plugins-user folder
+ * ADD IMAGE TO BLOCK no longer duplicates the file and instead overwrites to form a single copy in the ZIP file
+ * OPEN FILE BLOCK no longer crashes if given a non-ZIP filename, provides graceful error
+ * Added GET DATA FILE EXISTS(FileID) command to round off this functionality
+ * GET CD LETTER$() now returns the correct sequence of CD drive letters
+ * Fixed linkage of the GETCOMPUTERNAMEEX function so it does not report a missinf export
+
+Cloth & Particle (add-on plugin upgrade)
+----------------
+
+ * AddKey to size effector returns the correct index of the created keyframe, no longer 0, 0, 1, 2, etc
+ * Fixed SET RADIAL EMISSIONS command by uncommenting the code that sets the flags - not sure why it was excluded
+ * Added code to ensure the object world matrix is used in the emitter object, such as the ZROTATE OBJECT intermitent bug
+ * Code exited to reset position, scale and rotation on the first update physics call, not disabled to retain obj positions
+ * Added corrections for Make Wrapround Effector and Set Wrapround Effector in keyword file and help CHM
+ * POSITION OBJECT when used on an emitter could be reset, because a vecPosition field was using a local structure, not the latest DBO structure
+
+GameFX Extraction
+-----------------
+
+The following unsupported commands have been extracted from the Basic3D command set and placed in a new freely available GameFX plugin distributed along with U6. There have been no functional changes to these commands:
+
+    IDS_STRING101           "SET STATIC UNIVERSE%FFF%?CreateNodeTree@@YAXMMM@Z%X, Y, Z"
+    IDS_STRING102           "MAKE STATIC OBJECT%LLLLL%?AddNodeTreeObject@@YAXHHHHH@Z%Object Number, Collision, Arbitary Value, Cast Shadow, Portal Blocker"
+    IDS_STRING103           "MAKE STATIC LIMB%LLLLLL%?AddNodeTreeLimb@@YAXHHHHHH@Z%Object Number, Limb Number, Collision, Arbitary Value, Cast Shadow, Portal Blocker"
+    IDS_STRING104           "DELETE STATIC OBJECTS%0%?DeleteNodeTree@@YAXXZ"
+    IDS_STRING105           "DELETE STATIC OBJECT%L%?RemoveNodeTreeObject@@YAXH@Z%Object Number"
+    IDS_STRING106           "SET STATIC PORTALS ON%0%?SetNodeTreePortalsOn@@YAXXZ%"
+    IDS_STRING107           "SET STATIC PORTALS OFF%0%?SetNodeTreePortalsOff@@YAXXZ%"
+    IDS_STRING108           "BUILD STATIC PORTALS%0%?BuildNodeTreePortals@@YAXXZ%"
+    IDS_STRING109           "SET STATIC OBJECTS WIREFRAME ON%0%?SetNodeTreeWireframeOn@@YAXXZ"
+    IDS_STRING110           "SET STATIC OBJECTS WIREFRAME OFF%0%?SetNodeTreeWireframeOff@@YAXXZ"
+    IDS_STRING111           "STATIC LINE OF SIGHT[%LFFFFFFFF%?GetStaticLineOfSight@@YAHMMMMMMMM@Z%X1, Y1, Z1, X2, Y2, Z2, Width, Accuracy"
+    IDS_STRING112           "GET STATIC COLLISION HIT[%LFFFFFFFFFFFF%?GetStaticHit@@YAHMMMMMMMMMMMM@Z%OX1, OY1, OZ1, OX2, OY2, OZ2, NX1, NY1, NZ1, NX2, NY2, NZ2"
+    IDS_STRING113           "STATIC RAYCAST[%LFFFFFF%?GetStaticRayCast@@YAHMMMMMM@Z%X1, Y1, Z1, X2, Y2, Z2"
+    IDS_STRING114           "STATIC VOLUME[%LFFFFFFF%?GetStaticVolumeCast@@YAHMMMMMMM@Z%X1, Y1, Z1, X2, Y2, Z2, Size"
+    IDS_STRING115           "GET STATIC COLLISION X[%F%?GetStaticX@@YAKXZ"
+    IDS_STRING116           "GET STATIC COLLISION Y[%F%?GetStaticY@@YAKXZ"
+    IDS_STRING117           "GET STATIC COLLISION Z[%F%?GetStaticZ@@YAKXZ"
+    IDS_STRING118           "GET STATIC COLLISION COUNT[%L%?GetStaticColCount@@YAHXZ"
+    IDS_STRING119           "GET STATIC COLLISION VALUE[%L%?GetStaticColValue@@YAHXZ"
+    IDS_STRING120           "GET STATIC COLLISION FLOOR[%L%?GetStaticFloor@@YAHXZ"
+    IDS_STRING121           "ADD STATIC OBJECTS TO LIGHT MAP POOL%0%?AddStaticObjectsToLightMapPool@@YAXXZ%"
+    IDS_STRING122           "ADD OBJECT TO LIGHT MAP POOL%L%?AddObjectToLightMapPool@@YAXH@Z%Object Number"
+    IDS_STRING123           "ADD LIGHT MAP LIGHT%FFFFFFFFL%?AddLightMapLight@@YAXMMMMMMMMH@Z%X, Y, Z, Radius, Red, Green, Blue, Brightness, Shadow"
+    IDS_STRING124           "CREATE LIGHT MAPS%LLS%?CreateLightMaps@@YAXHHK@Z%Texture Size, Texture Quality, LightMapSavePath"
+    IDS_STRING125           "FLUSH LIGHT MAPS%0%?FlushLightMaps@@YAXXZ%"
+    IDS_STRING126           "ADD LIMB TO LIGHT MAP POOL%LL%?AddLimbToLightMapPool@@YAXHH@Z%"
+    IDS_STRING127           "DELETE LIGHT MAP LIGHTS%0%?FlushLightMapLights@@YAXXZ%"
+    IDS_STRING128           "ADD STATIC SCORCH%FL%?AddNodeTreeScorch@@YAXMH@Z%Scorch Size, Scorch Type"
+    IDS_STRING129           "LOAD STATIC OBJECTS%SL%?LoadNodeTreeObjects@@YAXKH@Z%Filename, Divide Texture Size"
+    IDS_STRING130           "SET STATIC SCORCH%LLL%?SetNodeTreeScorchTexture@@YAXHHH@Z%Image Number, Width, Height"
+    IDS_STRING131           "SET SHADOW LIGHT%LFFFF%?AddNodeTreeLight@@YAXHMMMM@Z%Light Number, X, Y, Z, Range"
+    IDS_STRING132           "SET GLOBAL SHADOWS OFF%0%?SetGlobalShadowsOff@@YAXXZ"
+    IDS_STRING133           "SET GLOBAL SHADOWS ON%0%?SetGlobalShadowsOn@@YAXXZ"
+    IDS_STRING134           "SET GLOBAL SHADOW SHADES%L%?SetShadowShades@@YAXH@Z%Number Of Shades"
+    IDS_STRING135           "SET GLOBAL SHADOW COLOR%LLLL%?SetShadowColor@@YAXHHHH@Z%Red, Green, Blue, Alpha"
+    IDS_STRING136           "SET SHADOW POSITION%LFFF%?SetShadowPosition@@YAXHMMM@Z%Mode, X, Y, Z"
+    IDS_STRING137           "PERFORM CSG UNION%LL%?PeformCSGUnion@@YAXHH@Z%Target Object, Brush Object"
+    IDS_STRING138           "PERFORM CSG DIFFERENCE%LL%?PeformCSGDifference@@YAXHH@Z%Target Object, Brush Object"
+    IDS_STRING139           "PERFORM CSG INTERSECTION%LL%?PeformCSGIntersection@@YAXHH@Z%Target Object, Brush Object"
+    IDS_STRING140           "PERFORM CSG CLIP%LL%?PeformCSGClip@@YAXHH@Z%Target Object, Brush Object"
+    IDS_STRING141           "PERFORM CSG UNION ON VERTEXDATA%L%?PeformCSGUnionOnVertexData@@YAXH@Z%Brush Mesh"
+    IDS_STRING142           "PERFORM CSG DIFFERENCE ON VERTEXDATA%L%?PeformCSGDifferenceOnVertexData@@YAXH@Z%Brush Mesh"
+    IDS_STRING143           "PERFORM CSG INTERSECTION ON VERTEXDATA%L%?PeformCSGIntersectionOnVertexData@@YAXH@Z%Brush Mesh"
+    IDS_STRING144           "REDUCE MESH%LLLLLL%?ReduceMesh@@YAXHHHHHH@Z%Mesh Number, Block Mode, Near Mode, GX, GY, GZ"
+    IDS_STRING145           "ATTACH OBJECT TO STATIC%L%?AttachObjectToNodeTree@@YAXH@Z%Object Number"
+    IDS_STRING146           "OBJECT BLOCKING[%LLFFFFFF%?ObjectBlocking@@YAHHMMMMMM@Z%Object, X1, Y1, Z1, X2, Y2, Z2"
+    IDS_STRING147           "DETACH OBJECT FROM STATIC%L%?DetachObjectFromNodeTree@@YAXH@Z%Object Number"
+    IDS_STRING148           "ADD LOD TO OBJECT%LLLF%?AddLODToObject@@YAXHHHM@Z%Object Number, LOD Object, LOD Level, LOD Distance"
+    IDS_STRING149           "SAVE STATIC OBJECTS%S%?SaveNodeTreeObjects@@YAXK@Z%Filename"

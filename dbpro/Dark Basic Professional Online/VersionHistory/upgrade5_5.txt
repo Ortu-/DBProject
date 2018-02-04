@@ -1,0 +1,38 @@
+Upgrade 5.5
+===========
+
+BASIC3D
+-------
+* OFFSET LIMB, SCALE LIMB and ROTATE LIMB now have optional extra parameter for triggering bounds recalculation
+* INTERSECT OBJECT no longer refreshes the VB each time it is called (bug introduced with U5.4)
+* DELETE OBJECT now does a better job if SYNC not used right away before same object recreation
+
+CORE
+----
+* REDIM caused by two sequences of DIM statements no longer crashes if either array is completely empty
+* Uninitialised strings now compare correctly even when not initialised
+* WRAPVALUE now works again with negative numbers
+
+COMPILER
+--------
+* Added extra debug reporting into TGC Online elements for greater detail when a connection error occurs
+* New TGC.TXT employed so TGC online components can be translated for localized upgrades
+* An empty INPUT command will no longer crash the compiler due to zero parameters
+
+DISPLAY
+-------
+* Set window title will no longer attempt to show the mouse cursor
+* Applications using HIDDEN mode no longer get shown at the start of the init phase
+
+QUAKE 2 BSP
+-----------
+* Sorted problem with alpha blending
+
+NOTES
+-----
+
+* Variables can no longer start with a numeric character (ie 3DITEM)
+* The default editor detects '...' as a concatenation symbol and will add the next line to current line!
+* The default editor is unaware of additional macros and pre-parsers employed by other DBPro editors
+* DWORDs are no longer accepted in the compiler as subscripts and must be integer values
+* Due to alteration of foundation functionality, object planes have a 180 degree altered rotation on the Y

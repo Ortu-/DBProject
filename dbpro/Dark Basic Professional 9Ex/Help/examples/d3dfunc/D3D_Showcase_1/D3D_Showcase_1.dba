@@ -1,0 +1,605 @@
+Rem D3DFunc Showcase Example
+Rem Written By Jason Clogg 2008
+Rem 
+Rem Show various features of D3DFunc
+
+Gosub InitialiseDemo
+
+Rem This first section of code is just showing the main menu
+
+do
+
+   gosub DrawTitle
+
+   MenuText$="1. D3D Text Vs DBPro Text" +crlf$+crlf$
+   MenuText$=MenuText$+ "2. D3D Text Vs DBPro Text (Multiple Fonts and Sizes)" +crlf$+crlf$
+   MenuText$=MenuText$+ "3. 3D Text Mesh" +crlf$+crlf$
+   MenuText$=MenuText$+ "4. 3D Line/Dot Drawing" +crlf$+crlf$
+   MenuText$=MenuText$+ "5. D3D Objects" +crlf$+crlf$
+   MenuText$=MenuText$+ "6. D3D Primitives" +crlf$+crlf$
+   MenuText$=MenuText$+ "7. Rounded Boxes" +crlf$+crlf$
+   MenuText$=MenuText$+ "ESC. Quit"
+
+   D3D_Rounded_Box sw/2-250,125,sw/2+250,sh-105,10,1,rgb(0,0,128)
+   D3D_Rounded_Box sw/2-250,125,sw/2+250,sh-105,10,0,rgb(128,128,128)
+
+   D3D_StartText
+      D3D_BoxText 2,sw/2-249,126,500,370,1,1,MenuText$,rgb(0,0,0)
+      D3D_BoxText 2,sw/2-250,125,500,370,1,1,MenuText$
+   D3D_EndText
+   
+   If inkey$()="1" then gosub D3DVsDBP
+   If inkey$()="2" then gosub D3DVsDBPMulti
+   If inkey$()="3" then gosub D3DTextMesh
+   If inkey$()="4" then gosub Line3D
+   If inkey$()="5" then gosub D3DObject
+   If inkey$()="6" then gosub DrawPolygon
+   If inkey$()="7" then gosub RoundBox
+
+   sync
+
+loop
+
+Rem *************************************************************************
+Rem * 
+Rem * D3D Text vs DBP Text Demonstration - Jason Clogg 2008
+Rem * 
+Rem *************************************************************************
+
+D3DVsDBP:
+
+   DemoState$="D3DVsDBP"
+   TextType$="DBP"
+
+   cls
+
+   set text font "Arial"
+   set text size 30
+
+   Do
+   
+      gosub DrawTitle
+
+      Select TextType$
+         Case "DBP"
+            For i=1 to 200
+               Text rnd(700),rnd(400)+100,"DBP Text"
+            Next i
+            Center Text sw/2,sh/2,"Press Space for D3D Text"
+         EndCase
+         Case "D3D"
+            D3D_StartText
+               For i=1 to 200
+                  D3D_Text 4,rnd(700),rnd(400)+100,0,"D3D Text"
+               Next i
+               D3D_Text 4,sw/2,sh/2,1,"Press Space for DBP Text"
+            D3D_EndText
+         EndCase
+      EndSelect
+
+      D3D_Box sw/2-201,sh/2-1,sw/2+201,sh/2+31
+      D3D_Box sw/2-200,sh/2,sw/2+200,sh/2+30,rgb(0,0,0),rgb(0,0,0),rgb(0,0,0),rgb(0,0,0)
+
+      D3D_StartText
+         D3D_Text 3,0,30,0,TextType$ + " Text FPS = " + str$(screen fps())
+         If TextType$="D3D"
+            D3D_Text 4,sw/2,sh/2,1,"Press Space for DBP Text",rgb(255,0,0)
+         Else
+            D3D_Text 4,sw/2,sh/2,1,"Press Space for D3D Text",rgb(255,0,0)
+         EndIf
+      D3D_EndText
+
+      If SpaceKey()=1
+         if spacepressed=0
+            spacepressed=1
+            if TextType$="DBP"
+               TextType$="D3D"
+            Else
+               TextType$="DBP"
+            EndIf
+         EndIf
+      Else
+         spacepressed=0
+      EndIf
+
+      If upper$(Inkey$())="Q"
+         DemoState$="Menu"
+         return
+      EndIf
+
+      sync
+
+   Loop
+
+   return
+
+Rem *************************************************************************
+Rem * 
+Rem * D3D vs DBP text (Multi size) Demonstration - Jason Clogg 2008
+Rem * 
+Rem *************************************************************************
+
+D3DVsDBPMulti:
+
+   DemoState$="D3DVsDBPMulti"
+   TextType$="DBP"
+
+   cls
+
+   set text font "Arial"
+
+   Do
+   
+      gosub DrawTitle
+
+      Select TextType$
+         Case "DBP"
+            For i=1 to 100
+               set text size 15
+               Text rnd(700),rnd(400)+100,"DBP Text"
+               set text size 30
+               Text rnd(700),rnd(400)+100,"DBP Text"
+            Next i
+        EndCase
+         Case "D3D"
+            D3D_StartText
+               For i=1 to 100
+                  D3D_Text 3,rnd(700)+50,rnd(400)+100,1,"D3D Text"
+                  D3D_Text 4,rnd(700)+50,rnd(400)+100,1,"D3D Text"
+               Next i
+            D3D_EndText
+         EndCase
+      EndSelect
+      
+      D3D_Box sw/2-201,sh/2-1,sw/2+201,sh/2+31
+      D3D_Box sw/2-200,sh/2,sw/2+200,sh/2+30,rgb(0,0,0),rgb(0,0,0),rgb(0,0,0),rgb(0,0,0)
+
+      D3D_StartText
+         D3D_Text 3,0,30,0,TextType$ + " Text FPS = " + str$(screen fps())
+         If TextType$="D3D"
+            D3D_Text 4,sw/2,sh/2,1,"Press Space for DBP Text",rgb(255,0,0)
+         Else
+            D3D_Text 4,sw/2,sh/2,1,"Press Space for D3D Text",rgb(255,0,0)
+         EndIf
+      D3D_EndText
+
+      If SpaceKey()=1
+         if spacepressed=0
+            spacepressed=1
+            if TextType$="DBP"
+               TextType$="D3D"
+            Else
+               TextType$="DBP"
+            EndIf
+         EndIf
+      Else
+         spacepressed=0
+      EndIf
+
+      If upper$(Inkey$())="Q"
+         DemoState$="Menu"
+         return
+      EndIf
+
+      sync
+
+   Loop
+
+   return
+
+Rem *************************************************************************
+Rem * 
+Rem * D3D Text Mesh Demonstration - Jason Clogg 2008
+Rem * 
+Rem *************************************************************************
+
+D3DTextMesh:
+
+   DemoState$="D3DTextMesh"
+
+   cls
+
+   D3D_Make_3DText 1,1,"D3DFunc - Low Quality",.1,0,1
+   Position Object 1,0,2,0
+   D3D_Make_3DText 2,1,"D3DFunc - Medium Quality",.1,1,1
+   Position Object 2,0,0,0
+   D3D_Make_3DText 3,1,"D3DFunc - High Quality",.1,2,1
+   Position Object 3,0,-2,0
+
+   Position Camera 0,0,-10
+   Point Camera 0,0,0
+
+   ca#=0
+
+   Do
+
+      tmrSize=timer()
+
+      gosub DrawTitle
+
+      D3D_StartText
+         D3D_Text 3,0,30,0,"FPS = " + str$(screen fps())
+      D3D_EndText
+
+      If upper$(Inkey$())="Q"
+         DemoState$="Menu"
+         Delete Object 1
+         Delete Object 2
+         Delete Object 3
+         return
+      EndIf
+
+      position camera sin(ca#)*10,0,cos(ca#)*10
+      point camera 0,0,0
+
+      ca#=(tmrSize mod 7200)/20.0
+
+      sync
+
+   Loop
+
+   return
+
+Line3D:
+
+   DemoState$="Line3D"
+
+   cls
+   position camera 0,0,50
+   point camera 0,0,60
+
+   Make Camera 1
+   Set Camera View 1,sw/2-330,sh/2-120,sw/2-10,sh/2+120
+   Color Backdrop 1,0
+   
+   Make Camera 2
+   Set Camera View 2,sw/2+10,sh/2-120,sw/2+320,sh/2+120
+   Color Backdrop 2,0
+
+   ca#=0
+   for i=1 to 20
+      if object exist(i+100)=0 then  make object sphere i+100,.5
+      hide object i+100
+   next i
+   zpos#=50
+   x=0
+   y=0
+
+   Do
+
+      gosub DrawTitle
+
+      D3D_Rounded_Box sw/2-331,sh/2-121,sw/2-10,sh/2+120,1,0,rgb(128,128,128)
+      D3D_Rounded_Box sw/2+9,sh/2-121,sw/2+320,sh/2+120,1,0,rgb(128,128,128)
+
+      D3D_StartText
+         D3D_Text 3,0,30,0,"FPS = " + str$(screen fps())
+      D3D_EndText
+
+      cx#=cos(ca#)*zpos#
+      cz#=sin(ca#)*zpos#
+      position camera 1,cx#,2,cz#
+      point camera 1,0,0,0
+      position camera 2, cz#,2,cx#
+      point camera 2,0,0,0
+      ca#=ca#+.1
+      randomize 0
+      x1#=rnd(20)-5
+      y1#=rnd(20)-5
+      z1#=rnd(20)-5
+      for i=1 to 20
+         x2#=rnd(20)-5
+         y2#=rnd(20)-5
+         z2#=rnd(20)-5
+         position object i+100,x1#,y1#,z1#
+         show object i+100
+         LineColor=D3D_RGBA(rnd(255),rnd(255),rnd(255),255)
+         D3D_Line3D 1,x1#,y1#,z1#,x2#,y2#,z2#,LineColor,LineColor, 0
+         D3D_Line3D 2,x1#,y1#,z1#,x2#,y2#,z2#,LineColor,LineColor, 0
+         D3D_Dot3D 1,x1#,y1#,z1#,5,LineColor, 0
+         D3D_Dot3D 2,x1#,y1#,z1#,5,LineColor, 0
+         x1#=x2#
+         y1#=y2#
+         z1#=z2#
+      next i
+      if zpos#=>50 then zmove#=-.01
+      if zpos#=<-50 then zmove#=.01
+      zpos#=zpos#+zmove#
+
+      If upper$(Inkey$())="Q"
+         DemoState$="AntiVsTextMulti"
+         Delete Camera 1
+         Delete Camera 2
+         for i=1 to 20
+            delete object i+100
+         next i
+         return
+      EndIf
+
+      sync
+
+   Loop
+
+   return
+
+Rem *************************************************************************
+Rem * 
+Rem * D3D Object Demonstration - Jason Clogg 2008
+Rem * 
+Rem *************************************************************************
+
+D3DObject:
+
+   DemoState$="D3DObject"
+
+   cls
+   iPrimitive=0
+   spacepressed=0
+
+   Do
+      Select iPrimitive
+         Case 0
+            D3D_Make_Pyramid 1, 3, 3, 3
+            Obj$="Pyramid"
+         EndCase
+         Case 1
+            D3D_Make_Teapot 1
+            Obj$="Teapot"
+         EndCase
+         Case 2
+            D3D_Make_Torus 1,.5,1.6,32,32
+            Obj$="Torus"
+         EndCase
+         Case 3
+            D3D_Make_Polygon 1,6
+            Obj$="Polygon"
+         EndCase
+      EndSelect
+
+      ExitLoop=0
+
+      While ExitLoop = 0
+
+         tmrSize=timer()
+
+         gosub DrawTitle
+
+         if spacekey()=1
+            if spacepressed=0
+               spacepressed=1
+               ExitLoop=1
+            endif
+         else
+            spacepressed=0
+         endif
+
+         If upper$(Inkey$())="Q"
+            DemoState$="Menu"
+            Delete Object 1
+            return
+         EndIf
+
+         position camera sin(ca#)*5.5,2,cos(ca#)*5.5
+         point camera 0,0,0
+
+         ca#=(tmrSize mod 3600)/10.0
+
+         D3D_Box sw/2-201,sh/2-1,sw/2+201,sh/2+31
+         D3D_Box sw/2-200,sh/2,sw/2+200,sh/2+30,rgb(0,0,0),rgb(0,0,0),rgb(0,0,0),rgb(0,0,0)
+
+         D3D_StartText
+            D3D_Text 3,0,30,0,TextType$ + " Text FPS = " + str$(screen fps())
+            D3D_Text 4,sw/2,sh/2,1,"Press Space for Next Object",rgb(255,0,0)
+         D3D_EndText
+
+         sync
+
+      EndWhile
+
+      Delete Object 1
+      inc iPrimitive
+
+      if iPrimitive>3 then iPrimitive=0
+
+      if ExitLoop=2
+         D3D_Font 1,"Arial",20,0,0,1
+         D3D_Font 2,"Arial",15,0,0,1
+         D3D_Font 3,"Arial",10,0,0,1
+         return
+      Endif
+
+   Loop
+
+   return
+
+Rem *************************************************************************
+Rem * 
+Rem * Draw Polygon Demonstration - Jason Clogg 2008
+Rem * 
+Rem *************************************************************************
+
+DrawPolygon:
+
+   DemoState$="DrawPolygon"
+
+   cls
+   cwa#=0
+   ccwa#=0
+
+   Do
+   
+      gosub DrawTitle
+
+      D3D_StartText
+         D3D_Text 3,0,30,0,"FPS = " + str$(screen fps())
+      D3D_EndText
+
+      tmrRotation=timer()
+
+      Rem Each Polygon is drawn twice, first filled, then outlined
+
+      d3d_polygon sw/4,sh/4,50,3,1,cwa#,rgb(255,0,0)
+      d3d_polygon sw/4,sh/4,50,3,0,cwa#,rgb(255,255,255)
+
+      d3d_polygon sw/2,sh/4,50,4,1,ccwa#,rgb(255,0,0)
+      d3d_polygon sw/2,sh/4,50,4,0,ccwa#,rgb(255,255,255)
+
+      d3d_polygon sw/4*3,sh/4,50,5,1,cwa#,rgb(255,0,0)
+      d3d_polygon sw/4*3,sh/4,50,5,0,cwa#,rgb(255,255,255)
+
+      d3d_polygon sw/4,sh/2,50,3,1,cwa#,rgb(0,255,0)
+      d3d_polygon sw/4,sh/2,50,3,0,cwa#,rgb(255,255,255)
+
+      d3d_polygon sw/2,sh/2,50,5,1,ccwa#,rgb(0,255,0)
+      d3d_polygon sw/2,sh/2,50,5,0,ccwa#,rgb(255,255,255)
+
+      d3d_polygon sw/4*3,sh/2,50,6,1,cwa#,rgb(0,255,0)
+      d3d_polygon sw/4*3,sh/2,50,6,0,cwa#,rgb(255,255,255)
+
+      d3d_polygon sw/4,sh/4*3,50,7,1,cwa#,rgb(0,0,255)
+      d3d_polygon sw/4,sh/4*3,50,7,0,cwa#,rgb(255,255,255)
+
+      d3d_polygon sw/2,sh/4*3,50,8,1,ccwa#,rgb(0,0,255)
+      d3d_polygon sw/2,sh/4*3,50,8,0,ccwa#,rgb(255,255,255)
+
+      d3d_polygon sw/4*3,sh/4*3,50,9,1,cwa#,rgb(0,0,255)
+      d3d_polygon sw/4*3,sh/4*3,50,9,0,cwa#,rgb(255,255,255)
+
+      If upper$(Inkey$())="Q"
+         DemoState$="Menu"
+         return
+      EndIf
+
+      Rem Rotate each polygon 360 degrees every 2 seconds (2000ms)
+
+      cwa#=wrapvalue((tmrRotation mod 2000)*360.0/2000.0)
+      ccwa#=wrapvalue((2000-(tmrRotation mod 2000))*360.0/2000.0)
+
+      sync
+
+   Loop
+
+   return
+
+RoundBox:
+
+   DemoState$="RoundBox"
+
+   cls
+
+   Do
+
+      gosub DrawTitle
+
+      D3D_StartText
+         D3D_Text 3,0,30,0,"FPS = " + str$(screen fps())
+      D3D_EndText
+
+      D3D_Rounded_Box sw/2-200,90,sw/2+200,140,10,0,rgb(255,255,255)
+      
+      D3D_Rounded_Box sw/2-200,150,sw/2+200,250,20,0,rgb(255,255,255)
+      
+      D3D_Rounded_Box sw/2-200,260,sw/2+200,460,50,1,rgb(128,0,0)
+      D3D_Rounded_Box sw/2-200,260,sw/2+200,460,50,0,rgb(255,255,255)
+
+      D3D_Rounded_Box sw/2-200,470,sw/2+200,500,5,0,rgb(255,255,255)
+      
+      D3D_Rounded_Box sw/2-200,510,sw/2+200,530,2,0,rgb(255,255,255)
+
+      D3D_StartText
+         D3D_BoxText 2,sw/2-200,90,400,50,1,1,"Radius = 10"
+         D3D_BoxText 2,sw/2-200,150,400,100,1,1,"Radius = 20"
+         D3D_BoxText 2,sw/2-200,260,400,200,1,1,"Radius = 50"
+         D3D_BoxText 2,sw/2-200,470,400,30,1,1,"Radius = 5"
+         D3D_BoxText 2,sw/2-200,510,400,20,1,1,"Radius = 2"
+      D3D_EndText
+      
+      If upper$(Inkey$())="Q"
+         DemoState$="Menu"
+         return
+      EndIf
+
+      sync
+
+   Loop
+
+   return
+
+InitialiseDemo:
+
+   Rem Initialise D3DFunc allowing a maximum of 4 fonts
+   D3D_init 4
+   
+   sync on:autocam off:backdrop on:color backdrop rgb(10,10,10)
+
+   sh=screen height()
+   sw=screen width()
+   crlf$=chr$(13)+chr$(10)
+   DemoState$="Menu"
+
+   D3D_Font 1,"Arial",20,0,0,1
+   D3D_Font 2,"Arial",15,0,0,0
+   D3D_Font 3,"Arial",9,0,0,1
+   D3D_Font 4,"Arial",25,0,0,0
+
+   gosub CenterWindow
+
+   return
+
+DrawTitle:
+
+   D3D_Box 0,5,sw/2,70,d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255)
+   D3D_Box sw/2,5,sw,70,d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50)
+   D3D_Line 0,5,sw,5,rgb(128,128,128)
+   D3D_Line 0,70,sw,70,rgb(128,128,128)
+   
+   D3D_Box 0,sh-50,sw/2,sh-5,d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255)
+   D3D_Box sw/2,sh-50,sw,sh-5,d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50),d3d_rgba(0,0,200,255),d3d_rgba(0,0,200,50)
+   D3D_Line 0,sh-5,sw,sh-5,rgb(128,128,128)
+   D3D_Line 0,sh-50,sw,sh-50,rgb(128,128,128)
+
+   D3D_StartText
+      D3D_Text 1,sw/2,10,1,"D3DFunc - Showcase"
+      D3D_Text 2,sw/2,40,1,"Jason Clogg - 2008"
+
+      Select DemoState$
+         Case "Menu"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"Select an Example"
+         EndCase
+         Case "D3DVsDBP"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"D3D Text Vs DBPro Text - Press 'Q' to return to Menu"
+         EndCase
+         Case "D3DVsDBPMulti"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"D3D Text Vs DBPro Text (Multiple Fonts and Sizes) - Press 'Q' to return to Menu"
+        EndCase
+         Case "D3DTextMesh"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"3D Text Mesh - Press 'Q' to return to Menu"
+        EndCase
+         Case "Line3D"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"3D Line/Dot Drawing - Press 'Q' to return to Menu"
+        EndCase
+         Case "D3DObject"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"D3D Objects - Press 'Q' to return to Menu"
+        EndCase
+         Case "DrawPolygon"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"D3D Primitives - Press 'Q' to return to Menu"
+        EndCase
+         Case "RoundBox"
+            D3D_BoxText 2,0,sh-50,sw,45,1,1,"D3D Rounded Boxes - Press 'Q' to return to Menu"
+        EndCase
+      EndSelect
+   D3D_EndText
+
+   return
+   
+CenterWindow:
+
+   Rem Get Desktop Size
+
+   DW=D3D_Get_Desktop_Width()
+   DH=D3D_Get_Desktop_Height()
+
+   Rem Not completely accurate but should be good enough
+   set window position DW/2-SW/2,DH/2-SH/2-32
+
+return

@@ -1,0 +1,3 @@
+Synchronizing C:\dev\DBProject\projects\Demo\src\resource >> C:\dev\DBProject\projects\Demo\publish\debug\release\resource
+-- UPDATED file "data\world.db"
+Complete.

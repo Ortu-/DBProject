@@ -1,0 +1,875 @@
+`====================================================
+` Terrain Brush Functions
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+`--------------
+` Initialize Terrain Brush
+`--------------
+function Terrain_BrushSetup()
+
+   if Terrain_Enabled=1
+      global Terrain_BrushEnabled as boolean
+      global Terrain_BrushTool as integer
+      global Terrain_BrushLayer as integer
+      global Terrain_BrushRadius as float
+      global Terrain_BrushStrength as float
+      global Terrain_OldMouse as AL_Vec2Integer
+      global Terrain_EditTimer as AL_Vec2Integer
+      global Terrain_FlattenHeight as float
+      global Terrain_BrushPosition as AL_Vec3Float
+      global Terrain_BrushTo as AL_Vec2Integer
+      global Terrain_BrushFrom as AL_Vec2Integer
+      global Terrain_BrushSize as AL_Vec2Integer
+      global Terrain_BrushColor as AL_Vec4Float
+      global Terrain_BrushNormal as AL_Vec4Float
+      global Terrain_BrushVertical as AL_Vec4Float
+      global Terrain_BrushBlendXYZ as AL_Vec4Float
+      global Terrain_BrushBlend as float
+      global dim Terrain_BlendMap(Terrain_Size.X-1,Terrain_Size.y-1,4) as float
+      global dim Terrain_ColorMap(Terrain_Size.X-1,Terrain_Size.y-1,3) as float
+      global dim Terrain_Camera(2) as integer
+      global dim Terrain_BrushColorSize(7) as AL_Vec2Float
+      global dim Terrain_BrushEffect(3) as integer
+      global dim Terrain_BrushObject(3) as integer
+      global dim Terrain_BrushTexture(3) as integer
+      global dim Terrain_Memblock(12) as integer
+      Terrain_BrushEnabled=1
+      Terrain_BrushTool=1
+      Terrain_BrushLayer=1
+      Terrain_BrushRadius=500.0
+      Terrain_BrushStrength=1
+      Terrain_Memblock(1)=find free memblock()
+      make memblock Terrain_Memblock(1),12
+      Terrain_Memblock(2)=find free memblock()
+      make memblock from image Terrain_Memblock(2),Terrain_Texture(1)
+      Terrain_Memblock(3)=find free memblock()
+      make memblock from image Terrain_Memblock(3),Terrain_Texture(2)
+      Terrain_Memblock(4)=find free memblock()
+      make memblock from image Terrain_Memblock(4),Terrain_Texture(3)
+      for x=0 to Terrain_Size.x-1
+         for y=0 to Terrain_Size.y-1
+            Pos=12+(y*(Terrain_Size.x*4))+(x*4)
+            Terrain_BlendMap(x,y,0)=memblock byte(Terrain_Memblock(3),Pos+2)
+            Terrain_BlendMap(x,y,1)=memblock byte(Terrain_Memblock(3),Pos+1)
+            Terrain_BlendMap(x,y,2)=memblock byte(Terrain_Memblock(3),Pos+0)
+            Terrain_BlendMap(x,y,3)=memblock byte(Terrain_Memblock(3),Pos+3)
+            Terrain_BlendMap(x,y,4)=255-(Terrain_BlendMap(x,y,0)+Terrain_BlendMap(x,y,1)+Terrain_BlendMap(x,y,2)+Terrain_BlendMap(x,y,3))
+            Terrain_ColorMap(x,y,0)=memblock byte(Terrain_Memblock(4),Pos+2)
+            Terrain_ColorMap(x,y,1)=memblock byte(Terrain_Memblock(4),Pos+1)
+            Terrain_ColorMap(x,y,2)=memblock byte(Terrain_Memblock(4),Pos+0)
+            Terrain_ColorMap(x,y,3)=memblock byte(Terrain_Memblock(4),Pos+3)
+         next y
+      next x
+      set vector4 AL_Vector4(1),0.5/Terrain_Size.x,0.5/Terrain_Size.y,0,0
+      for c=1 to 2
+         if c=1 then t=1
+         if c=2 then t=3
+         delete image Terrain_Texture(t)
+         Terrain_Camera(c)=find free camera()
+         AL_CreateCamera(Terrain_Camera(c),Terrain_Texture(t),Terrain_Size.x,Terrain_Size.y,21)
+         texture object Terrain_Object(1),t-1,Terrain_Texture(t)
+         texture object Terrain_Object(2),t-1,Terrain_Texture(t)
+         texture object Terrain_Object(3),t-1,Terrain_Texture(t)
+         texture object Terrain_Object(4),t-1,Terrain_Texture(t)
+         Terrain_BrushObject(c)=find free object()
+         Terrain_BrushEffect(c)=find free effect()
+         make object plain Terrain_BrushObject(c),2,2,1
+         load effect AL_Directory+"/Terrain/TextureUpdate.fx",Terrain_BrushEffect(c),0,1
+         set object effect Terrain_BrushObject(c),Terrain_BrushEffect(c)
+         set object mask Terrain_BrushObject(c),2^Terrain_Camera(c)
+         set effect constant vector Terrain_BrushEffect(c),"ViewSize",AL_Vector4(1)
+         Terrain_BrushTexture(c)=find free image()
+         make image from memblock Terrain_BrushTexture(c),Terrain_Memblock(t+1)
+         texture object Terrain_BrushObject(c),0,Terrain_BrushTexture(c)
+      next t
+      sync mask (2^Terrain_Camera(1))+(2^Terrain_Camera(2))
+      fastsync
+      Terrain_BrushTexture(3)=find free image()
+      load image AL_Directory+"/Resources/Brush Radius.dds",Terrain_BrushTexture(3),0
+      Terrain_BrushObject(3)=find free object()
+      load object AL_Directory+"/Resources/Brush.dbo",Terrain_BrushObject(3)
+      Terrain_BrushEffect(3)=find free effect()
+      load effect AL_Directory+"/Terrain/Brush.fx",Terrain_BrushEffect(3),0,1
+      set object mask Terrain_BrushObject(3),2^AL_Camera(8)
+      texture object Terrain_BrushObject(3),0,Terrain_BrushTexture(3)
+      texture object Terrain_BrushObject(3),1,Terrain_Texture(1)
+      set object effect Terrain_BrushObject(3),Terrain_BrushEffect(3)
+      ghost object on Terrain_BrushObject(3)
+      set object light Terrain_BrushObject(3),0
+      disable object zdepth Terrain_BrushObject(3)
+      disable object zwrite Terrain_BrushObject(3)
+      scale object  Terrain_BrushObject(3),20,20,20
+      set vector4 AL_Vector4(1),Terrain_Size.X,Terrain_Size.Y,Terrain_TileSize/100,Terrain_TileSize*32
+      set effect constant vector Terrain_BrushEffect(3),"TerrainSize",AL_Vector4(1)
+      set vector4 AL_Vector4(1),Terrain_TileSize*Terrain_Size.X,Terrain_TileSize*Terrain_Size.Y,(0.5/Terrain_Size.X),(0.5/Terrain_Size.Y)
+      set effect constant vector Terrain_BrushEffect(3),"TerrainTileSize",AL_Vector4(1)
+      set effect constant float Terrain_BrushEffect(3),"TerrainHeight",Terrain_Height
+   endif
+endfunction
+
+`--------------
+` Terrain Brush Enabled
+`--------------
+function Terrain_BrushSetEnabled(iEnabled as integer)
+   if Terrain_BrushEnabled>0
+      if iEnabled=1 and Terrain_BrushEnabled=2
+         Terrain_BrushEnabled=1
+         show object Terrain_BrushObject(3)
+         Terrain_OldMouse.x=-1
+      endif
+      if iEnabled=0 and Terrain_BrushEnabled=1
+         Terrain_BrushEnabled=2
+         hide object Terrain_BrushObject(3)
+         Terrain_OldMouse.x=-1
+      endif
+   endif
+endfunction
+
+`--------------
+` Terrain Brush Update
+`--------------
+function Terrain_BrushUpdate(iMouseX as integer,iMouseY as integer)
+   if Terrain_BrushEnabled=1
+      if iMouseX<>Terrain_OldMouse.x or iMouseY<>Terrain_OldMouse.y
+         Terrain_OldMouse.x=iMouseX
+         Terrain_OldMouse.y=iMouseY
+         pick screen iMouseX,iMouseY,Terrain_TileSize*250
+         Terrain_Ray(camera position x(),camera position y(),camera position z(),camera position x()+get pick vector x(),camera position y()+get pick vector y(),camera position z()+get pick vector z())
+         Terrain_BrushPosition.x=Terrain_RayPosition.x
+         Terrain_BrushPosition.y=Terrain_RayPosition.y
+         Terrain_BrushPosition.z=Terrain_RayPosition.z
+         position object Terrain_BrushObject(3),Terrain_BrushPosition.x,Terrain_BrushPosition.y,Terrain_BrushPosition.z
+         if mouseclick()=1 and Terrain_EditTimer.x=0 then Terrain_EditTimer.x=2
+         if Terrain_EditTimer.x=2
+            if Terrain_BrushTool=1 then Terrain_BrushSculpt(Terrain_BrushPosition.x,Terrain_BrushPosition.z,Terrain_BrushRadius,Terrain_BrushStrength*20)
+            if Terrain_BrushTool=2 then Terrain_BrushSculpt(Terrain_BrushPosition.x,Terrain_BrushPosition.z,Terrain_BrushRadius,-Terrain_BrushStrength*20)
+            if Terrain_BrushTool=3 then Terrain_BrushSmooth(Terrain_BrushPosition.x,Terrain_BrushPosition.z,Terrain_BrushRadius,Terrain_BrushStrength)
+            if Terrain_BrushTool=4
+               if Terrain_FlattenHeight=0 then Terrain_FlattenHeight=Terrain_BrushPosition.y
+               Terrain_BrushFlatten(Terrain_BrushPosition.x,Terrain_BrushPosition.z,Terrain_BrushRadius,Terrain_BrushStrength*0.1,Terrain_FlattenHeight)
+            endif
+            if Terrain_BrushTool=5 then Terrain_BrushPaintLayer(Terrain_BrushPosition.x,Terrain_BrushPosition.z,Terrain_BrushRadius,Terrain_BrushStrength*40)
+         endif
+      endif
+      if Terrain_EditTimer.x>0 then dec Terrain_EditTimer.x
+      if mouseclick()=0 then Terrain_FlattenHeight=0
+   endif
+endfunction
+
+`--------------
+` Terrain Set Brush Tool
+`--------------
+function Terrain_BrushSetTool(iTool as integer)
+   if Terrain_BrushEnabled=1
+      local tChangeTexture as boolean
+      if iTool=5 and Terrain_BrushTool<5 then tChangeTexture=1
+      if iTool<5 and Terrain_BrushTool=5 then tChangeTexture=1
+      Terrain_BrushTool=iTool
+      if tChangeTexture=1
+         if Terrain_BrushTool<5
+            delete image Terrain_BrushTexture(1)
+            make image from memblock Terrain_BrushTexture(1),Terrain_Memblock(2)
+            delete camera Terrain_Camera(1)
+            delete image Terrain_Texture(1)
+            AL_CreateCamera(Terrain_Camera(1),Terrain_Texture(1),Terrain_Size.x,Terrain_Size.y,21)
+            texture object Terrain_Object(1),0,Terrain_Texture(1)
+            texture object Terrain_Object(2),0,Terrain_Texture(1)
+            texture object Terrain_Object(3),0,Terrain_Texture(1)
+            texture object Terrain_Object(4),0,Terrain_Texture(1)
+            texture object Terrain_BrushObject(1),0,Terrain_BrushTexture(1)
+            texture object Terrain_BrushObject(3),1,Terrain_Texture(1)
+            sync mask 2^Terrain_Camera(1)
+            fastsync
+         else
+            delete image Terrain_BrushTexture(1)
+            make image from memblock Terrain_BrushTexture(1),Terrain_Memblock(3)
+            delete camera Terrain_Camera(1)
+            delete image Terrain_Texture(2)
+            AL_CreateCamera(Terrain_Camera(1),Terrain_Texture(2),Terrain_Size.x,Terrain_Size.y,21)
+            texture object Terrain_Object(1),1,Terrain_Texture(2)
+            texture object Terrain_Object(2),1,Terrain_Texture(2)
+            texture object Terrain_Object(3),1,Terrain_Texture(2)
+            texture object Terrain_Object(4),1,Terrain_Texture(2)
+            texture object Terrain_BrushObject(1),0,Terrain_BrushTexture(1)
+            sync mask 2^Terrain_Camera(1)
+            fastsync
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Terrain Set Layer
+`--------------
+function Terrain_BrushSetLayer(iLayer as integer)
+   if Terrain_BrushEnabled=1
+      Terrain_BrushLayer=iLayer
+   endif
+endfunction
+
+`--------------
+` Terrain Set Brush Radius
+`--------------
+function Terrain_BrushSetRadius(iBrushRadius as float)
+   if Terrain_BrushEnabled=1
+      Terrain_BrushRadius=iBrushRadius
+      if Terrain_BrushRadius<Terrain_TileSize*2 then Terrain_BrushRadius=Terrain_TileSize*2
+      if Terrain_BrushRadius>Terrain_TileSize*32 then Terrain_BrushRadius=Terrain_TileSize*32
+      scale object Terrain_BrushObject(3),Terrain_BrushRadius*2,100,Terrain_BrushRadius*2
+   endif
+endfunction
+
+`--------------
+` Terrain Set Brush Strength
+`--------------
+function Terrain_BrushSetStrength(iBrushStrength as float)
+   if Terrain_BrushEnabled=1
+      Terrain_BrushStrength=iBrushStrength
+   endif
+endfunction
+
+`--------------
+` Terrain Sculpt
+`--------------
+function Terrain_BrushSculpt(iPosX as float,iPosZ as float,iRadius as float,iVal as float)
+   if Terrain_Enabled=1 and Terrain_BrushEnabled=1
+      local tDist as float
+      local tSize as integer
+      iVal=(iVal/(Terrain_Height/255))
+      tSize=(int(iRadius/Terrain_TileSize)*2)
+      Terrain_BrushFrom.x=int(iPosX/Terrain_TileSize)-(tSize/2)
+      Terrain_BrushFrom.y=int(iPosZ/Terrain_TileSize)-(tSize/2)
+      Terrain_BrushTo.x=Terrain_BrushFrom.x+tSize
+      Terrain_BrushTo.y=Terrain_BrushFrom.y+tSize
+      for x=Terrain_BrushFrom.x to Terrain_BrushTo.x
+         for z=Terrain_BrushFrom.y to Terrain_BrushTo.y
+            if x>-1 and z>-1 and x<Terrain_Size.x and z<Terrain_Size.y
+               tDist=sqrt(((x*Terrain_TileSize)-iPosX)^2+((z*Terrain_TileSize)-iPosZ)^2)
+               if tDist<iRadius
+                  Terrain_Height(x,z)=Terrain_Height(x,z)+(iVal*Terrain_BrushSmoothDist(tDist/iRadius))
+                  if Terrain_Height(x,z)<0 then Terrain_Height(x,z)=0
+                  if Terrain_Height(x,z)>255 then Terrain_Height(x,z)=255
+               endif
+            endif
+         next z
+      next x
+      Terrain_BrushUpdateHeightMap(iPosX,iPosZ,iRadius)
+   endif
+endfunction
+
+`--------------
+` Terrain Smooth
+`--------------
+function Terrain_BrushSmooth(iPosX as float,iPosZ as float,iRadius as float,iVal as float)
+   if Terrain_Enabled=1 and Terrain_BrushEnabled=1
+      local tDist as float
+      local tSize as integer
+      local tTargetHeight as float
+      tSize=(int(iRadius/Terrain_TileSize)*2)
+      Terrain_BrushFrom.x=int(iPosX/Terrain_TileSize)-(tSize/2)
+      Terrain_BrushFrom.y=int(iPosZ/Terrain_TileSize)-(tSize/2)
+      Terrain_BrushTo.x=Terrain_BrushFrom.x+tSize
+      Terrain_BrushTo.y=Terrain_BrushFrom.y+tSize
+      for x=Terrain_BrushFrom.x to Terrain_BrushTo.x
+         for z=Terrain_BrushFrom.y to Terrain_BrushTo.y
+            if x>-1 and z>-1 and x<Terrain_Size.x and z<Terrain_Size.y
+               tDist=sqrt(((x*Terrain_TileSize)-iPosX)^2+((z*Terrain_TileSize)-iPosZ)^2)
+               if tDist<iRadius
+                  xn=(wrapvalue(((x-1)/Terrain_Size.x)*360)/360)*Terrain_Size.x
+                  zn=(wrapvalue(((z-1)/Terrain_Size.y)*360)/360)*Terrain_Size.y
+                  xp=(wrapvalue(((x+1)/Terrain_Size.x)*360)/360)*Terrain_Size.x
+                  zp=(wrapvalue(((z+1)/Terrain_Size.y)*360)/360)*Terrain_Size.y
+                  tTargetHeight=(Terrain_Height(xn,z)+Terrain_Height(xp,z)+Terrain_Height(x,zn)+Terrain_Height(x,zp)+Terrain_Height(xn,zn)+Terrain_Height(xp,zp)+Terrain_Height(xp,zn)+Terrain_Height(xn,zp)+Terrain_Height(x,z))/9
+                  Terrain_Height(x,z)=Terrain_Height(x,z)+(tTargetHeight-Terrain_Height(x,z))*(iVal*Terrain_BrushSmoothDist(tDist/iRadius))
+                  if Terrain_Height(x,z)<0 then Terrain_Height(x,z)=0
+                  if Terrain_Height(x,z)>255 then Terrain_Height(x,z)=255
+               endif
+            endif
+         next z
+      next x
+      Terrain_BrushUpdateHeightMap(iPosX,iPosZ,iRadius)
+   endif
+endfunction
+
+`--------------
+` Terrain Flatten
+`--------------
+function Terrain_BrushFlatten(iPosX as float,iPosZ as float,iRadius as float,iVal as float,iHeight as float)
+   if Terrain_Enabled=1 and Terrain_BrushEnabled=1
+      local tDist as float
+      local tSize as integer
+      iHeight=(iHeight/(Terrain_Height/255))
+      tSize=(int(iRadius/Terrain_TileSize)*2)
+      Terrain_BrushFrom.x=int(iPosX/Terrain_TileSize)-(tSize/2)
+      Terrain_BrushFrom.y=int(iPosZ/Terrain_TileSize)-(tSize/2)
+      Terrain_BrushTo.x=Terrain_BrushFrom.x+tSize
+      Terrain_BrushTo.y=Terrain_BrushFrom.y+tSize
+      for x=Terrain_BrushFrom.x to Terrain_BrushTo.x
+         for z=Terrain_BrushFrom.y to Terrain_BrushTo.y
+            if x>-1 and z>-1 and x<Terrain_Size.x and z<Terrain_Size.y
+               tDist=sqrt(((x*Terrain_TileSize)-iPosX)^2+((z*Terrain_TileSize)-iPosZ)^2)
+               if tDist<iRadius
+                  Terrain_Height(x,z)=Terrain_Height(x,z)+(iHeight-Terrain_Height(x,z))*(iVal*Terrain_BrushSmoothDist(tDist/iRadius))
+                  if Terrain_Height(x,z)<0 then Terrain_Height(x,z)=0
+                  if Terrain_Height(x,z)>255 then Terrain_Height(x,z)=255
+               endif
+            endif
+         next z
+      next x
+      Terrain_BrushUpdateHeightMap(iPosX,iPosZ,iRadius)
+   endif
+endfunction
+
+`--------------
+` Update Height
+`--------------
+function Terrain_BrushUpdateHeightMap(iPosX as float,iPosZ as float,iRadius as float)
+   local tGrade as float
+   local tSize as integer
+   tSize=(int(iRadius/Terrain_TileSize)*2)
+   Terrain_BrushFrom.x=int(iPosX/Terrain_TileSize)-(tSize/2)
+   Terrain_BrushFrom.y=int(iPosZ/Terrain_TileSize)-(tSize/2)
+   Terrain_BrushTo.x=Terrain_BrushFrom.x+tSize
+   Terrain_BrushTo.y=Terrain_BrushFrom.y+tSize
+   Terrain_BrushSize.x=tSize
+   Terrain_BrushSize.y=tSize
+   if Terrain_BrushFrom.x<0 then Terrain_BrushSize.x=tSize-abs(Terrain_BrushFrom.x):Terrain_BrushFrom.x=0
+   if Terrain_BrushFrom.y<0 then Terrain_BrushSize.y=tSize-abs(Terrain_BrushFrom.y):Terrain_BrushFrom.y=0
+   if Terrain_BrushTo.x>Terrain_Size.x-1 then Terrain_BrushSize.x=tSize-(Terrain_BrushTo.x-(Terrain_Size.x-1)):Terrain_BrushTo.x=Terrain_Size.x-1
+   if Terrain_BrushTo.y>Terrain_Size.y-1 then Terrain_BrushSize.y=tSize-(Terrain_BrushTo.y-(Terrain_Size.y-1)):Terrain_BrushTo.y=Terrain_Size.y-1
+   Terrain_BrushNormal.z=(Terrain_Height/Terrain_TileSize)*0.5
+   if Terrain_BrushSize.x>0 and Terrain_BrushSize.y>0
+      delete memblock Terrain_Memblock(1)
+      make memblock Terrain_Memblock(1),12+((Terrain_BrushSize.x+1)*(Terrain_BrushSize.y+1)*4)
+      write memblock dword Terrain_Memblock(1),0,Terrain_BrushSize.x+1
+      write memblock dword Terrain_Memblock(1),4,Terrain_BrushSize.y+1
+      write memblock dword Terrain_Memblock(1),8,32
+      for x=Terrain_BrushFrom.x to Terrain_BrushTo.x
+         for z=Terrain_BrushFrom.y to Terrain_BrushTo.y
+            xn=(wrapvalue(((x-1)/Terrain_Size.x)*360)/360)*Terrain_Size.x
+            zn=(wrapvalue(((z-1)/Terrain_Size.y)*360)/360)*Terrain_Size.y
+            xp=(wrapvalue(((x+1)/Terrain_Size.x)*360)/360)*Terrain_Size.x
+            zp=(wrapvalue(((z+1)/Terrain_Size.y)*360)/360)*Terrain_Size.y
+            set vector3 AL_Vector3(1),255,0.0,(Terrain_Height(xp,z)-Terrain_Height(xn,z))*Terrain_BrushNormal.z
+            set vector3 AL_Vector3(2),0.0,255,(Terrain_Height(x,zp)-Terrain_Height(x,zn))*Terrain_BrushNormal.z
+            cross product vector3 AL_Vector3(1),AL_Vector3(1),AL_Vector3(2)
+            normalize vector3 AL_Vector3(1),AL_Vector3(1)
+            Terrain_BrushNormal.x=(x vector3(AL_Vector3(1))+1)*127
+            Terrain_BrushNormal.y=(y vector3(AL_Vector3(1))+1)*127
+            Pos=12+((z-Terrain_BrushFrom.y)*((Terrain_BrushSize.x+1)*4))+((x-Terrain_BrushFrom.x)*4)
+            write memblock byte Terrain_Memblock(1),Pos+2,Terrain_BrushNormal.x
+            write memblock byte Terrain_Memblock(1),Pos+1,Terrain_BrushNormal.y
+            write memblock byte Terrain_Memblock(1),Pos+0,int(Terrain_Height(x,z))
+            tGrade=(Terrain_Height(x,z)-int(Terrain_Height(x,z)))*255
+            write memblock byte Terrain_Memblock(1),Pos+3,int(tGrade)
+            Pos=12+(z*(Terrain_Size.x*4))+(x*4)
+            write memblock byte Terrain_Memblock(2),Pos+2,Terrain_BrushNormal.x
+            write memblock byte Terrain_Memblock(2),Pos+1,Terrain_BrushNormal.y
+            write memblock byte Terrain_Memblock(2),Pos+0,int(Terrain_Height(x,z))
+            write memblock byte Terrain_Memblock(2),Pos+3,int(tGrade)
+         next z
+      next x
+      Terrain_BrushRefreshTexture()
+   endif
+endfunction
+
+`--------------
+` Brush Paint Layer
+`--------------
+function Terrain_BrushPaintLayer(iPosX as float,iPosZ as float,iRadius as float,iVal as float)
+   if Terrain_Enabled=1 and Terrain_BrushEnabled=1
+      local tDist as float
+      local tSize as integer
+      local tTempcol as float
+      iHeight=(iHeight/(Terrain_Height/255))
+      tSize=(int(iRadius/Terrain_TileSize)*2)
+      Terrain_BrushFrom.x=int(iPosX/Terrain_TileSize)-(tSize/2)
+      Terrain_BrushFrom.y=int(iPosZ/Terrain_TileSize)-(tSize/2)
+      Terrain_BrushTo.x=Terrain_BrushFrom.x+tSize
+      Terrain_BrushTo.y=Terrain_BrushFrom.y+tSize
+      for x=Terrain_BrushFrom.x to Terrain_BrushTo.x
+         for z=Terrain_BrushFrom.y to Terrain_BrushTo.y
+            if x>-1 and z>-1 and x<Terrain_Size.x and z<Terrain_Size.y
+               tDist=sqrt(((x*Terrain_TileSize)-iPosX)^2+((z*Terrain_TileSize)-iPosZ)^2)
+               if tDist<iRadius
+                  Terrain_BrushBlend=Terrain_BrushSmoothDist(tDist/iRadius)
+                  tTempcol=Terrain_BlendMap(x,z,0)+Terrain_BlendMap(x,z,1)+Terrain_BlendMap(x,z,2)+Terrain_BlendMap(x,z,3)+Terrain_BlendMap(x,z,4)
+                  tTempcol=tTempcol-Terrain_BlendMap(x,z,Terrain_BrushLayer-1)
+                  Terrain_BlendMap(x,z,Terrain_BrushLayer-1)=Terrain_BlendMap(x,z,Terrain_BrushLayer-1)+(iVal*Terrain_BrushBlend)
+                  for y=0 to 4
+                      if Terrain_BrushLayer<>y+1 then Terrain_BlendMap(x,z,y)=Terrain_BlendMap(x,z,y)-((iVal*Terrain_BrushBlend)*(Terrain_BlendMap(x,z,y)/tTempcol))
+                      if Terrain_BlendMap(x,z,y)<0 then Terrain_BlendMap(x,z,y)=0
+                      if Terrain_BlendMap(x,z,y)>255 then Terrain_BlendMap(x,z,y)=255
+                  next y
+               endif
+            endif
+         next z
+      next x
+      Terrain_BrushUpdateBlendMap(iPosX,iPosZ,iRadius)
+   endif
+endfunction
+
+`--------------
+` Update BlendMap
+`--------------
+function Terrain_BrushUpdateBlendMap(iPosX as float,iPosZ as float,iRadius as float)
+   local tSize as integer
+   tSize=(int(iRadius/Terrain_TileSize)*2)
+   Terrain_BrushFrom.x=int(iPosX/Terrain_TileSize)-(tSize/2)
+   Terrain_BrushFrom.y=int(iPosZ/Terrain_TileSize)-(tSize/2)
+   Terrain_BrushTo.x=Terrain_BrushFrom.x+tSize
+   Terrain_BrushTo.y=Terrain_BrushFrom.y+tSize
+   Terrain_BrushSize.x=tSize
+   Terrain_BrushSize.y=tSize
+   if Terrain_BrushFrom.x<0 then Terrain_BrushSize.x=tSize-abs(Terrain_BrushFrom.x):Terrain_BrushFrom.x=0
+   if Terrain_BrushFrom.y<0 then Terrain_BrushSize.y=tSize-abs(Terrain_BrushFrom.y):Terrain_BrushFrom.y=0
+   if Terrain_BrushTo.x>Terrain_Size.x-1 then Terrain_BrushSize.x=tSize-(Terrain_BrushTo.x-(Terrain_Size.x-1)):Terrain_BrushTo.x=Terrain_Size.x-1
+   if Terrain_BrushTo.y>Terrain_Size.y-1 then Terrain_BrushSize.y=tSize-(Terrain_BrushTo.y-(Terrain_Size.y-1)):Terrain_BrushTo.y=Terrain_Size.y-1
+   if Terrain_BrushSize.x>0 and Terrain_BrushSize.y>0
+      delete memblock Terrain_Memblock(1)
+      make memblock Terrain_Memblock(1),12+((Terrain_BrushSize.x+1)*(Terrain_BrushSize.y+1)*4)
+      write memblock dword Terrain_Memblock(1),0,Terrain_BrushSize.x+1
+      write memblock dword Terrain_Memblock(1),4,Terrain_BrushSize.y+1
+      write memblock dword Terrain_Memblock(1),8,32
+      for x=Terrain_BrushFrom.x to Terrain_BrushTo.x
+         for z=Terrain_BrushFrom.y to Terrain_BrushTo.y
+            Pos=12+((z-Terrain_BrushFrom.y)*((Terrain_BrushSize.x+1)*4))+((x-Terrain_BrushFrom.x)*4)
+            write memblock byte Terrain_Memblock(1),Pos+2,int(Terrain_BlendMap(x,z,0))
+            write memblock byte Terrain_Memblock(1),Pos+1,int(Terrain_BlendMap(x,z,1))
+            write memblock byte Terrain_Memblock(1),Pos+0,int(Terrain_BlendMap(x,z,2))
+            write memblock byte Terrain_Memblock(1),Pos+3,int(Terrain_BlendMap(x,z,3))
+            Pos=12+(z*(Terrain_Size.x*4))+(x*4)
+            write memblock byte Terrain_Memblock(3),Pos+2,int(Terrain_BlendMap(x,z,0))
+            write memblock byte Terrain_Memblock(3),Pos+1,int(Terrain_BlendMap(x,z,1))
+            write memblock byte Terrain_Memblock(3),Pos+0,int(Terrain_BlendMap(x,z,2))
+            write memblock byte Terrain_Memblock(3),Pos+3,int(Terrain_BlendMap(x,z,3))
+         next z
+      next x
+      Terrain_BrushRefreshTexture()
+   endif
+endfunction
+
+`--------------
+` Refresh Texture
+`--------------
+function Terrain_BrushRefreshTexture()
+   delete image Terrain_BrushTexture(1)
+   make image from memblock Terrain_BrushTexture(1),Terrain_Memblock(1)
+   texture object Terrain_BrushObject(1),0,Terrain_BrushTexture(1)
+   set camera view Terrain_Camera(1),Terrain_BrushFrom.x,Terrain_BrushFrom.y,Terrain_BrushTo.x+1,Terrain_BrushTo.y+1
+   sync mask 2^Terrain_Camera(1)
+   if Terrain_EditTimer.y=0 then Terrain_EditTimer.y=2
+   if Terrain_EditTimer.y=2 then Terrain_BrushUpdateColorMap():sync mask (2^Terrain_Camera(1))+(2^Terrain_Camera(2))
+   dec Terrain_EditTimer.y
+   fastsync
+endfunction
+
+`--------------
+` Terrain Set Color Texture
+`--------------
+function Terrain_BrushColorTexture(iTexture as integer,iLayer as integer)
+   if Terrain_BrushEnabled=1
+      if Terrain_Memblock(5+iLayer)>0
+         if Memblock exist(Terrain_Memblock(5+iLayer))=1
+            delete Memblock Terrain_Memblock(5+iLayer)
+            Terrain_BrushColorSize(iLayer).x=0
+         endif
+      endif
+      if iTexture>0
+         if image exist(iTexture)=1
+            if Terrain_Memblock(5+iLayer)=0 then Terrain_Memblock(5+iLayer)=find free memblock()
+            make memblock from image Terrain_Memblock(5+iLayer),iTexture
+            Terrain_BrushColorSize(iLayer).x=memblock dword(Terrain_Memblock(5+iLayer),0)
+            Terrain_BrushColorSize(iLayer).y=memblock dword(Terrain_Memblock(5+iLayer),4)
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Terrain Update Color Map
+`--------------
+function Terrain_BrushUpdateColorMap()
+   for x=Terrain_BrushFrom.x to Terrain_BrushTo.x
+      for z=Terrain_BrushFrom.y to Terrain_BrushTo.y
+         Terrain_BrushSetColor(x,z)
+         Pos=12+(z*(Terrain_Size.X*4))+(x*4)
+         write memblock byte Terrain_Memblock(4),Pos+2,int(Terrain_ColorMap(x,z,0))
+         write memblock byte Terrain_Memblock(4),Pos+1,int(Terrain_ColorMap(x,z,1))
+         write memblock byte Terrain_Memblock(4),Pos+0,int(Terrain_ColorMap(x,z,2))
+         write memblock byte Terrain_Memblock(4),Pos+3,int(Terrain_ColorMap(x,z,3))
+         Pos=12+((z-Terrain_BrushFrom.y)*((Terrain_BrushSize.x+1)*4))+((x-Terrain_BrushFrom.x)*4)
+         write memblock byte Terrain_Memblock(1),Pos+2,int(Terrain_ColorMap(x,z,0))
+         write memblock byte Terrain_Memblock(1),Pos+1,int(Terrain_ColorMap(x,z,1))
+         write memblock byte Terrain_Memblock(1),Pos+0,int(Terrain_ColorMap(x,z,2))
+         write memblock byte Terrain_Memblock(1),Pos+3,int(Terrain_ColorMap(x,z,3))
+      next z
+   next x
+   delete image Terrain_BrushTexture(2)
+   make image from memblock Terrain_BrushTexture(2),Terrain_Memblock(1)
+   texture object Terrain_BrushObject(2),0,Terrain_BrushTexture(2)
+   set camera view Terrain_Camera(2),Terrain_BrushFrom.x,Terrain_BrushFrom.y,Terrain_BrushTo.x+1,Terrain_BrushTo.y+1
+endfunction
+
+`--------------
+` Terrain Fill Color
+`--------------
+function Terrain_BrushFillColor()
+   if Terrain_BrushEnabled=1
+      for x=0 to Terrain_Size.x-1
+         for z=0 to Terrain_Size.y-1
+            Terrain_BrushSetColor(x,z)
+            Pos=12+(z*(Terrain_Size.X*4))+(x*4)
+            write memblock byte Terrain_Memblock(4),Pos+2,int(Terrain_ColorMap(x,z,0))
+            write memblock byte Terrain_Memblock(4),Pos+1,int(Terrain_ColorMap(x,z,1))
+            write memblock byte Terrain_Memblock(4),Pos+0,int(Terrain_ColorMap(x,z,2))
+            write memblock byte Terrain_Memblock(4),Pos+3,int(Terrain_ColorMap(x,z,3))
+         next z
+      next x
+      delete image Terrain_BrushTexture(2)
+      make image from memblock Terrain_BrushTexture(2),Terrain_Memblock(4)
+      texture object Terrain_BrushObject(2),0,Terrain_BrushTexture(2)
+      set camera view Terrain_Camera(2),0,0,Terrain_Size.x,Terrain_Size.y
+      sync mask 2^Terrain_Camera(2)
+      fastsync
+   endif
+endfunction
+
+`--------------
+` Set Color
+`--------------
+function Terrain_BrushSetColor(iX as integer,iZ as integer)
+   Pos=12+(iZ*(Terrain_Size.X*4))+(iX*4)
+   Terrain_BrushNormal.x=memblock byte(Terrain_Memblock(2),Pos+2)
+   Terrain_BrushNormal.y=memblock byte(Terrain_Memblock(2),Pos+1)
+   Terrain_BrushNormal.z=memblock byte(Terrain_Memblock(2),Pos+0)
+   Terrain_BrushNormal.w=memblock byte(Terrain_Memblock(2),Pos+3)
+   Terrain_BrushNormal.x=Terrain_BrushNormal.x/255
+   Terrain_BrushNormal.y=Terrain_BrushNormal.y/255
+   Terrain_BrushNormal.w=Terrain_BrushNormal.w/255
+   Terrain_BrushNormal.w=Terrain_BrushNormal.z+Terrain_BrushNormal.w;
+   Terrain_BrushNormal.z=(1-Terrain_BrushNormal.x)*2-1;
+   Terrain_BrushNormal.x=Terrain_BrushNormal.x*2-1
+   Terrain_BrushNormal.y=Terrain_BrushNormal.y*2-1
+   Terrain_BrushVertical.x=abs(Terrain_BrushNormal.x)
+   Terrain_BrushVertical.y=abs(Terrain_BrushNormal.y)
+   Terrain_BrushVertical.z=abs(Terrain_BrushNormal.y+Terrain_BrushNormal.z)
+   Terrain_BrushVertical.w=abs(Terrain_BrushNormal.x+Terrain_BrushNormal.y)
+   Terrain_BrushVertical.x=Terrain_BrushVertical.x+Terrain_BrushVertical.y+Terrain_BrushVertical.z+Terrain_BrushVertical.w;
+   Terrain_BrushBlendXYZ.x=27-Terrain_BrushNormal.w
+   Terrain_BrushBlendXYZ.y=(Terrain_BrushVertical.x-1.5)*2
+   Terrain_BrushBlendXYZ.z=(Terrain_BrushVertical.x-2.2)*2
+   if Terrain_BrushBlendXYZ.x<0 then Terrain_BrushBlendXYZ.x=0
+   if Terrain_BrushBlendXYZ.y<0 then Terrain_BrushBlendXYZ.y=0
+   if Terrain_BrushBlendXYZ.z<0 then Terrain_BrushBlendXYZ.z=0
+   if Terrain_BrushBlendXYZ.x>1 then Terrain_BrushBlendXYZ.x=1
+   if Terrain_BrushBlendXYZ.y>1 then Terrain_BrushBlendXYZ.y=1
+   if Terrain_BrushBlendXYZ.z>1 then Terrain_BrushBlendXYZ.z=1
+   Terrain_BrushBlendXYZ.x=Terrain_BrushBlendXYZ.x*(1-Terrain_BrushBlendXYZ.z)
+   Terrain_BrushBlendXYZ.y=Terrain_BrushBlendXYZ.y*(1-(Terrain_BrushBlendXYZ.x+Terrain_BrushBlendXYZ.z))
+   Terrain_BrushBlendXYZ.w=1-(Terrain_BrushBlendXYZ.x+Terrain_BrushBlendXYZ.y+Terrain_BrushBlendXYZ.z)
+   Terrain_ColorMap(iX,iZ,0)=0
+   Terrain_ColorMap(iX,iZ,1)=0
+   Terrain_ColorMap(iX,iZ,2)=0
+   Terrain_ColorMap(iX,iZ,3)=0
+   for t=0 to 4
+      if Terrain_BlendMap(iX,iZ,t)>0 and Terrain_BrushBlendXYZ.w>0
+         x=(wrapvalue((iX/Terrain_BrushColorSize(t).x)*360)/360)*Terrain_BrushColorSize(t).x
+         z=(wrapvalue((iZ/Terrain_BrushColorSize(t).y)*360)/360)*Terrain_BrushColorSize(t).y
+         Pos2=12+(x*Terrain_BrushColorSize(t).x*4)+(z*4)
+         Terrain_BrushColor.x=memblock byte(Terrain_Memblock(t+5),Pos2+2)
+         Terrain_BrushColor.y=memblock byte(Terrain_Memblock(t+5),Pos2+1)
+         Terrain_BrushColor.z=memblock byte(Terrain_Memblock(t+5),Pos2)
+         Terrain_BrushColor.w=memblock byte(Terrain_Memblock(t+5),Pos2+3)
+         Terrain_BrushBlend=(Terrain_BlendMap(iX,iZ,t)/255)*Terrain_BrushBlendXYZ.w
+         Terrain_ColorMap(iX,iZ,0)=Terrain_ColorMap(iX,iZ,0)+(Terrain_BrushColor.x*Terrain_BrushBlend)
+         Terrain_ColorMap(iX,iZ,1)=Terrain_ColorMap(iX,iZ,1)+(Terrain_BrushColor.y*Terrain_BrushBlend)
+         Terrain_ColorMap(iX,iZ,2)=Terrain_ColorMap(iX,iZ,2)+(Terrain_BrushColor.z*Terrain_BrushBlend)
+         Terrain_ColorMap(iX,iZ,3)=Terrain_ColorMap(iX,iZ,3)+(Terrain_BrushColor.w*Terrain_BrushBlend)
+      endif
+   next t
+   if Terrain_BrushBlendXYZ.w<1
+      if Terrain_BrushBlendXYZ.x>0
+         x=(wrapvalue((iX/Terrain_BrushColorSize(5).x)*360)/360)*Terrain_BrushColorSize(5).x
+         z=(wrapvalue((iZ/Terrain_BrushColorSize(5).y)*360)/360)*Terrain_BrushColorSize(5).y
+         Pos2=12+(x*Terrain_BrushColorSize(5).x*4)+(z*4)
+         Terrain_BrushColor.x=memblock byte(Terrain_Memblock(10),Pos2+2)
+         Terrain_BrushColor.y=memblock byte(Terrain_Memblock(10),Pos2+1)
+         Terrain_BrushColor.z=memblock byte(Terrain_Memblock(10),Pos2)
+         Terrain_BrushColor.w=memblock byte(Terrain_Memblock(10),Pos2+3)
+         Terrain_ColorMap(iX,iZ,0)=Terrain_ColorMap(iX,iZ,0)+(Terrain_BrushColor.x*Terrain_BrushBlendXYZ.x)
+         Terrain_ColorMap(iX,iZ,1)=Terrain_ColorMap(iX,iZ,1)+(Terrain_BrushColor.y*Terrain_BrushBlendXYZ.x)
+         Terrain_ColorMap(iX,iZ,2)=Terrain_ColorMap(iX,iZ,2)+(Terrain_BrushColor.z*Terrain_BrushBlendXYZ.x)
+         Terrain_ColorMap(iX,iZ,3)=Terrain_ColorMap(iX,iZ,3)+(Terrain_BrushColor.w*Terrain_BrushBlendXYZ.x)
+      endif
+      if Terrain_BrushBlendXYZ.y>0
+         x=(wrapvalue((iX/Terrain_BrushColorSize(6).x)*360)/360)*Terrain_BrushColorSize(6).x
+         z=(wrapvalue((iZ/Terrain_BrushColorSize(6).y)*360)/360)*Terrain_BrushColorSize(6).y
+         Pos2=12+(x*Terrain_BrushColorSize(6).x*4)+(z*4)
+         Terrain_BrushColor.x=memblock byte(Terrain_Memblock(11),Pos2+2)
+         Terrain_BrushColor.y=memblock byte(Terrain_Memblock(11),Pos2+1)
+         Terrain_BrushColor.z=memblock byte(Terrain_Memblock(11),Pos2)
+         Terrain_BrushColor.w=memblock byte(Terrain_Memblock(11),Pos2+3)
+         Terrain_ColorMap(iX,iZ,0)=Terrain_ColorMap(iX,iZ,0)+(Terrain_BrushColor.x*Terrain_BrushBlendXYZ.y)
+         Terrain_ColorMap(iX,iZ,1)=Terrain_ColorMap(iX,iZ,1)+(Terrain_BrushColor.y*Terrain_BrushBlendXYZ.y)
+         Terrain_ColorMap(iX,iZ,2)=Terrain_ColorMap(iX,iZ,2)+(Terrain_BrushColor.z*Terrain_BrushBlendXYZ.y)
+         Terrain_ColorMap(iX,iZ,3)=Terrain_ColorMap(iX,iZ,3)+(Terrain_BrushColor.w*Terrain_BrushBlendXYZ.y)
+      endif
+      if Terrain_BrushBlendXYZ.z>0
+         x=(wrapvalue((iX/Terrain_BrushColorSize(7).x)*360)/360)*Terrain_BrushColorSize(7).x
+         z=(wrapvalue((iZ/Terrain_BrushColorSize(7).y)*360)/360)*Terrain_BrushColorSize(7).y
+         Pos2=12+(x*Terrain_BrushColorSize(7).x*4)+(z*4)
+         Terrain_BrushColor.x=memblock byte(Terrain_Memblock(12),Pos2+2)
+         Terrain_BrushColor.y=memblock byte(Terrain_Memblock(12),Pos2+1)
+         Terrain_BrushColor.z=memblock byte(Terrain_Memblock(12),Pos2)
+         Terrain_BrushColor.w=memblock byte(Terrain_Memblock(12),Pos2+3)
+         Terrain_ColorMap(iX,iZ,0)=Terrain_ColorMap(iX,iZ,0)+(Terrain_BrushColor.x*Terrain_BrushBlendXYZ.z)
+         Terrain_ColorMap(iX,iZ,1)=Terrain_ColorMap(iX,iZ,1)+(Terrain_BrushColor.y*Terrain_BrushBlendXYZ.z)
+         Terrain_ColorMap(iX,iZ,2)=Terrain_ColorMap(iX,iZ,2)+(Terrain_BrushColor.z*Terrain_BrushBlendXYZ.z)
+         Terrain_ColorMap(iX,iZ,3)=Terrain_ColorMap(iX,iZ,3)+(Terrain_BrushColor.w*Terrain_BrushBlendXYZ.z)
+      endif
+   endif
+endfunction
+
+`--------------
+` Smooth Distance
+`--------------
+function Terrain_BrushSmoothDist(iDist as float)
+   iDist=1-iDist
+   if iDist=<0.5
+      iDist=(iDist*iDist)*2
+   else
+      iDist=1-iDist
+     iDist=(0.5-((iDist*iDist)*2))+0.5
+   endif
+endfunction iDist
+
+`--------------
+` Lock Terrain HeightMap
+` The below functions were used for a heightmap editer
+`--------------
+function Terrain_LockHeightMap()
+   global Terrain_LockHeight=1
+   global dim Terrain_HeightEdit(Terrain_Size.x-1,Terrain_Size.y-1) as float
+   for x=0 to Terrain_Size.x-1
+      for z=0 to Terrain_Size.y-1
+          Terrain_HeightEdit(x,z)=Terrain_Height(x,z)
+      next z
+   next x
+endfunction
+
+`--------------
+` Unlock Terrain Height
+`--------------
+function Terrain_UnLockHeightMap()
+   if Terrain_LockHeight=1
+      local tGrade as float
+      Terrain_BrushNormal.z=(Terrain_Height/Terrain_TileSize)*0.5
+      for x=0 to Terrain_Size.x-1
+          for z=0 to Terrain_Size.y-1
+            if Terrain_Height(x,z)<>Terrain_HeightEdit(x,z)
+               Terrain_Height(x,z)=Terrain_HeightEdit(x,z)
+               xn=(wrapvalue(((x-1)/Terrain_Size.x)*360)/360)*Terrain_Size.x
+               zn=(wrapvalue(((z-1)/Terrain_Size.y)*360)/360)*Terrain_Size.y
+               xp=(wrapvalue(((x+1)/Terrain_Size.x)*360)/360)*Terrain_Size.x
+               zp=(wrapvalue(((z+1)/Terrain_Size.y)*360)/360)*Terrain_Size.y
+               set vector3 AL_Vector3(1),255,0.0,(Terrain_HeightEdit(xp,z)-Terrain_HeightEdit(xn,z))*Terrain_BrushNormal.z
+               set vector3 AL_Vector3(2),0.0,255,(Terrain_HeightEdit(x,zp)-Terrain_HeightEdit(x,zn))*Terrain_BrushNormal.z
+               cross product vector3 AL_Vector3(1),AL_Vector3(1),AL_Vector3(2)
+               normalize vector3 AL_Vector3(1),AL_Vector3(1)
+               Terrain_BrushNormal.x=(x vector3(AL_Vector3(1))+1)*127
+               Terrain_BrushNormal.y=(y vector3(AL_Vector3(1))+1)*127
+               Pos=12+(z*(Terrain_Size.x*4))+(x*4)
+               write memblock byte Terrain_Memblock(2),Pos+2,Terrain_BrushNormal.x
+               write memblock byte Terrain_Memblock(2),Pos+1,Terrain_BrushNormal.y
+               write memblock byte Terrain_Memblock(2),Pos+0,int(Terrain_HeightEdit(x,z))
+               tGrade=(Terrain_Height(x,z)-int(Terrain_HeightEdit(x,z)))*255
+               write memblock byte Terrain_Memblock(2),Pos+3,int(tGrade)
+            endif
+          next z
+      next x
+      if Terrain_BrushTool=5
+         delete image Terrain_Texture(1)
+         make image from memblock Terrain_Texture(1),Terrain_Memblock(2)
+         texture object Terrain_Object(1),0,Terrain_Texture(1)
+         texture object Terrain_Object(2),0,Terrain_Texture(1)
+         texture object Terrain_Object(3),0,Terrain_Texture(1)
+         texture object Terrain_Object(4),0,Terrain_Texture(1)
+         texture object Terrain_BrushObject(3),1,Terrain_Texture(1)
+      else
+         delete image Terrain_BrushTexture(1)
+         make image from memblock Terrain_BrushTexture(1),Terrain_Memblock(2)
+         texture object Terrain_BrushObject(1),0,Terrain_BrushTexture(1)
+         set camera view Terrain_Camera(1),0,0,Terrain_Size.x,Terrain_Size.y
+         sync mask 2^Terrain_Camera(1)
+         fastsync
+      endif
+      Terrain_LockHeight=0
+      undim Terrain_HeightEdit()
+      Terrain_BrushFillColor()
+   endif
+endfunction
+
+`--------------
+` Set Height
+`--------------
+function Terrain_SetLockHeightMap(x as integer,z as integer,Height as integer)
+   if Terrain_LockHeight=1
+      Terrain_HeightEdit(x,z)=Height
+      if Terrain_HeightEdit(x,z)<0 then Terrain_HeightEdit(x,z)=0
+      if Terrain_HeightEdit(x,z)>255 then Terrain_HeightEdit(x,z)=255
+   endif
+endfunction
+
+`--------------
+` Get Lock Height
+`--------------
+function Terrain_GetLockHeightMap(x as integer,z as integer)
+   if Terrain_LockHeight=1
+      Height=Terrain_HeightEdit(x,z)
+   endif
+endfunction Height
+
+`--------------
+` Smooth
+`--------------
+function Terrain_SetLockHeightMapSmooth(iSmoothness as integer)
+   if Terrain_LockHeight=1
+      for pass=1 to iSmoothness
+         for x=0 to Terrain_Size.x-1
+            for z=0 to Terrain_Size.y-1
+               Terrain_HeightEdit(x,z)=(Terrain_HeightEditWrap(x-1,z)+Terrain_HeightEditWrap(x+1,z)+Terrain_HeightEditWrap(x,z-1)+Terrain_HeightEditWrap(x,z+1)+Terrain_HeightEditWrap(x-1,z-1)+Terrain_HeightEditWrap(x+1,z+1)+Terrain_HeightEditWrap(x+1,z-1)+Terrain_HeightEditWrap(x-1,z+1)+Terrain_HeightEdit(x,z))/9
+            next z
+         next x
+      next pass
+   endif
+endfunction
+
+`--------------
+` Noise
+`--------------
+function Terrain_SetLockHeightMapNoise(iRndHeight as integer,iSmoothness as integer)
+   if Terrain_LockHeight=1
+      for x=0 to Terrain_Size.x-1
+         for z=0 to Terrain_Size.y-1
+            x0=rnd(Terrain_Size.x-1)
+            z0=rnd(Terrain_Size.y-1)
+            Terrain_HeightEdit(x0,z0)=Terrain_HeightEdit(x0,z0)+iRndHeight
+            if Terrain_HeightEdit(x0,z0)<0 then Terrain_HeightEdit(x0,z0)=0
+            if Terrain_HeightEdit(x0,z0)>255 then Terrain_HeightEdit(x0,z0)=255
+         next z
+      next x
+      Terrain_SetLockHeightMapSmooth(iSmoothness)
+   endif
+endfunction
+
+`--------------
+` Terrace
+`--------------
+function Terrain_SetLockHeightMapTerrace(iSlices as integer,iSmoothness as integer)
+   if Terrain_LockHeight=1
+      local tValue as float
+      for x=0 to Terrain_Size.x-1
+         for z=0 to Terrain_Size.y-1
+            for t=0 to iSlices
+               tValue=(255/iSlices)
+               if Terrain_HeightEdit(x,z)>((t*tValue)-(valu/2)) and Terrain_HeightEdit(x,z)<((t*tValue)+(tValue/2))
+                  Terrain_HeightEdit(x,z)=t*tValue
+               endif
+            next t
+         next z
+      next x
+      Terrain_SetLockHeightMapSmooth(iSmoothness)
+   endif
+endfunction
+
+`--------------
+` Erosion
+`--------------
+function Terrain_SetLockHeightMapErosion(Randamize as integer,Strength as integer,iSmoothness as integer)
+   if Terrain_LockHeight=1
+      local MaxHeight as float
+      local tHeightDiff as float
+      local tRnd as AL_Vec2Float
+      local tNewRnd as AL_Vec2Float
+      local tOldRnd as AL_Vec2Float
+      global dim tErosionEdit(Terrain_Size.x-1,Terrain_Size.y-1) as float
+      for x=0 to ((Terrain_Size.x/128)*Randamize)
+          for z=0 to ((Terrain_Size.y/128)*Randamize)
+            tRnd.x=rnd(Terrain_Size.x-1)
+            tRnd.y=rnd(Terrain_Size.y-1)
+            for l=0 to 255
+               MaxHeight=0
+               if Terrain_HeightEditWrap(tRnd.x,tRnd.y)>MaxHeight then MaxHeight=Terrain_HeightEditWrap(tRnd.x,tRnd.y):tNewRnd.x=tRnd.x:tNewRnd.y=tRnd.y
+               for r=0 to 4
+                  GetRnd=rnd(7)
+                  if GetRnd=0 and Terrain_ErosionEditWrap(tRnd.x-1,tRnd.y-1)=0 and Terrain_HeightEditWrap(tRnd.x-1,tRnd.y-1)>MaxHeight then MaxHeight=Terrain_HeightEditWrap(tRnd.x-1,tRnd.y-1):tNewRnd.x=tRnd.x-1:tNewRnd.y=tRnd.y-1
+                  if GetRnd=1 and Terrain_ErosionEditWrap(tRnd.x,tRnd.y-1)=0 and Terrain_HeightEditWrap(tRnd.x,tRnd.y-1)>MaxHeight then MaxHeight=Terrain_HeightEditWrap(tRnd.x,tRnd.y-1):tNewRnd.x=tRnd.x:tNewRnd.y=tRnd.y-1
+                  if GetRnd=2 and Terrain_ErosionEditWrap(tRnd.x+1,tRnd.y-1)=0 and Terrain_HeightEditWrap(tRnd.x+1,tRnd.y-1)>MaxHeight then MaxHeight=Terrain_HeightEditWrap(tRnd.x+1,tRnd.y-1):tNewRnd.x=tRnd.x+1:tNewRnd.y=tRnd.y-1
+                  if GetRnd=3 and Terrain_ErosionEditWrap(tRnd.x-1,tRnd.y)=0 and Terrain_HeightEditWrap(tRnd.x-1,tRnd.y)>MaxHeight then MaxHeight=Terrain_HeightEditWrap(tRnd.x-1,tRnd.y):tNewRnd.x=tRnd.x-1:tNewRnd.y=tRnd.y
+                  if GetRnd=4 and Terrain_ErosionEditWrap(tRnd.x+1,tRnd.y)=0 and Terrain_HeightEditWrap(tRnd.x+1,tRnd.y)>MaxHeight then MaxHeight=Terrain_HeightEditWrap(tRnd.x+1,tRnd.y):tNewRnd.x=tRnd.x+1:tNewRnd.y=tRnd.y
+                  if GetRnd=5 and Terrain_ErosionEditWrap(tRnd.x-1,tRnd.y+1)=0 and Terrain_HeightEditWrap(tRnd.x-1,tRnd.y+1)>MaxHeight then MaxHeight=Terrain_HeightEditWrap(tRnd.x-1,tRnd.y+1):tNewRnd.x=tRnd.x-1:tNewRnd.y=tRnd.y+1
+                  if GetRnd=6 and Terrain_ErosionEditWrap(tRnd.x,tRnd.y+1)=0 and Terrain_HeightEditWrap(tRnd.x,tRnd.y+1)>MaxHeight then MaxHeight=Terrain_HeightEditWrap(tRnd.x,tRnd.y+1):tNewRnd.x=tRnd.x:tNewRnd.y=tRnd.y+1
+                  if GetRnd=7 and Terrain_ErosionEditWrap(tRnd.x+1,tRnd.y+1)=0 and Terrain_HeightEditWrap(tRnd.x+1,tRnd.y+1)>MaxHeight then MaxHeight=Terrain_HeightEditWrap(tRnd.x+1,tRnd.y+1):tNewRnd.x=tRnd.x+1:tNewRnd.y=tRnd.y+1
+               next r
+               Check=0
+               if Terrain_HeightEditWrap(tNewRnd.x-1,tNewRnd.y-1)>MaxHeight then Check=1
+               if Terrain_HeightEditWrap(tNewRnd.x,tNewRnd.y-1)>MaxHeight then Check=1
+               if Terrain_HeightEditWrap(tNewRnd.x+1,tNewRnd.y-1)>MaxHeight then Check=1
+               if Terrain_HeightEditWrap(tNewRnd.x-1,tNewRnd.y)>MaxHeight then Check=1
+               if Terrain_HeightEditWrap(tNewRnd.x+1,tNewRnd.y)>MaxHeight then Check=1
+               if Terrain_HeightEditWrap(tNewRnd.x-1,tNewRnd.y+1)>MaxHeight then Check=1
+               if Terrain_HeightEditWrap(tNewRnd.x,tNewRnd.y+1)>MaxHeight then Check=1
+               if Terrain_HeightEditWrap(tNewRnd.x+1,tNewRnd.y+1)>MaxHeight then Check=1
+               if Check=0 then MaxHeight=Terrain_HeightEditWrap(tRnd.x,tRnd.y):tNewRnd.x=tRnd.x:tNewRnd.y=tRnd.y
+               if MaxHeight=Terrain_HeightEditWrap(tRnd.x,tRnd.y)
+                  l=255
+               else
+                  tOldRnd.x=tRnd.x
+                  tOldRnd.y=tRnd.y
+                  tRnd.x=tNewRnd.x
+                  tRnd.y=tNewRnd.y
+                  x0=(wrapvalue((tRnd.x/Terrain_Size.x)*360)/360)*Terrain_Size.x
+                  z0=(wrapvalue((tRnd.y/Terrain_Size.y)*360)/360)*Terrain_Size.y
+                  x1=(wrapvalue((tOldRnd.x/Terrain_Size.x)*360)/360)*Terrain_Size.x
+                  z1=(wrapvalue((tOldRnd.y/Terrain_Size.y)*360)/360)*Terrain_Size.y
+                  tHeightDiff=Terrain_HeightEdit(x0,z0)-Terrain_HeightEdit(x1,z1)
+                  tErosionEdit(x0,z0)=Strength*(tHeightDiff+tHeightDiff)
+               endif
+            next l
+         next z
+      next x
+      for x=0 to Terrain_Size.x-1
+         for z=0 to Terrain_Size.y-1
+            Terrain_HeightEdit(x,z)=Terrain_HeightEdit(x,z)-tErosionEdit(x,z)
+            if Terrain_HeightEdit(x,z)<0 then Terrain_HeightEdit(x,z)=0
+            if Terrain_HeightEdit(x,z)>255 then Terrain_HeightEdit(x,z)=255
+         next z
+      next x
+      Terrain_SetLockHeightMapSmooth(iSmoothness)
+      undim tErosionEdit()
+   endif
+endfunction
+
+`--------------
+` Edit Height Wrap
+`--------------
+function Terrain_HeightEditWrap(ix as float,iz as float)
+   local tReturn as float
+   x=(wrapvalue((ix/Terrain_Size.x)*360)/360)*Terrain_Size.x
+   z=(wrapvalue((iz/Terrain_Size.y)*360)/360)*Terrain_Size.y
+   tReturn=Terrain_HeightEdit(x,z)
+endfunction tReturn
+
+`--------------
+` Edit Height Wrap
+`--------------
+function Terrain_ErosionEditWrap(ix as float,iz as float)
+   local tReturn as float
+   x=(wrapvalue((ix/Terrain_Size.x)*360)/360)*Terrain_Size.x
+   z=(wrapvalue((iz/Terrain_Size.y)*360)/360)*Terrain_Size.y
+   tReturn=tErosionEdit(x,z)
+endfunction tReturn

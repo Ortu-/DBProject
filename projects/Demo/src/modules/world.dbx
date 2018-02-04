@@ -1,0 +1,1148 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	World Loading and Interaction
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides handling for the loading, handling, and interaction of levels and world environment.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+		SC_Collision.dll (Sparky)
+		SQLITE.dll (Duffer)
+		Advanced Lighting (Evolved)
+
+	*******************************************
+	Classes:
+
+		Requires system.dbx
+		Requires database.dbx
+		Requires media.dbx
+		Requires ui.dbx
+		Requires fx.dbx
+		Requires controls.dbx
+
+		=========================================
+		Defines STATIC CLASS: World
+
+			------------------------
+			public functions:
+
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+				_World_init()
+					-
+
+			------------------------
+			private data:
+
+
+
+		=========================================
+		Defines CLASS: InteractableObject
+
+			------------------------
+			public functions:
+
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+
+					-
+
+			------------------------
+			private data:
+
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+world_module_init:
+
+	if WORLD_MODULE_LOADED = FALSE
+
+		<?System_log("world.dbx", 2, "main", "Begin module load: world.")?>
+		App_updateSplashScreen("- Environment")
+
+		//Declare World -----------------------------------------------------------
+
+		type World_type_environmentConfigData
+			scaleMeter as float
+			scaleSunMin as float
+			scaleSunMax as float
+			scaleMoon as float
+		endtype
+
+		type World_type_weatherData
+			state as string
+			currentCloudDensity as integer
+			targetCloudDensity as integer
+		endtype
+
+		type World_type_sceneData
+			sceneRecord as integer
+			waypointRecord as integer
+			sceneName as string
+			textureBase as string
+			time as float
+			timeSpeed as float
+			weather as string
+			enableWeatherDynamic as boolean
+			camInitX as float
+			camInitY as float
+			camInitZ as float
+			camInitTilt as float
+			camInitPan as float
+			camInitZoom as float
+		endtype
+
+		type STATIC_CLASS_World
+			time as float
+			windObjectID as string
+			//windObjectID1 as string
+			//windObjectID2 as string
+			scene as World_type_sceneData
+			weather as World_type_weatherData
+			envConfig as World_type_environmentConfigData
+		endtype
+
+		//Declare SceneEntity -----------------------------------------------------------
+
+		type CLASS_SceneEntity
+			objectNum as integer //this field does not get written to DB!
+			objectID as string //this field does not get written to DB!
+			entityRecord as integer
+			sceneName as string
+			collisionMode as string
+			isInteractable as boolean
+			fileBase as string
+			animationFile as string
+			shaderFile as string
+			textureBase as string
+			textureVariant as string
+			fixPivot as boolean
+			canInstance as boolean
+			lod as integer
+			posX as float
+			posY as float
+			posZ as float
+			rotX as float
+			rotY as float
+			rotZ as float
+			scaleX as float
+			scaleY as float
+			scaleZ as float
+			applyObjectGravity as boolean //this field does not get written to DB!
+			applyLimbGravity as boolean //TODO: add this field to DB table
+			objectType as string //environment, vegetation, character, collision, interactable //TODO: add to DB???
+			objectMode as byte //0 source, 1 clone, 2 instance
+			parentID as string
+			bindMode as integer //MEDIA_ENUM_BIND_*
+		endtype
+
+		//Declare InteractableObject -----------------------------------------------------------
+
+		type CLASS_InteractableObject
+			objectID as string
+			parentID as string
+			entityRecord as integer
+			itemRecord as integer
+			name as string
+			fileBase as string
+			activeState as integer
+			maxStates as integer
+			onUse as string
+		endtype
+
+		//private data -------------------------------------------------------------
+
+		dim _World_animatedObjects[] as integer
+		dim _World_sceneEntities[] as CLASS_SceneEntity
+
+		//public data --------------------------------------------------------------
+
+		dim World_interactableObjects[] as CLASS_InteractableObject
+
+		//Init ---------------------------------------------------------------------
+
+		//==================================
+
+		GLOBAL World as STATIC_CLASS_World
+
+		$construct CLASS_SceneEntity{
+			objectNum = -1
+			objectID = ""
+			entityRecord = -1
+			sceneName = ""
+			collisionMode = ""
+			isInteractable = FALSE
+			fileBase = ""
+			animationFile = ""
+			shaderFile = ""
+			textureBase = ""
+			textureVariant = ""
+			fixPivot = FALSE
+			canInstance = FALSE
+			lod = 0
+			posX = 0.0
+			posY = 0.0
+			posZ = 0.0
+			rotX = 0.0
+			rotY = 0.0
+			rotZ = 0.0
+			scaleX = 20000.0
+			scaleY = 20000.0
+			scaleZ = 20000.0
+			applyObjectGravity = FALSE
+			applyLimbGravity = FALSE
+			objectType = ""
+			objectMode = 0
+			parentID = ""
+			bindMode = 0
+		}
+
+		$construct CLASS_InteractableObject{
+			objectID = ""
+			parentID = ""
+			entityRecord = -1
+			itemRecord = -1
+			name = ""
+			fileBase = ""
+			activeState = -1
+			maxStates = -1
+			onUse = ""
+		}
+
+
+		//==================================
+
+		_World_init()
+
+		WORLD_MODULE_LOADED = TRUE
+
+		<?System_log("world.dbx", 2, "main", "End module load: world.")?>
+
+	endif
+return
+
+
+function _World_init()
+	World.envConfig.scaleMeter = 20.0 / 0.3048 //5.0 //20u = 1ft = 0.3048m
+	World.envConfig.scaleSunMin = 0.09
+	World.envConfig.scaleSunMax = 0.2
+	World.envConfig.scaleMoon = 0.125
+
+	App_addUpdate("World_updateEnvironment", "", FALSE)
+
+endfunction
+
+
+function World_loadScene()
+
+	//load the wind object
+	Media_loadObject("resource/media/environment/wind", FALSE, generate guid$())
+	hide object Media.objectResult.number
+	World.windObjectID = Media.objectResult.id
+	tAnim = $new CLASS_AppliedAnimation3d
+	tAnim.objectNum = Media.objectResult.number
+	tAnim.animSetNum = Anim3d_getAnimSetNumber("resource/media/environment/wind.anim")
+	tAnim.keyName = "light-breeze"
+	tAnim.speedFactor = 0.3
+	tAnim.enableLoop = TRUE
+	Anim3d_addAppliedAnimation(tAnim)
+
+	//TODO: load multiple winds for variation
+
+	//get requested scene data
+	dbWorld = Sqlite_getConnection("resource/data/world.db")
+	dbWorldB = Sqlite_getConnection("resource/data/world.db") //sub/secondary query processing
+	dbProfile = Sqlite_getConnection("resource/data/save/" + App.currentProfile)
+
+<?System_log("world.dbx", 3, "main", "> loading from " + App.currentProfile)?>
+
+
+	qry$ = "Select * from waypoint"
+	res = sqlite begin sql query(dbProfile, qry$)
+		while sqlite next record row(dbProfile) > 0
+			World.scene.sceneRecord = sqlite record row integer by column name(dbProfile, "sceneID")
+			World.scene.waypointRecord = sqlite record row integer by column name(dbProfile, "waypointID")
+		endwhile
+	res = sqlite finish sql query(dbProfile)
+
+<?System_log("world.dbx", 3, "main", "> loading sceneID/Record: " + str$(World.scene.sceneRecord) + " waypoint: " + str$(World.scene.waypointRecord))?>
+
+	qry$ = "SELECT * FROM scenes WHERE sceneID = '" + str$(World.scene.sceneRecord) + "'"
+	res = sqlite begin sql query(dbWorld, qry$)
+		while sqlite next record row(dbWorld) > 0
+			World.scene.sceneName = sqlite record row string by column name$(dbWorld, "sceneName")
+			World.scene.textureBase = sqlite record row string by column name$(dbWorld, "textureBase")
+			World.scene.time = sqlite record row float by column name(dbWorld, "timeOfDay")
+			World.scene.timeSpeed = sqlite record row float by column name(dbWorld, "timeSpeed")
+			World.scene.weather = sqlite record row string by column name$(dbWorld, "weather")
+			World.scene.enableWeatherDynamic = sqlite record row integer by column name(dbWorld, "weatherDynamic")
+			<?System_log("world.dbx", 2, "main", "> sceneName: " + World.scene.sceneName)?>
+		endwhile
+	res = sqlite finish sql query(dbWorld)
+
+
+	//apply scene
+	tA = Media_getImageNumber("resource/maps/"+ World.scene.sceneName + "/Terrain.dds", 0, 0)
+	tB = Media_getImageNumber("resource/maps/"+ World.scene.sceneName + "/Blendmap.dds", 0, 0)
+	tC = Media_getImageNumber("resource/maps/"+ World.scene.sceneName + "/Colormap.dds", 0, 0)
+	Terrain_Load(tA, tB, tC)
+	Terrain_SetScale(64,7500)
+	t1 = Media_getImageNumber("resource/media/terrain/"+ World.scene.textureBase +"/1.dds", 0, 0)
+	t2 = Media_getImageNumber("resource/media/terrain/"+ World.scene.textureBase +"/2.dds", 0, 0)
+	t3 = Media_getImageNumber("resource/media/terrain/"+ World.scene.textureBase +"/3.dds", 0, 0)
+	t4 = Media_getImageNumber("resource/media/terrain/"+ World.scene.textureBase +"/4.dds", 0, 0)
+	t5 = Media_getImageNumber("resource/media/terrain/"+ World.scene.textureBase +"/5.dds", 0, 0)
+	Terrain_SetTexture(t1, t2, t3, t4, t5)
+
+	World.time = World.scene.time
+	World.weather.state = World.scene.weather
+
+	World_updateWeather(FALSE)
+	if World.scene.enableWeatherDynamic
+		System_setInterval("World_updateWeather", "TRUE", -1, 45000)
+	endif
+
+	//load and apply scene lighting colors
+	tImg = Media_getImageNumber("resource/scenes/" + World.scene.sceneName + "/lighting.dds", 0, 0)
+	create bitmap 1, 16, 16 //TODO: find free bitmap
+	paste image tImg, 0, 0
+	for x = 1 to 8
+		for y = 1 to 15
+			AL_TimeOfDay[x, y].x = rgbr(point(x-1, y-1))
+			AL_TimeOfDay[x, y].y = rgbg(point(x-1, y-1))
+			AL_TimeOfDay[x, y].z = rgbb(point(x-1, y-1))
+		next y
+	next x
+	set current bitmap 0
+	delete bitmap 1
+	Media_unloadImage(tImg, "", 0, 0)
+	tTime# = World.time - 8.0
+	if tTime# < 0.0 then tTime# = 24.0 - 8.0
+	sunAngle# = wrapvalue(277.0 - (15.0 * tTime#))
+	Sky_SetSunAngle(sunAngle#, 90.0, 0.0, 1.0)
+	World_updateEnvironment()
+
+
+	qry$ = "select * from waypoints where waypointID = '" + str$(World.scene.waypointRecord) + "'"
+	res = sqlite begin sql query(dbWorld, qry$)
+		while sqlite next record row(dbWorld) > 0
+			//TODO: init char pos/ang
+			World.scene.camInitX = sqlite record row float by column name(dbWorld, "camX")
+			World.scene.camInitY = sqlite record row float by column name(dbWorld, "camY")
+			World.scene.camInitZ = sqlite record row float by column name(dbWorld, "camZ")
+			World.scene.camInitTilt = sqlite record row float by column name(dbWorld, "camT")
+			World.scene.camInitPan = sqlite record row float by column name(dbWorld, "camP")
+			World.scene.camInitZoom = sqlite record row float by column name(dbWorld, "camM")
+		endwhile
+	res = sqlite finish sql query(dbWorld)
+
+	Camera.baseData.x = World.scene.camInitX
+	Camera.baseData.y = World.scene.camInitY
+	Camera.baseData.z = World.scene.camInitZ
+	Camera.baseData.tilt = World.scene.camInitTilt
+	Camera.baseData.pan = World.scene.camInitPan
+	Camera.baseData.zoom = World.scene.camInitZoom
+
+
+	//get environmental objects
+	qry$ = "SELECT * FROM entities WHERE sceneName = '" + World.scene.sceneName + "'"
+
+	<?System_log("editor.dbx", 1, "data", "Execute query on world.db: " + qry$)?>
+
+	res = sqlite begin sql query(dbWorld, qry$)
+		while sqlite next record row(dbWorld) > 0
+
+			tEntity = $new CLASS_SceneEntity
+			tEntity.entityRecord = sqlite record row integer by column name(dbWorld, "entityID")
+			tEntity.sceneName = sqlite record row string by column name$(dbWorld, "sceneName")
+			tEntity.collisionMode = sqlite record row string by column name$(dbWorld, "collision")
+			tEntity.isInteractable = sqlite record row integer by column name(dbWorld, "interaction")
+			tEntity.fileBase = sqlite record row string by column name$(dbWorld, "fileName")
+			tEntity.animationFile = sqlite record row string by column name$(dbWorld, "animation")
+			tEntity.shaderFile = sqlite record row string by column name$(dbWorld, "shader")
+			tEntity.textureBase = sqlite record row string by column name$(dbWorld, "textureBase")
+			tEntity.textureVariant = sqlite record row string by column name$(dbWorld, "textureVariant")
+			tEntity.fixPivot = sqlite record row integer by column name(dbWorld, "fixPivot")
+			tEntity.canInstance = sqlite record row integer by column name(dbWorld, "allowInstance")
+			tEntity.posX = sqlite record row float by column name(dbWorld, "posX")
+			tEntity.posY = sqlite record row float by column name(dbWorld, "posY")
+			tEntity.posZ = sqlite record row float by column name(dbWorld, "posZ")
+			tEntity.rotX = sqlite record row float by column name(dbWorld, "rotX")
+			tEntity.rotY = sqlite record row float by column name(dbWorld, "rotY")
+			tEntity.rotZ = sqlite record row float by column name(dbWorld, "rotZ")
+			tEntity.scaleX = sqlite record row float by column name(dbWorld, "sclX")
+			tEntity.scaleY = sqlite record row float by column name(dbWorld, "sclY")
+			tEntity.scaleZ = sqlite record row float by column name(dbWorld, "sclZ")
+			tEntity.objectType = sqlite record row string by column name$(dbWorld, "objectType")
+			tEntity.lod = sqlite record row integer by column name(dbWorld, "lod")
+			tEntity.applyLimbGravity = sqlite record row integer by column name(dbWorld, "limbGravity")
+			tEntity.objectID = sqlite record row string by column name$(dbWorld, "objectID")
+			if tEntity.objectID = "" then tEntity.objectID = generate guid$()
+			tEntity.parentID = sqlite record row string by column name$(dbWorld, "parentID")
+			tEntity.bindMode = sqlite record row integer by column name(dbWorld, "bindMode")
+			if tEntity.applyLimbGravity then tEntity.applyObjectGravity = TRUE
+
+			Media_loadObject(tEntity.fileBase, tEntity.canInstance, tEntity.objectID)
+			tEntity.objectNum = Media.objectResult.number
+
+			<?System_log("world.dbx", 2, "world", "Loaded World Entity: " + tEntity.fileBase + " objectID: " + tEntity.objectID + " parentID: " + tEntity.parentID)?>
+
+			if tEntity.objectNum = -1
+				System_log("world.dbx", 4, "error", "ERROR: Could not load or get an object number for requested object: " + tEntity.fileBase)
+				App_closeGame(TRUE)
+			endif
+
+			array insert at bottom _World_sceneEntities[]
+			_World_sceneEntities[] = tEntity
+
+			position object tEntity.objectNum, tEntity.posX, tEntity.posY, tEntity.posZ
+			rotate object tEntity.objectNum, tEntity.rotX, tEntity.rotY, tEntity.rotZ
+
+			if tEntity.fixPivot
+				fix object pivot tEntity.objectNum
+			endif
+
+			//collision and scaling
+			select tEntity.collisionMode
+
+				case "none":
+					<?System_log("world.dbx", 1, "world", " > no collision applied")?>
+					scale object tEntity.objectNum, tEntity.scaleX, tEntity.scaleY, tEntity.scaleZ
+				endcase
+
+				case "hidden":
+					<?System_log("world.dbx", 1, "world", " > apply hidden collision")?>
+					sc_setupComplexObject tEntity.objectNum, 1, 2
+					sc_allowObjectScaling tEntity.objectNum
+					scale object tEntity.objectNum, tEntity.scaleX, tEntity.scaleY, tEntity.scaleZ
+					sc_updateObject tEntity.objectNum
+					exclude object on tEntity.objectNum
+					<?System_log("world.dbx", 1, "world", "excluded hidden collision mesh for object " + str$(tEntity.objectNum) + " file: " + tEntity.fileBase)?>
+				endcase
+
+				case "box":
+					<?System_log("world.dbx", 1, "world", " > apply box collision")?>
+					sc_setupObject tEntity.objectNum, 1, 2
+					sc_allowObjectScaling tEntity.objectNum
+					scale object tEntity.objectNum, tEntity.scaleX, tEntity.scaleY, tEntity.scaleZ
+					sc_updateObject tEntity.objectNum
+
+					if tEntity.isInteractable
+						tIntr = $new CLASS_InteractableObject
+						tIntr.objectID = tEntity.objectID
+						tIntr.entityRecord = tEntity.entityRecord
+						tIntr.fileBase = tEntity.fileBase
+						array insert at bottom World_interactableObjects[]
+						World_interactableObjects[] = tIntr
+					endif
+				endcase
+
+				case "full":
+					<?System_log("world.dbx", 1, "world", " > apply full collision")?>
+					sc_setupComplexObject tEntity.objectNum, 1, 2
+					sc_allowObjectScaling tEntity.objectNum
+					scale object tEntity.objectNum, tEntity.scaleX, tEntity.scaleY, tEntity.scaleZ
+					sc_updateObject tEntity.objectNum
+
+					if tEntity.isInteractable
+						tIntr = $new CLASS_InteractableObject
+						tIntr.objectID = tEntity.objectID
+						tIntr.entityRecord = tEntity.entityRecord
+						tIntr.fileBase = tEntity.fileBase
+						array insert at bottom World_interactableObjects[]
+						World_interactableObjects[] = tIntr
+					endif
+				endcase
+
+				case default:
+					<?System_log("world.dbx", 1, "world", " > apply multi-state collision")?>
+
+					//NOTE: this case will handle multi-state collision. this only really applies to 'use' interactable entities.
+					//	on this case, interaction should always be greater than 0.
+					// collision mode value should be an integer indicating the number of states the interactable will cycle.
+					totalCollisionStates = intval(tEntity.collisionMode)
+
+					//base object, same as no collision
+					scale object tEntity.objectNum, tEntity.scaleX, tEntity.scaleY, tEntity.scaleZ
+
+					//foreach state collision mesh, same as hidden
+					for s = 1 to totalCollisionStates
+						colObjID$ = generate guid$()
+						Media_loadObject(tEntity.fileBase + "_state" + str$(s) + "_col", FALSE, colObjID$)
+						colObjNum = Media.objectResult.number
+
+						<?System_log("world.dbx", 2, "world", "  Loaded Collision Sub-Entity: " + tEntity.fileBase + "_state" + str$(s) + "_col" + " : " + colObjID$ + " for parent entity " + tEntity.objectID)?>
+
+						position object colObjNum, tEntity.posX, tEntity.posY, tEntity.posZ
+						rotate object colObjNum, tEntity.rotX, tEntity.rotY, tEntity.rotZ
+
+						sc_setupComplexObject colObjNum, 1, 2 //TODO: can probably use setupObject instead of setupComplexObject
+						sc_allowObjectScaling colObjNum
+						scale object colObjNum, tEntity.scaleX, tEntity.scaleY, tEntity.scaleZ
+						sc_updateObject colObjNum
+						exclude object on colObjNum
+						<?System_log("world.dbx", 1, "world", " > made collision object " + str$(colObjNum) + " " + tEntity.fileBase + "_state" + str$(s) + "_col")?>
+
+						if s > 1
+							//only activate collision for state 1 on init
+							sc_setObjectCollisionOff colObjNum
+						endif
+
+						if tEntity.isInteractable
+							tIntr = $new CLASS_InteractableObject
+							tIntr.objectID = colObjID$
+							tIntr.entityRecord = tEntity.entityRecord
+							tIntr.fileBase = tEntity.fileBase + "_state" + str$(s) + "_col"
+							tIntr.parentID = tEntity.objectID
+							tIntr.activeState = 0
+							array insert at bottom World_interactableObjects[]
+							World_interactableObjects[] = tIntr
+						endif
+
+					next s
+				endcase
+			endselect
+
+			if object excluded(tEntity.objectNum) = FALSE
+
+				//apply limb gravity
+				if tEntity.applyLimbGravity = TRUE
+					<?System_log("editorMenu.dbx", 1, "editor", "   >> set limbs to terrain")?>
+					perform checklist for object limbs tEntity.objectNum
+					for l = 1 to checklist quantity()
+						if fast left$(checklist string$(l), 10) = "Armature_t"
+							tLimb = checklist value a(l)
+							targetY# = Terrain_GetHeight(limb position x(tEntity.objectNum, tLimb), limb position z(tEntity.objectNum, tLimb))
+							offset limb tEntity.objectNum, tLimb, limb offset x(tEntity.objectNum, tLimb), limb offset y(tEntity.objectNum, tLimb) + ((targetY# - limb position y(tEntity.objectNum, tLimb)) * 0.005), limb offset z(tEntity.objectNum, tLimb), 1
+						endif
+					next l
+				endif
+
+				<?System_log("world.dbx", 1, "world", "object " + str$(tEntity.objectNum) + " " + tEntity.fileBase + " not excluded, process shaders and textures")?>
+
+				//handle textures and shaders
+					//TODO: check for user settings regarding level of shader usage and load only required resources.
+						//ex: if sss is turned off, dont load sss textures.
+					//TODO: if using a transparency shader, need to use AlphaObject functions
+
+				if Media.objectResult.text = "source"
+					tEffectNum = Media_getEffectNumber(tEntity.shaderFile, 0) //TODO: get data mode from DB, almost always should be 0 but better to allow for the option to set
+					set object effect tEntity.objectNum, tEffectNum
+				endif
+
+				if Media.objectResult.text <> "instanced"
+
+					Object_Add(tEntity.objectNum)
+					Object_SetAutoUpdate(tEntity.objectNum, 1)
+
+					select tEntity.shaderFile
+
+						case "resource/Advanced Lighting/Shaders/Surface/Object/Diffuse.fx":
+							//Basic Static
+							tImgNum = Media_getImageNumber(tEntity.textureBase + tEntity.textureVariant + "_d" + ENV_TEXTUREFORMAT, 0, 0)
+								texture object tEntity.objectNum, 0, tImgNum
+						endcase
+
+						case "resource/Advanced Lighting/Shaders/Surface/Object/Normalmap Clip.fx":
+							//Normal Static
+							tImgNum = Media_getImageNumber(tEntity.textureBase + tEntity.textureVariant + "_d" + ENV_TEXTUREFORMAT, 0, 0)
+								texture object tEntity.objectNum, 0, tImgNum
+							tImgNum = Media_getImageNumber(tEntity.textureBase + "_n" + ENV_TEXTUREFORMAT, 0, 0)
+								texture object tEntity.objectNum, 1, tImgNum
+							tImgNum = Media_getImageNumber(tEntity.textureBase + "_s" + ENV_TEXTUREFORMAT, 0, 0)
+								texture object tEntity.objectNum, 2, tImgNum
+							//tImgNum = Media_getImageNumber(tEntity.textureBase + "_sss" + ENV_TEXTUREFORMAT)
+								//texture object tEntity.objectNum, 4, tImgNum
+						endcase
+
+						case "resource/Advanced Lighting/Shaders/Surface/Animation/Normalmap Clip.fx":
+							//Normal Fastbone
+							tImgNum = Media_getImageNumber(tEntity.textureBase + tEntity.textureVariant + "_d" + ENV_TEXTUREFORMAT, 0, 0)
+								texture object tEntity.objectNum, 0, tImgNum
+							tImgNum = Media_getImageNumber(tEntity.textureBase + "_n" + ENV_TEXTUREFORMAT, 0, 0)
+								texture object tEntity.objectNum, 1, tImgNum
+							tImgNum = Media_getImageNumber(tEntity.textureBase + "_s" + ENV_TEXTUREFORMAT, 0, 0)
+								texture object tEntity.objectNum, 2, tImgNum
+							//tImgNum = Media_getImageNumber(tEntity.textureBase + "_sss" + ENV_TEXTUREFORMAT)
+								//texture object tEntity.objectNum, 4, tImgNum
+						endcase
+
+					endselect
+				endif
+
+				//handle animation
+				if tEntity.objectType = "Vegetation"
+					Media_getObjectRefByID(World.windObjectID)
+					Media_bindObject(tEntity.objectNum, Media.objectResult.number, MEDIA_ENUM_BIND_FRM)
+					<?System_log("editor.dbx", 2, "world", " > bind vegetation object " + str$(tEntity.objectNum) + " to wind " + str$(Media.objectResult.number) + " : " + str$(MEDIA_ENUM_BIND_FRM))?>
+				endif
+				if tEntity.animationFile > ""
+					array insert at bottom _World_animatedObjects[]
+					_World_animatedObjects[] = tEntity.objectNum
+					//STUB: ?
+				endif
+
+			endif
+
+		endwhile
+	res = sqlite finish sql query(dbWorld)
+
+	//apply parent bindings
+	for i = 0 to array count(_World_sceneEntities[])
+		if _World_sceneEntities[i].bindMode > 0
+			Media_getObjectRefByID(_World_sceneEntities[i].parentID)
+			Media_bindObject(_World_sceneEntities[i].objectNum, Media.objectResult.number, _World_sceneEntities[i].bindMode)
+		endif
+	next i
+
+	empty array _World_sceneEntities[] //TODO: we may need to keep this to use when unloading for shader/texture etc references. OR we may need Media_setObjectTextures(...) Media_setObjectEffect(...) to track these resources
+
+	//get characters ---------------------------------------------------------------------------
+
+	tFX_OBJ_BONE = Media_getEffectNumber("resource/Advanced Lighting/Shaders/Surface/Animation/Normalmap Clip.fx", 0)
+
+	qry$ = "select * from characters where sceneName = '" + World.scene.sceneName + "'"
+
+	res = sqlite begin sql query(dbWorld, qry$)
+		while sqlite next record row(dbWorld) > 0
+
+			tChar = $new CLASS_CharacterEntity
+
+			//base object
+			tChar.baseData.objID = sqlite record row string by column name$(dbWorld, "objectID")
+			if tChar.baseData.objID = "" then tChar.baseData.objID = generate guid$()
+
+			//TODO: add mass to DB
+			tChar.bio.name = sqlite record row string by column name$(dbWorld, "name")
+			tChar.bio.gender = sqlite record row string by column name$(dbWorld, "gender")
+			tChar.bio.faction = sqlite record row string by column name$(dbWorld, "faction")
+			tChar.bio.characterClass = sqlite record row string by column name$(dbWorld, "class")
+			tChar.ai.aiClass = sqlite record row string by column name$(dbWorld, "ai")
+
+			tChar.baseData.posX = sqlite record row float by column name(dbWorld, "posX")
+			tChar.baseData.posY = sqlite record row float by column name(dbWorld, "posY")
+			tChar.baseData.posZ = sqlite record row float by column name(dbWorld, "posZ")
+			tChar.baseData.facing = sqlite record row float by column name(dbWorld, "facing")
+
+			tCharTexVar$ = sqlite record row string by column name$(dbWorld, "textureVariant")
+
+			//apply save data
+			if tChar.ai.aiClass = "player" //TODO: also if "group"
+				wayqry$ = "Select * from waypoints where waypointID = '" + str$(World.scene.waypointRecord) + "'"
+				res = sqlite begin sql query(dbWorldB, wayqry$)
+					while sqlite next record row(dbWorldB) > 0
+						tChar.baseData.posX = sqlite record row float by column name(dbWorldB, "charX")
+						tChar.baseData.posY = sqlite record row float by column name(dbWorldB, "charY")
+						tChar.baseData.posZ = sqlite record row float by column name(dbWorldB, "charZ")
+						tChar.baseData.facing = sqlite record row float by column name(dbWorldB, "charA")
+					endwhile
+				res = sqlite finish sql query(dbWorldB)
+
+				savqry$ = "Select * from characters where name = '" + tChar.bio.name + "'"
+				res = sqlite begin sql query(dbProfile, savqry$)
+					while sqlite next record row(dbProfile) > 0
+						tChar.bio.characterClass = sqlite record row string by column name$(dbProfile, "class")
+						tChar.status.isLiving = sqlite record row integer by column name(dbProfile, "isLiving")
+						tCharTexVar$ = sqlite record row string by column name$(dbProfile, "textureVariant")
+					endwhile
+				res = sqlite finish sql query(dbProfile)
+			endif
+
+
+			tChar.bio.isUnique = sqlite record row integer by column name(dbWorld, "unique")
+			if tChar.bio.isUnique
+				tChar.baseData.fileBase = fast lower$("resource/media/characters/" + tChar.bio.characterClass + "-" + tChar.bio.name)
+			else
+				tChar.baseData.fileBase = fast lower$("resource/media/characters/" + tChar.bio.characterClass + "-" + tChar.bio.gender)
+			endif
+
+			Media_loadObject(tChar.baseData.fileBase, FALSE, tChar.baseData.objID)
+			tObj = Media.objectResult.number
+
+			scale object tObj, 20000, 20000, 20000
+			tChar.baseData.height = object size y(tObj, 1)
+
+			position object tObj, tChar.baseData.posX, tChar.baseData.posY, tChar.baseData.posZ
+
+			if Media.objectResult.text = "source"
+				yrotate object tObj, 180 : fix object pivot tObj
+				yrotate object tObj, tChar.baseData.facing
+
+				Object_Add(tObj)
+				Object_SetAutoUpdate(tObj, 1)
+				set object effect tObj, tFX_OBJ_BONE
+
+				texture object tObj, 0, Media_getImageNumber(tChar.baseData.fileBase + tCharTexVar$ + "_d" + ENV_TEXTUREFORMAT, 0, 0)
+				texture object tObj, 1, Media_getImageNumber(tChar.baseData.fileBase + "_n" + ENV_TEXTUREFORMAT, 0, 0)
+				texture object tObj, 2, Media_getImageNumber(tChar.baseData.fileBase + "_s" + ENV_TEXTUREFORMAT, 0, 0)
+			else
+				//clone (characters never get instanced)
+				yrotate object tObj, tChar.baseData.facing
+
+				Object_Add(tObj)
+				Object_SetAutoUpdate(tObj, 1)
+
+				texture object tObj, 0, Media_getImageNumber(tChar.baseData.fileBase + tCharTexVar$ + "_d" + ENV_TEXTUREFORMAT, 0, 0)
+			endif
+
+			//collision object
+			Media_loadObject("resource/media/characters/human_col", FALSE, generate guid$()) //TODO: TRUE? we dont position limbs, these are pretty simple just position and rotate to base obj. does sparkys work with instance?
+			sObj = Media.objectResult.number
+			if Media.objectResult.text = "source"
+				yrotate object sObj, 180 : fix object pivot sObj
+			endif
+			sc_setupObject sObj, 1, 0
+			sc_allowObjectScaling sObj
+			scale object sObj, 20000, 20000, 20000
+			sc_updateObject sObj
+			Media_bindObject(sObj, tObj, MEDIA_ENUM_BIND_LOC + MEDIA_ENUM_BIND_ROT + MEDIA_ENUM_BIND_COL)
+			hide object sObj //TODO: can we use exclude? can we sc_update an exluded object?
+
+			tChar.baseData.colObjNum = sObj
+			<?System_log("world.dbx", 1, "world", " > made collision object " + str$(sObj) + " " + "resource/media/characters/human_col")?>
+
+			//accessories
+			updateEquip = 0
+			tDB = dbWorldB
+			if tChar.bio.isUnique
+				if tChar.ai.aiClass = "player" //TODO: also if "group"
+					//apply save data
+					subqry$ = "select * from accessories where class = '" + tChar.bio.name + "'"
+					tDB = dbProfile
+				else
+					subqry$ = "select * from accessories where sceneName = '" + World.scene.sceneName + "' and class = '" + tChar.bio.name + "'"
+				endif
+			else
+				subqry$ = "select * from accessories where sceneName = '" + World.scene.sceneName + "' and class = '" + tChar.bio.characterClass + "'"
+			endif
+			res = sqlite begin sql query(tDB, subqry$)
+				while sqlite next record row(tDB) > 0
+
+					//TODO: handle texture variants ex reqItem + "_b"
+					//TODO: texture variant data should be stored in item master, not accessories.
+					itemBase$ = sqlite record row string by column name$(tDB, "fileName")
+					texVar$ = ""
+
+					Media_loadObject(tChar.baseData.fileBase + "_" + itemBase$, FALSE, generate guid$())
+					tSubObjNum = Media.objectResult.number
+
+					if tSubObjNum > -1
+						if object exist(tSubObjNum)
+							select Media.objectResult.text
+								case "source":
+									yrotate object tSubObjNum, 180 : fix object pivot tSubObjNum
+									scale object tSubObjNum, 20000, 20000, 20000 //TODO: get from database
+
+									Object_Add(tSubObjNum)
+									Object_SetAutoUpdate(tSubObjNum, 1)
+									set object effect tSubObjNum, tFX_OBJ_BONE
+
+									tImg = Media_getImageNumber(tChar.baseData.fileBase + "_" + itemBase$ + texVar$ + "_d" + ENV_TEXTUREFORMAT, 1, 0)
+										texture object tSubObjNum, 0, tImg
+									tImg = Media_getImageNumber(tChar.baseData.fileBase + "_" + itemBase$ + "_n" + ENV_TEXTUREFORMAT, 0, 0)
+										texture object tSubObjNum, 1, tImg
+									tImg = Media_getImageNumber(tChar.baseData.fileBase + "_" + itemBase$ + "_s" + ENV_TEXTUREFORMAT, 0, 0)
+										texture object tSubObjNum, 2, tImg
+								endcase
+
+								case "cloned":
+									scale object tSubObjNum, 20000, 20000, 20000 //TODO: get from database
+									Object_Add(tSubObjNum)
+									Object_SetAutoUpdate(tSubObjNum, 1)
+
+										tImg = Media_getImageNumber(tChar.baseData.fileBase + "_" + itemBase$ + texVar$ + "_d" + ENV_TEXTUREFORMAT, 1, 0)
+											texture object tSubObjNum, 0, tImg
+								endcase
+
+								case "instanced":
+									scale object tSubObjNum, 20000, 20000, 20000 //TODO: get from database
+								endcase
+							endselect
+
+							Media_bindObject(tSubObjNum, tObj, MEDIA_ENUM_BIND_LOC + MEDIA_ENUM_BIND_ROT + MEDIA_ENUM_BIND_FRM)
+
+						endif
+					endif
+				endwhile
+			res = sqlite finish sql query(tDB)
+
+			//add it
+			tCharIndex = Characters_addCharacterEntity(tChar)
+
+			if tChar.ai.aiClass = "player"
+				Characters.myCharIndex = tCharIndex
+				Camera.baseData.focusObjectType = 1
+				Camera.baseData.focusObjectNum = tObj
+			endif
+
+		endwhile
+	res = sqlite finish sql query(dbWorld)
+
+	//get lights, particles etc
+	//STUB:
+
+	Sqlite_restConnection(dbWorld)
+	Sqlite_restConnection(dbWorldB)
+	Sqlite_restConnection(dbProfile)
+
+	World_getInteractableData()
+
+endfunction
+
+
+function World_unloadScene()
+
+	//unload module data
+	Anim3d_unload()
+		<?System_log("world.dbx", 2, "main", " > unloaded Anim3d data")?>
+	Math3d_removeAllArcs()
+		<?System_log("world.dbx", 2, "main", " > unloaded Math3d data")?>
+	System_clearAllIntervals()
+		<?System_log("world.dbx", 2, "main", " > unloaded Interval data")?>
+	Characters_unloadAllCharacters()
+		<?System_log("world.dbx", 2, "main", " > unloaded Character data")?>
+
+	//unload media
+	Media_unloadAllObjects()
+		<?System_log("world.dbx", 2, "main", " > unloaded objects")?>
+	//Media_unloadAllImages() -> handle AL sky images from fx.dbx! probably want to move this to world alongside terrain stuff. will need to reload UI images at end.
+
+	//unload world data
+	empty array _World_sceneEntities[]
+	empty array _World_animatedObjects[]
+	empty array World_interactableObjects[]
+		<?System_log("world.dbx", 2, "main", " > unloaded World data")?>
+
+	//unload terrain
+	Media_unloadImage(0, "resource/maps/"+ World.scene.sceneName + "/Terrain.dds", 0, 0)
+	Media_unloadImage(0, "resource/maps/"+ World.scene.sceneName + "/Blendmap.dds", 0, 0)
+	Media_unloadImage(0, "resource/maps/"+ World.scene.sceneName + "/Colormap.dds", 0, 0)
+	Media_unloadImage(0, "resource/media/terrain/"+ World.scene.textureBase +"/1.dds", 0, 0)
+	Media_unloadImage(0, "resource/media/terrain/"+ World.scene.textureBase +"/2.dds", 0, 0)
+	Media_unloadImage(0, "resource/media/terrain/"+ World.scene.textureBase +"/3.dds", 0, 0)
+	Media_unloadImage(0, "resource/media/terrain/"+ World.scene.textureBase +"/4.dds", 0, 0)
+	Media_unloadImage(0, "resource/media/terrain/"+ World.scene.textureBase +"/5.dds", 0, 0)
+	Terrain_Delete()
+		<?System_log("world.dbx", 2, "main", " > unloaded Terrain")?>
+
+	//TODO: flush video memory?
+	//UI_loadMedia()
+
+endfunction
+
+
+function World_updateEnvironment()
+
+	<?System_log("world.dbx", 2, "main", "Begin Update: World_updateEnvironment")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	//time
+	//NOTE:
+	//bodies move 15 deg per hour (360 / 24)
+
+	if World.scene.timeSpeed > 0.0
+		inc World.time, (System.timing.delta * World.scene.timeSpeed * 24.0) / 86400000.0
+		if World.time > 23.999 then World.time = 0.0
+	endif
+
+	//sky bodies
+	sunAngle# = wrapvalue(277.0 - (15.0 * World.time))
+	moonAngle# = wrapvalue(73.0 - (15.0 * World.time))
+
+	if sunAngle# >= 180.0
+		sunScale# = World.envConfig.scaleSunMax
+	else
+		if sunAngle# >= 90.0
+			//scale down as sun approaches zenith
+			sunScale# = World.envConfig.scaleSunMin + (((180.0 - sunAngle#) / 90.0) * (World.envConfig.scaleSunMax - World.envConfig.scaleSunMin))
+		else
+			//scale up as sun approaches horizon
+			sunScale# = World.envConfig.scaleSunMin + (((90.0 - sunAngle#) / 90.0) * (World.envConfig.scaleSunMax - World.envConfig.scaleSunMin))
+		endif
+	endif
+
+	Sky_SetPlanetAngle(moonAngle#, 90.0, 0.0, World.envConfig.scaleMoon)
+	Sky_SetSunAngle(sunAngle#, 90.0, 0.0, sunScale#)
+
+	<?System_log("world.dbx", 1, "main", "sun ang: " + str$(sunAngle#))?>
+
+	//weather
+	if World.scene.enableWeatherDynamic
+		AL_CloudsDensity = curvevalue(World.weather.targetCloudDensity, AL_CloudsDensity, (30000 / (System.timing.delta + 1)))
+	else
+		AL_CloudsDensity = World.weather.targetCloudDensity
+	endif
+	Clouds_SetDensity(AL_CloudsDensity)
+
+	<?System_log("world.dbx", 2, "main", "End Update: World_updateEnvironment," + str$(hitimer(1000000) - updateMark) + "us")?>
+endfunction
+
+
+function World_updateWeather(rAllowChange as boolean)
+	chg = rnd(10)
+
+	select World.weather.state
+
+		case "clear":
+			World.weather.targetCloudDensity = 98
+
+			if chg > 8 and rAllowChange
+				World.weather.state = "sunny"
+				World.weather.targetCloudDensity = 90
+			else
+				imgClouds = Media_getImageNumber("resource/media/materials/blank_alpha.png", 0, 0)
+				imgCloudNoise = Media_getImageNumber("resource/media/materials/blank_alpha.png", 0, 0)
+				Sky_SetCloudsTexture(imgClouds, imgCloudNoise)
+			endif
+			exitfunction
+		endcase
+
+		case "sunny":
+
+			if World.weather.targetCloudDensity = 98
+				imgClouds = Media_getImageNumber("resource/Advanced Lighting/Textures/sky/Clouds.dds", 0, 0)
+				imgCloudNoise = Media_getImageNumber("resource/Advanced Lighting/Textures/sky/Cloud Noise.dds", 0, 0)
+				Sky_SetCloudsTexture(imgClouds, imgCloudNoise)
+			endif
+
+			World.weather.targetCloudDensity = 90
+
+			if chg < 3 and rAllowChange
+				World.weather.state = "clear"
+				World.weather.targetCloudDensity = 100
+			endif
+			if chg > 8 and rAllowChange
+				World.weather.state = "partly-cloudy"
+				World.weather.targetCloudDensity = 70
+			endif
+			exitfunction
+		endcase
+
+		case "partly-cloudy":
+			World.weather.targetCloudDensity = 70
+
+			if chg < 3 and rAllowChange
+				World.weather.state = "sunny"
+				World.weather.targetCloudDensity = 90
+			endif
+			if chg > 8 and rAllowChange
+				World.weather.state = "cloudy"
+				World.weather.targetCloudDensity = 6
+			endif
+			exitfunction
+		endcase
+
+		case "cloudy":
+			World.weather.targetCloudDensity = 6
+
+			if chg < 3 and rAllowChange
+				World.weather.state = "partly-cloudy"
+				World.weather.targetCloudDensity = 70
+			endif
+			if chg > 8 and rAllowChange
+				split = rnd(10)
+				if split <= 6
+					World.weather.state = "overcast"
+					World.weather.targetCloudDensity = 1
+				endif
+				if split = 7 or split = 8
+					World.weather.state = "rainy"
+					World.weather.targetCloudDensity = 6
+				endif
+				if split = 9 or split = 10
+					World.weather.state = "foggy"
+					World.weather.targetCloudDensity = 6
+				endif
+			endif
+			exitfunction
+		endcase
+
+		case "overcast":
+			World.weather.targetCloudDensity = 1
+
+			if chg < 3 and rAllowChange
+				split = rnd(10)
+				if split <= 6
+					World.weather.state = "cloudy"
+					World.weather.targetCloudDensity = 6
+				endif
+				if split = 7 or split = 8
+					World.weather.state = "rainy"
+					World.weather.targetCloudDensity = 6
+				endif
+				if split = 9 or split = 10
+					World.weather.state = "foggy"
+					World.weather.targetCloudDensity = 6
+				endif
+			endif
+			if chg > 8 and rAllowChange
+				World.weather.state = "storming"
+				World.weather.targetCloudDensity = 1
+			endif
+			exitfunction
+		endcase
+
+		case "rainy":
+			World.weather.targetCloudDensity = 6
+
+			if chg < 3 and rAllowChange
+				split = rnd(10)
+				if split <= 7
+					World.weather.state = "cloudy"
+					World.weather.targetCloudDensity = 6
+				endif
+				if split >= 8
+					World.weather.state = "foggy"
+					World.weather.targetCloudDensity = 6
+				endif
+			endif
+			if chg > 8 and rAllowChange
+				World.weather.state = "storming"
+				World.weather.targetCloudDensity = 1
+			endif
+			exitfunction
+		endcase
+
+		case "storming":
+			World.weather.targetCloudDensity = 1
+
+			if chg < 3 and rAllowChange
+				split = rnd(10)
+				if split <= 7
+					World.weather.state = "rainy"
+					World.weather.targetCloudDensity = 6
+				endif
+				if split >= 8 and rAllowChange
+					World.weather.state = "overcast"
+					World.weather.targetCloudDensity = 6
+				endif
+			endif
+			exitfunction
+		endcase
+
+		case "foggy":
+			World.weather.targetCloudDensity = 6
+
+			if chg < 3 and rAllowChange
+				World.weather.state = "cloudy"
+				World.weather.targetCloudDensity = 6
+			endif
+			if chg > 8 and rAllowChange
+				World.weather.state = "dense-fog"
+				World.weather.targetCloudDensity = 1
+			endif
+			exitfunction
+		endcase
+
+		case "dense-fog":
+			World.weather.targetCloudDensity = 1
+
+			if chg < 5 and rAllowChange
+				World.weather.state = "foggy"
+				World.weather.targetCloudDensity = 6
+			endif
+			exitfunction
+		endcase
+
+	endselect
+endfunction
+
+
+function World_getInteractableRefByNumber(rObjectNum as integer)
+	Media_getObjectRefByNumber(rObjectNum)
+	for i = 0 to array count(World_interactableObjects[])
+		if World_interactableObjects[i].objectID = Media.objectResult.id
+			exitfunction i
+		endif
+	next i
+endfunction -1
+
+
+function World_getInteractableData()
+
+	dbWorld = Sqlite_getConnection("resource/data/world.db")
+
+	<?System_log("world.dbx", 2, "events", "loading data for " + str$(array count(World_interactableObjects[])) + " interactables")?>
+	for i = 0 to array count(World_interactableObjects[])
+
+		qry$ = "SELECT * FROM interactables WHERE entityID = '" + str$(World_interactableObjects[i].entityRecord) + "'"
+
+		<?System_log("world.dbx", 1, "data", "Execute query on world.db: " + qry$)?>
+
+		res = sqlite begin sql query(dbWorld, qry$)
+			while sqlite next record row(dbWorld) > 0
+				World_interactableObjects[i].name = sqlite record row string by column name$(dbWorld, "entityName")
+				World_interactableObjects[i].maxStates = sqlite record row integer by column name(dbWorld, "maxStates")
+				World_interactableObjects[i].itemRecord = sqlite record row integer by column name(dbWorld, "itemID")
+				World_interactableObjects[i].onUse = sqlite record row string by column name$(dbWorld, "onUse")
+				<?System_log("world.dbx", 2, "events", " > Loaded interactable data: name " + World_interactableObjects[i].name)?>
+			endwhile
+		res = sqlite finish sql query(dbWorld)
+
+	next i
+
+	Sqlite_restConnection(dbWorld)
+
+endfunction
+
+
+function World_convertDistance(rMode as string, rVal as float)
+	tVal as float
+	select rMode
+		case "u2ft": tVal = rVal / (World.envConfig.scaleMeter * 0.3048) : endcase // input units / units per ft = total as ft
+		case "ft2u": tVal = rVal * (World.envConfig.scaleMeter * 0.3048) : endcase // input ft * units per ft = total as units
+		case "u2m": tVal = rVal / World.envConfig.scaleMeter : endcase // input units / units per meter = total as meters
+		case "m2u": tVal = rVal * World.envConfig.scaleMeter : endcase // input meters * units per meter = total as units
+		case "ft2m": tVal = (rVal * (World.envConfig.scaleMeter * 0.3048)) / World.envConfig.scaleMeter : endcase // input ft apply ft2u -> u2m = total as meters
+		case "m2ft": tVal =(rVal * World.envConfig.scaleMeter) / (World.envConfig.scaleMeter * 0.3048) : endcase //input meteres apply m2u -> u2ft = total as ft
+	endselect
+endfunction tVal

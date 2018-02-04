@@ -1,0 +1,35 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+SC_groupCollision
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    return float=SC_groupCollision ( obj1, group  )
+
+<BR><BR>
+
+        <u>-obj1</u>:   an object you want to check collision against<br>
+        <u>-group</u>:  the group of objects you want to check against this object(0 to check against all)<br>
+   						<br>
+        <u>returns</u>: the number of the object collided with<br>
+                        returns 0 if no collision occured<br>
+   						<br>
+        Similar to <a href="sc_objectCollision.htm">SC_objectCollision</a> except it checks against
+        a group of objects. <br><br>
+
+        Objects assigned group 0 during setup have no group and are ignored during group collision.<br>
+        (except obj1).<br><br>     
+
+        This command does not return any other information about the collision, it's<br>
+        normal or point of contact.<br>
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

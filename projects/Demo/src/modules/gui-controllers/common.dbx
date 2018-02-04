@@ -1,0 +1,132 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	UI Controller - Common Directives
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu)
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides event callback functions for common element events across gui documents.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+
+	*******************************************
+	Classes:
+
+		Extends UI
+
+	*******************************************
+	Notes:
+
+		This module provides several 'do{x}ByType()' functions for common ui event actions.
+		This handles things like brightening a button when the mouse hovers over it, or darkening it when pressed.
+		Element types are arbitrary and flexible: a 'div' or a 'button' is only a label and only has what meaning you give it.
+		Consistency is the key to using types to their best effect.
+
+		button: a typical button, you press it and it does something.
+			Best practice: hook your desired action to the onRelease event instead of onPress. Use onPress to give visual feedback against the mouse click.
+			- An exception to this is when gameplay is impacted, such as activating an ability, you will want to trigger onPress for responsiveness to controls.
+
+		icon: these indicate or represent something, often with detailed or complex data behind them.
+			Hover events often involve displaying a tooltip to provide summary info.
+			Some icons may be unmovable while others may be drag and drop.
+
+		socket: these provide a drop location for drag and drop elements such as icons. other types may also be drag and drop and utilize sockets as an anchor point.
+
+
+*/
+
+function UI_controller_common_doHoverByType(eventArgs as string)
+
+	//TODO: split string for additional agruments: on button -> new background image file or new class
+
+	tElementIndex = intval(eventArgs)
+	select _UI_elements[tElementIndex].tag
+
+		case "button":
+			if UI.styleProp.id.backgroundImage && _UI_elements[tElementIndex].style._visualPropertyEnabled
+			//if _UI_elements[tElementIndex].resolvedStyle.backgroundImage <> ""
+				<?System_log("ui.dbx", 1, "ui-event", ">> pop btn by background-image: " + _UI_elements[tElementIndex].name + "-pop.png")?>
+				UI_element_setStyleProp(tElementIndex, "background-image", _UI_elements[tElementIndex].name + "-pop.png")
+			else
+				<?System_log("ui.dbx", 1, "ui-event", ">> pop btn by styleClass: " + _UI_elements[tElementIndex].name + "-pop")?>
+				UI_element_setStyleClass(tElementIndex, _UI_elements[tElementIndex].name + "-pop")
+			endif
+		endcase
+
+		/*
+		case "itemSocket":
+			tStatusIndex = _UI_getElementById(_UI_elements[tElementIndex].id + "-status")
+			UI_element_setStyleProp(tStatusIndex, "display", "visible")
+		endcase
+		*/
+
+	endselect
+endfunction
+
+
+function UI_controller_common_doUnHoverByType(eventArgs as string)
+	tElementIndex = intval(eventArgs)
+	select _UI_elements[tElementIndex].tag
+
+		case "button":
+			if UI.styleProp.id.backgroundImage && _UI_elements[tElementIndex].style._visualPropertyEnabled
+				UI_element_setStyleProp(tElementIndex, "background-image", _UI_elements[tElementIndex].name + ".png")
+			else
+				<?System_log("ui.dbx", 1, "ui-event", ">> unpop btn by styleClass: " + _UI_elements[tElementIndex].name)?>
+				UI_element_setStyleClass(tElementIndex, _UI_elements[tElementIndex].name)
+			endif
+		endcase
+
+		/*
+		case "itemSocket":
+			tStatusIndex = _UI_getElementById(_UI_elements[tElementIndex].id + "-status")
+			//don't hide if status indicator is non-basic (don't hide active, allowed indicators etc)
+			if _UI_elements[tStatusIndex].styleClass = "icon-inventorySlot-lgStatus"
+				UI_element_setStyleProp(tStatusIndex, "display", "hidden")
+			endif
+		endcase
+		*/
+
+	endselect
+endfunction
+
+
+function UI_controller_common_doPressByType(eventArgs as string)
+	tElementIndex = intval(eventArgs)
+	select _UI_elements[tElementIndex].tag
+
+		case "button"
+			if UI.styleProp.id.backgroundImage && _UI_elements[tElementIndex].style._visualPropertyEnabled
+				UI_element_setStyleProp(tElementIndex, "background-image", _UI_elements[tElementIndex].name + "-push.png")
+			else
+				UI_element_setStyleClass(tElementIndex, _UI_elements[tElementIndex].name + "-push")
+			endif
+		endcase
+
+	endselect
+endfunction
+
+
+function UI_controller_common_doReleaseByType(eventArgs as string)
+	tElementIndex = intval(eventArgs)
+	select _UI_elements[tElementIndex].tag
+
+		case "button"
+
+		endcase
+
+		case "input"
+				//TODO: begin taking keyboard input and apply to active element value.
+		endcase
+
+	endselect
+endfunction

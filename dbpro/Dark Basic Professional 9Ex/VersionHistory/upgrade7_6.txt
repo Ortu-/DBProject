@@ -1,0 +1,7 @@
+Upgrade 7.6
+===========
+
+Compiler
+--------
+
+* Recognise new BlitzTerrain module

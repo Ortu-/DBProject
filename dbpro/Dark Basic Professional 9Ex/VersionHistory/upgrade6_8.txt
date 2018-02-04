@@ -1,0 +1,14 @@
+Upgrade 6.8
+===========
+
+Compiler
+--------
+
+ * A new field in SETUP.INI called ExternaliseDLLS will exclude ALL DLLs from your executable if set to yes. This allows you to have extremely small executables and place the required DLLs alongside the main executable.
+ * Using the above, you can find out what DLLs the executable needs by looking at the DLL list stored in the _Temp.dbm text file in your DBPro TEMP folder
+ * Added support for new DARKINK plug-in to provide advanced printer support
+
+Basic3D
+-------
+
+ * Object Not Exist error now reports the actual object number for better tracing

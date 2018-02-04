@@ -1,0 +1,140 @@
+rem Light Functionality
+sync on
+
+rem Call subroutines
+gosub _createscene
+gosub _usingvectors
+gosub _lightshow
+gosub _deletescene
+
+rem End of program
+end
+
+_createscene:
+
+rem Create Scene
+load image "ground.jpg",1
+make matrix 1,1000,1000,100,100
+prepare matrix texture 1,1,1,1
+position matrix 1,-500,0,-500
+position camera 0,100,0
+
+rem Set Ambient light
+set ambient light 20
+color ambient light rgb(64,64,128)
+
+rem Set Default Light As Sun
+set directional light 0,0,-1,0
+color light 0,192,192,192
+
+rem Create Moving Light
+LightNumber=1 : z#=500
+make light LightNumber
+set point light LightNumber,0,100,0
+color light LightNumber,512,512,256
+set light range LightNumber,200
+
+rem Create Lighthouse light
+make light 2
+set spot light 2,45,90
+color light 2,512,100,100
+position light 2,0,50,400
+
+rem Follow Light
+make light 3
+set spot light 3,15,30
+color light 3,-512,-512,0
+
+rem Set up Fog
+fog on
+fog distance 500
+fog color rgb(255,128,64)
+set normalization off
+color backdrop rgb(255,128,64)
+
+rem Setup camera
+rotate camera 20,0,0
+
+return
+
+_deletescene:
+
+if light exist(1)=1 then delete light 1
+if light exist(2)=1 then delete light 2
+if light exist(3)=1 then delete light 3
+set normalization on
+fog off
+
+return
+
+_usingvectors:
+
+VectorNumber=1 : LightNumber=2
+result==make vector3(VectorNumber)
+set vector3 VectorNumber, 0, 50, 200
+position light LightNumber, VectorNumber
+set vector3 VectorNumber, 0, 45, 0
+rotate light LightNumber, VectorNumber
+set vector3 to light position VectorNumber, LightNumber
+set vector3 to light rotation VectorNumber, LightNumber
+a#=y vector3(VectorNumber)
+result=delete vector3(VectorNumber)
+
+return
+
+_lightshow:
+
+while inkey$()<>"x"
+
+set cursor 0,0 : print "LIGHT COMMANDS (X to Exit)"
+print "USE ARROW KEYS TO MOVE LIGHT"
+print "A+Z TO SWITCH SUN OFF/ON"
+print
+print "LIGHT DATA"
+print
+if rnd(5)=1 then LightNumber=rnd(3)
+print "number:";LightNumber
+print "exist:";light exist(LightNumber)
+print "type:";light type(LightNumber)
+print "range:";light range(LightNumber)
+print "visible:";light visible(LightNumber)
+print "position x:";light position x(LightNumber)
+print "position y:";light position y(LightNumber)
+print "position z:";light position z(LightNumber)
+print "direction x:";light direction x(LightNumber)
+print "direction y:";light direction y(LightNumber)
+print "direction z:";light direction z(LightNumber)
+
+rem Mouselook Camera
+mx=mousemovex() : my=mousemovey()
+rotate camera camera angle x()+my,camera angle y()+mx,0
+
+rem Control Sun
+if inkey$()="a" then hide light 0
+if inkey$()="z" then show light 0
+
+rem Control Moving Light
+if leftkey()=1 then x#=x#-10
+if rightkey()=1 then x#=x#+10
+if upkey()=1 then z#=z#+10
+if downkey()=1 then z#=z#-10
+
+LightNumber=1 : ObjectNumber=1
+set light to object orientation LightNumber,ObjectNumber
+set light to object position LightNumber,ObjectNumber
+position light 1,x#,100,z#
+
+rem Control Lighthouse light
+a#=a#+1 : if a#>359 then a#=a#-360
+rotate light 2,0,a#,0
+
+rem Control Beam Of Light
+position light 3,x#,150,z#
+point light 3,0,0,0
+
+rem Update screen
+sync
+
+endwhile
+
+return

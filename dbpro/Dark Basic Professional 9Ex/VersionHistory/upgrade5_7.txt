@@ -1,0 +1,14 @@
+Upgrade 5.7
+===========
+
+NOTES
+-----
+* Compiler DLL Protection added for current and future plugins
+* Activation System Simplified for easier use on machines that switch and swap hardware
+
+BASIC3D
+-------
+* New Object Transparency Option; SET OBJECT TRANSPARENCY Obj,4 will set the alpha test to not render alpha
+  values less than 0x000000CF. Useful for rendering transparent objects in any order rather than z-sorted
+
+

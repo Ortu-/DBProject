@@ -1,0 +1,31 @@
+<body background="gfx/backdrop.jpg" bgproperties="fixed">
+<font face="Verdana" size="2">
+	<center><font size="3"><b>D3DFunc - Moving to V3.5</b></font><br>Breaking Changes & Additions</center></p>
+	Scilynt here, this is hopefully a small document letting you know about changes from previous versions, changes which could break your current code. I'd just like to apologise for the changes, but I believe that they are for the better, to make it easier to manage the plugin source, and to fit into DarkBASIC Professionals way of thinking. The framework for the plugin has now been finalised, and any further additions to the plugin should not affect existing command structure.<br>
+	If any of these changes are too drastic then let me know, if I get enough requests to add in backwards compatibility then I will. I would like to mention that any benefits to be gained with this release will probably replace current code anyway, so while you're making these changes, it shouldn't be too difficult to update the affected commands.</p><br>
+	<center><b>Changes</b></center><br>
+	<b>Alpha</b><br>
+	The first major change with this release is regarding alpha use. This is the single biggest change to existing code, alpha values now only accept a range of 0 to 255. The old percentage style of alpha has been removed. In line with this change, the flag added to D3D_INIT in previous releases has also been removed. This change affects D3D_COLOR and D3D_RGBA().</p>
+	<b>2D Box</b><br>
+	The alpha parameter for D3D_BOX has been replaced by a version for overriding the colour set by D3D_COLOR. By default all operations use alpha by default.</p>
+	<b>3D Text</b><br>
+	Due to the addition of functions which allow the creation of 3D objects, this command has been renamed to D3D_MAKE_3DTEXT. The parameters for 3D text remain the same. This change is to allow continuity between these 3D object commands which all begin with D3D_MAKE. This is to clear up any confusion that may be created between commands that create a reusable object, and those that don't.</p>
+	<b>3D Batching</b><br>
+	Introduced in the previous release of D3DFunc was batching 3D drawing operations. The original implementation has been updated to allow more flexibility to the system. The initial batch commands had a hardcoded limit of 10,000 shapes, which this release the limit has been changes to that of the range of a signed integer. With this, you must now initialise the batch with the appropriate D3D_BATCH_SET command. This commands have also been renamed to create continuity between all batching commands.</p>
+	<b>Batching 3D Dots</b><br>
+	Due to the nature of batch drawing, 3D dots can only have a single point size. The new implementation of D3D_BATCH_ADD_DOT3D has had it's point size parameter removed, and this must not be set using the command D3D_BATCH_SET_DOT3D_SIZE.</p><br>
+	<center><b>Additions / Updates</b></center><br>
+	<b>Plugin initialisation</b><br>
+	The command D3D_INIT is now called automatically at the being of code execution, this should prevent any problems caused by a user forgetting about it. D3D_INIT must still be called after a screen resolution change in order for the plugin to function correctly.</p>
+	<b>2D Operations</b><br>
+	Various 2D commands now have an addition colour parameter in order to overwrite the colour previously set by D3D_COLOR.</p>
+	<b>Gradient Lines</b><br>
+	Both 2D and 3D lines can now accept two colour parameters. When providing two colours, the line will be created with a gradient between Colour1 and Colour2.</p>
+	<b>Polygon Shapes</b><br>
+	D3D_MAKE_POLYGON is similar to the drawing versions, D3D_POLYGON and D3D_POLYGON3D, but will instead create a reusable object.</p>
+	<b>Batching</b><br>
+	The biggest addition / update to the command set in V3.5 is commands to batch drawing operations. This update brings in batching to 2D operations, and updates the previous 3D commands. All batching commands begin with D3D_BATCH to avoid mix ups with standard drawing commands. Batching can be used with 2D / 3D dots, and 2D / 3D lines. By using batching you will be optimising the usage of the internal drawing command, and increasing overall speed. In order to use batching the appropriate initialisation command must be called, these are in the form D3D_BATCH_SET_X, where X is the item to batch. Items can then be added using the D3D_BATCH_ADD commands. Finally, to output the result to the screen you must call D3D_BATCH_DRAW. For more information please review the help documention for these commands.</p>
+	CLICK <A HREF="..\d3dfunc.htm">HERE</A> TO RETURN TO THE D3DFUNC INDEX<BR>
+</font>
+</body>
+

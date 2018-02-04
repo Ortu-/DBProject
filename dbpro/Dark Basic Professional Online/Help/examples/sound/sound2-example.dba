@@ -1,0 +1,108 @@
+rem Sound Functionality
+
+rem Sound Values
+SoundNumber=1+rnd(4)
+SecondSound=6+rnd(4)
+3DSoundNumber=11+rnd(4)
+
+rem Main loop
+while mouseclick()=0
+
+rem Random values
+Volume=50+rnd(50)
+Speed=100+rnd(99900)
+Pan=-10000+rnd(20000)
+StartPos=1000+rnd(2000)
+LXPos=rnd(10)-5
+LYPos=rnd(10)-5
+LZPos=rnd(10)-5
+XPos=rnd(500)-250
+YPos=rnd(500)-250
+ZPos=rnd(500)-250
+YAngle#=wrapvalue(YAngle#+0.1)
+StartPos=rnd(500)
+EndPos=StartPos+500+rnd(500)
+InitPos=rnd(2000)
+
+rem Sound Loading
+if sound exist(SoundNumber)=0 then load sound "sound\smash.wav",SoundNumber
+if sound exist(3DSoundNumber)=0 then load 3dsound "sound\tube.wav",3DSoundNumber
+
+rem 2D Sound Control
+if rnd(100)=1 then play sound 3DSoundNumber
+if rnd(500)=1 then play sound SoundNumber
+if rnd(500)=1 then play sound SoundNumber,StartPos
+if rnd(500)=1 then stop sound SoundNumber
+if rnd(500)=1 then loop sound SoundNumber
+if rnd(500)=1 then loop sound SoundNumber,StartPos
+if rnd(500)=1 then loop sound SoundNumber,StartPos,EndPos
+if rnd(500)=1 then loop sound SoundNumber,StartPos,EndPos,InitPos
+if rnd(500)=1 then pause sound SoundNumber
+if rnd(500)=1 then resume sound SoundNumber
+if rnd(500)=1 then set sound volume SoundNumber,Volume
+if rnd(500)=1 then set sound speed SoundNumber,SPeed
+if rnd(500)=1 then set sound pan SoundNumber,Pan
+
+if sound exist(SecondSound)=1 then delete sound SecondSound
+if rnd(500)=1 then clone sound SecondSound,SoundNumber
+
+rem 3D Sound Control
+if sound exist(3DSoundNumber)=1
+ if rnd(500)=1 then position sound 3DSoundNumber,XPos,YPos,ZPos
+ if rnd(500)=1 then position listener LXPos,LYPos,LZPos
+ if rnd(500)=1 then rotate listener 0,YAngle#,0
+ if rnd(500)=1 then scale listener 0.1
+endif
+
+rem Recording a Sound
+if rnd(500)=1
+ print "Recording..."
+ Duration=2000+rnd(3000)
+ if rnd(1)=1
+  record sound SoundNumber,Duration
+ else
+  record sound SoundNumber
+ endif
+ wait Duration
+ stop recording sound
+ if sound exist(SoundNumber)=1
+  save sound "mysound.wav",SoundNumber
+ endif
+endif
+
+rem Sound Data
+cls
+print "Sound Data"
+print
+print "exist:";sound exist(SoundNumber)
+if sound exist(SoundNumber)=1
+ print "type:";sound type(SoundNumber)
+ print "playing:";sound playing(SoundNumber)
+ print "looping:";sound looping(SoundNumber)
+ print "paused:";sound paused(SoundNumber)
+ print "volume:";sound volume(SoundNumber)
+ print "speed:";sound speed(SoundNumber)
+ print "pan:";sound pan(SoundNumber)
+endif
+if sound exist(3DSoundNumber)=1
+ print "positionx:";sound position x(3DSoundNumber)
+ print "positiony:";sound position y(3DSoundNumber)
+ print "positionz:";sound position z(3DSoundNumber)
+endif
+print
+print "Listener Data"
+print
+print "positionx:";listener position x()
+print "positiony:";listener position y()
+print "positionz:";listener position z()
+print "anglex:";listener angle x()
+print "angley:";listener angle y()
+print "anglez:";listener angle z()
+
+rem End loop
+endwhile
+
+rem Delete sounds
+if sound exist(SoundNumber)=1 then delete sound SoundNumber
+if sound exist(SecondSound)=1 then delete sound SecondSound
+if sound exist(3DSoundNumber)=1 then delete sound 3DSoundNumber

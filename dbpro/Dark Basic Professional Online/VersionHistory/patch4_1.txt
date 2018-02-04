@@ -1,0 +1,56 @@
+Patch 4.1
+=========
+
+GENERAL
+-------
+* Internal images no longer load as a single mipmap texture, and now have 9 mipmap levels loaded (as in Patch 3.1)
+* Cull mode is now restored between primary and overlay render phases - mysterious culling effect fixed
+* Ambient light calculations on objects that use no teture and diffuse colors no longer drown the object in white
+* SET OBJECT INTERPOLATION X,100 will now disable interpolation effect even if it was interupted (mostly the case)
+* Internal Image load for textures unified to use main texture loader, and TGA support added for alpha maps
+* Added extra 0.5 bias to sprite positions to increase accuracy of drawn and pasted sprites
+* Commented back in the shadow creation code, seems it was removed accidently
+* CLONE OBJECT and to a greater degree the DBO system can now retain limb visibility and orientation data
+* Fixed serious crash bug caused when large quantities of objects are created and destroyed - vertex buffer duplication
+* Deactivated default setting PROCESSOR FRIENDLY flag - now false until SYNC OFF is explicitly used
+* CLONE OBJECT no longer crashes if destination object index has not priorly been created 
+* Fixed interaction between ghost and transparent objects - caused transparent objects to loose Zwrite ability
+* Fixed problem caused by creation of lots of small objects - vertex buffers would run out of resources too soon
+* Fixed culling bound information for cloned static objects - they can now be culled like regular objects
+* Fixed vertex buffer and index buffer updating to only occur once at sync time, instead of each obj/mesh/limb command
+* Added a flag to default object creation so that they work similar to P3 and create their own buffers = removed slowbug
+* Removed creation of bound sphere and box meshes to show object bounds command to speed up regular object use
+* modified vertex animation for MD2 models
+* changed DBO block code so sub frames would be copied correctly
+* put in some checks to make sure vertex animation was right
+* MD3 models now use correct vertex order
+* no longer need culling flag after an object has been created
+* changed sub frames and meshes for MD3 models
+* stopped crash on AnimateBoneMesh function
+* swapped matrix values in MD3 converter
+* MD2 and MD3 models now animate
+* delete bsp function now works for all BSP types
+* temporary files now deleted when using Quake 2 / Half Life BSPs
+* Quake 3 patches are created with higher detail
+* Mipmapped textures for non-DDS/TGA files now works on all 9 mipmap levels - no black edging
+* Particles for fire and snow now employ ghosting like regular particle objects
+* Added verification code for model loading to catch MD3 files loaded incorrectly
+* Reintegrated four model formats and removed bugs causing MDL and 3DS to leave temp files in the project folder
+* MDL, MD2 and MD3 now generate normals to provide correct lighting and feedback current frame number
+* MDL now culls correctly with the correct normals data
+* LOAD IMAGE when using the additional parameter for pixel perfect images now works with alpha and has no mipmaps
+* CHANGE MESH did not update the bounding data causing some result bugs
+* INTERSECT OBJECT did not handle objects that had no index data, now fixed
+* Built in special colour modifiers for the shadow and reflection effects - defaults for P4.1. Commands for P5.
+* Cartoon Shading works again - no longer depends on mipmap correctness or secondary texture smoothness (uses diffuse)
+* HIDE OBJECT and SHOW OBJECT no longer affect the visibility data of individual limbs pre-P4 behaviour
+* OBJECT IN SCREEN now does better clipping on scaled objects, and no longer clips subZ object positions
+
+PURPOSE OF PATCH
+----------------
+The primary purpose of this patch over Patch 4 is to resolve an issue caused by some 3D card drivers that caused a significant slowdown in the genration and handling of 3D geometry with vertex and index buffers. This issue has now been resolved by adjusting the way in which VB and IB buffers are used. The older, in some cases faster code still exists and will be re-activated in a future patch under a new command used for large object quantity optimisation.
+
+MIGRATION NOTES
+---------------
+MD2 and MD3 animations are controlled by a different animation system that the other models, causing some slight differneces such as the inability to set the speed or return the maximum number of frames. These issues will be resolved when the animation system is unified in Patch 5.
+

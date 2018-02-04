@@ -1,0 +1,211 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	UI Controller - Title Menu
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides event callback functions for the title menu.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+
+	*******************************************
+	Classes:
+
+		Extends UI
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+function UI_controller_titleMenu_init()
+
+	fCount = 0
+	set dir System.appRoot + "\resource\data\save\"
+	perform checklist for files
+	for i = 1 to checklist quantity()
+		if fast right$(checklist string$(i), 4) = ".sav"
+			inc fCount, 1
+		endif
+	next i
+	set dir System.appRoot
+
+	if fCount > 1
+		loadElementIndex = _UI_getElementById("titleMenu-opt-loadGame")
+		_UI_elements[loadElementIndex].enableEvents = 1
+		UI_element_setStyleProp(loadElementIndex, "color", "#ffffff")
+	endif
+
+	if file exist("resource\data\save\resume")
+		fHandle = find free file()
+		open to read fHandle, "resource\data\save\resume"
+		read string fHandle, App.currentProfile
+		close file fHandle
+		resumeElementIndex = _UI_getElementById("titleMenu-opt-resumeGame")
+		_UI_elements[resumeElementIndex].enableEvents = 1
+		UI_element_setStyleProp(resumeElementIndex, "color", "#ffffff")
+	endif
+
+endfunction
+
+
+function UI_controller_titleMenu_resumeGame(eventArgs as string)
+	tElementIndex = intval(eventArgs)
+
+	//hide title and swap in splash screen
+	titleElementIndex = _UI_getElementById("titleMenu")
+	UI_element_setStyleProp(titleElementIndex, "display", "hidden")
+
+	App.status.loadState = 1
+	App.status.loadType = 2
+	App.status.loadStage = 0
+	App_updateSplashScreen("- Initializing Level")
+
+	//check for unload
+	if World.scene.sceneRecord > 0
+		<?System_log("main.dbx", 3, "main", "Unloading previous scene on resumeGame titleMenu event")?>
+		d3d_box -10, -10, App.config.screenWidth + 10, App.config.screenHeight + 10, d3d_rgba(20, 20, 20, 255)
+		tCount = array count(_App_splashScreenResource[])
+		for i = 0 to tCount
+			paste image _App_splashScreenResource[i].imgNum, _App_splashScreenResource[i].pasteX, _App_splashScreenResource[i].pasteY, 1
+		next i
+		pasteY = App.config.screenHeight
+		if App.config.screenHeight > 1080
+			pasteY = ((App.config.screenHeight - 1080) / 2) + 1080
+		endif
+		<?System_log("main.dbx", 1, "main", "splashResourceCount: " + str$(tCount))?>
+
+		AdvLighting_Update()
+
+		World_unloadScene()
+	endif
+
+	//load
+	World_loadScene()
+	UI_loadMedia()
+
+	App.status.loadStage = 3
+	App_updateSplashScreen("- Finishing")
+
+endfunction
+
+
+function UI_controller_titleMenu_newGame(eventArgs as string)
+
+	//show new game
+	//It will accept input of a profile name which will be used as the .sav filename
+	//panel should include create and cancel buttons
+	pElementIndex = _UI_getElementById("titleMenu-newGame")
+	UI_element_setStyleProp(pElementIndex, "display", "visible")
+endfunction
+
+
+function UI_controller_titleMenu_newGameCreate(eventArgs as string)
+
+	profElementIndex = _UI_getElementById("newGame-profNam")
+	tProfileName$ = _UI_elements[profElementIndex].value
+
+	if file exist("resource/data/save/" + tProfileName$ + ".sav")
+		//prompt profile already exists, do you wish to overwrite?
+			//yes: delete file "resource/data/save/" + tProfileName$ + ".sav"
+			//no: exit :: return to new game / char creation panel
+
+			//TEMP: just overwrite
+			delete file "resource/data/save/" + tProfileName$ + ".sav"
+	endif
+
+	dbProfile = Sqlite_getConnection("resource/data/save/"+ tProfileName$ +".sav") //this will create the db file if it does not exist
+
+	//create tables
+	res = Sqlite Begin Transaction()
+
+		n = Sqlite Add To Transaction("CREATE TABLE `waypoint` (`sceneID` INTEGER, `waypointID` INTEGER)")
+		n = Sqlite Add To Transaction("insert into waypoint (sceneID) values (1)")
+		//only one record. on waypoint events, update the record. sceneID will reference sceneName and sceneStage from world.db.scenes
+		//char/cam config will come from world.db.waypoints
+
+		n = Sqlite Add To Transaction("CREATE TABLE `characters` (`record`	INTEGER PRIMARY KEY AUTOINCREMENT, `name`	TEXT, `class`	TEXT, `textureVariant`	TEXT, `isLiving`	INTEGER DEFAULT 1)")
+		n = Sqlite Add To Transaction("insert into characters (name, class) values ('MainCharacterNameHere', 'stickman')")
+		//TODO: dont hard code initial characters/classes
+
+		n = Sqlite Add To Transaction("CREATE TABLE `accessories` (`accessoryID` INTEGER, `class`	TEXT,	`fileName`	TEXT,	`textureVariant`	TEXT,	`isEquip`	INTEGER,	`condition`	INTEGER,	`itemID`	INTEGER,	`initDisabled`	INTEGER DEFAULT 0,	PRIMARY KEY(accessoryID))")
+		//NOTE: class = unique character's name
+		//TODO: don't hard code starting accessories, should be set through editor.
+
+	res = Sqlite Commit Transaction(dbProfile)
+
+	App.currentProfile = tProfileName$ + ".sav"
+	if file exist("resource/data/save/resume") then delete file "resource/data/save/resume"
+	fHandle = find free file()
+	open to write fHandle, "resource/data/save/resume"
+	write string fHandle, App.currentProfile
+	close file fHandle
+
+	resumeElementIndex = _UI_getElementById("titleMenu-opt-resumeGame")
+	_UI_elements[resumeElementIndex].enableEvents = 1
+	UI_element_setStyleProp(resumeElementIndex, "color", "#ffffff")
+
+	pElementIndex = _UI_getElementById("titleMenu-newGame")
+	UI_element_setStyleProp(pElementIndex, "display", "hidden")
+
+	UI_controller_titleMenu_resumeGame(str$(resumeElementIndex))
+
+endfunction
+
+
+function UI_controller_titleMenu_newGameCancel(eventArgs as string)
+	pElementIndex = _UI_getElementById("titleMenu-newGame")
+	UI_element_setStyleProp(pElementIndex, "display", "hidden")
+endfunction
+
+
+function UI_controller_titleMenu_loadGame(eventArgs as string)
+
+	if file exist("resource/data/save/resume") then delete file "resource/data/save/resume"
+
+	tProfile$ = System_getFileFromDialog(System.appRoot + "resource\data\save\,Load Profile,.sav,Open")
+		split string tProfile$, "/"
+		tProfile$ = get split word$(split count())
+	set dir System.appRoot
+
+	App.currentProfile = tProfile$
+	fHandle = find free file()
+	open to write fHandle, "resource/data/save/resume"
+	write string fHandle, tProfile$
+	close file fHandle
+
+	resumeElementIndex = _UI_getElementById("titleMenu-opt-resumeGame")
+	_UI_elements[resumeElementIndex].enableEvents = 1
+	UI_element_setStyleProp(resumeElementIndex, "color", "#ffffff")
+	UI_controller_titleMenu_resumeGame(str$(resumeElementIndex))
+
+endfunction
+
+
+function UI_controller_titleMenu_quitGame(eventArgs as string)
+	App_closeGame(FALSE)
+endfunction

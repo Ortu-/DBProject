@@ -1,0 +1,772 @@
+ `====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+type AL_ObjectData
+   Number as integer
+   Dynamic as integer
+   DynamicTimer as integer
+   Updated as integer
+   Radius as float
+   Mask as integer
+   OldMask as integer
+   MaskAdvLighting as boolean
+   MaskShadow as boolean
+   MaskDirShadow as integer
+   MaskReflection as boolean
+   MotionBlur as boolean
+   BoundSize as AL_Vec3Float
+   OldPosition as AL_Vec3Integer
+   OldPositionf as AL_Vec3Float
+   OldAngle as AL_Vec3Integer
+   OldScale as AL_Vec3Integer
+endtype
+
+type AL_AlphaObjectData
+   Number as integer
+   AdditiveBlending as boolean
+   Mask as integer
+   MaskAlpha as boolean
+   MaskRefract as boolean
+   MaskDistortScatter as boolean
+endtype
+
+`--------------
+` Add Object
+`--------------
+function Object_Add(iObject as integer)
+   if AL_Enabled=1
+      if object exist(iObject)=1
+         local tObject as integer
+         tObject=AL_ObjectArray(iObject)
+         if tObject=-1
+            array insert at bottom AL_Object()
+            inc AL_ObjectCount
+            AL_Object(AL_ObjectCount).Number=iObject
+            Object_Mask(iObject,1,1,3,0)
+            Object_GetBounds(iObject)
+            AL_Object(AL_ObjectCount).BoundSize.x=AL_ObjectBounds(1)
+            AL_Object(AL_ObjectCount).BoundSize.y=AL_ObjectBounds(2)
+            AL_Object(AL_ObjectCount).BoundSize.z=AL_ObjectBounds(3)
+            AL_Object(AL_ObjectCount).Radius=AL_ObjectBounds(4)
+            AL_Object(AL_ObjectCount).MotionBlur=0
+         endif
+      endif
+   endif
+endfunction AL_ObjectCount
+
+`--------------
+` Remove Object
+`--------------
+function Object_Remove(iObject as integer)
+   local tObjectIndex as integer
+   tObjectIndex = AL_ObjectArray(iObject) //TODO: rename AL_ObjectArray to AL_getObjectIndexByNumber
+   if tObjectIndex > -1
+      for o = 0 to AL_ObjectAutoUpdateCount
+         if AL_ObjectAutoUpdate(o) - 1 > tObjectIndex then dec AL_ObjectAutoUpdate(o)
+      next o
+      if AL_Object(tObjectIndex).MotionBlur = 1 then Object_MotionBlurRemove(iObject)
+      for m = 0 to AL_MotionBlurAttachCount
+         if AL_MotionBlurAttach(m).ObjectArray > tObjectIndex then dec AL_MotionBlurAttach(m).ObjectArray
+      next m
+      Object_SetAutoUpdate(iObject, 0)
+      Object_Update(iObject)
+      array delete element AL_Object(), tObjectIndex
+      dec AL_ObjectCount
+   endif
+endfunction
+
+`--------------
+` Set Object Auto Update
+`--------------
+function Object_SetAutoUpdate(iObject as integer,iMode as integer)
+   if AL_Enabled=1
+      local tObject as integer
+      tObject=AL_ObjectArray(iObject)
+      if tObject>-1
+         if AL_Object(tObject).Dynamic<>iMode
+            if iMode=0
+               for o=0 to AL_ObjectAutoUpdateCount
+                  if AL_ObjectAutoUpdate(o)=tObject+1
+                     array delete element AL_ObjectAutoUpdate(),o
+                     dec AL_ObjectAutoUpdateCount
+                     AL_Object(tObject).Dynamic=0
+                     exit
+                  endif
+               next o
+            else
+               tAddObject as integer
+               tAddObject=0
+               for o=0 to AL_ObjectAutoUpdateCount
+                  if AL_ObjectAutoUpdate(o)=tObject+1
+                     tAddObject=1
+                     exit
+                  endif
+               next o
+               if tAddObject=0
+                  array insert at bottom AL_ObjectAutoUpdate()
+                  inc  AL_ObjectAutoUpdateCount
+                  AL_ObjectAutoUpdate(AL_ObjectAutoUpdateCount)=tObject+1
+                  AL_Object(tObject).Dynamic=1
+               endif
+            endif
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Object Shadow
+`--------------
+function Object_SetShadow(iObject as integer,iShadow as boolean,iDirShadow as integer)
+   if AL_Enabled=1
+      tObject=AL_ObjectArray(iObject)
+      Object_Mask(iObject,AL_Object(tObject).MaskAdvLighting,iShadow,iDirShadow,AL_Object(tObject).MaskReflection)
+   endif
+endfunction
+
+`--------------
+` Set Object Reflection
+`--------------
+function Object_SetReflection(iObject as integer,iReflection as boolean)
+   if AL_Enabled=1
+      tObject=AL_ObjectArray(iObject)
+      Object_Mask(iObject,AL_Object(tObject).MaskAdvLighting,AL_Object(tObject).MaskShadow,AL_Object(tObject).MaskDirShadow,iReflection)
+   endif
+endfunction
+
+`--------------
+` Set Object Mask
+`--------------
+function Object_Mask(iObject as integer,iAdvLighting as boolean,iShadow as boolean,iDirShadow as integer,iReflection as boolean)
+   if AL_Enabled=1
+      if object exist(iObject)=1
+         local tMask as integer
+         local tObject as integer
+         tMask=0
+         tObject=AL_ObjectArray(iObject)
+         if iAdvLighting=1
+            tMask=(2^AL_Camera(1))+(2^AL_Camera(2))
+         endif
+         if iReflection=1
+            tMask=tMask+(2^AL_Camera(3))
+         endif
+         if iShadow>0
+            tMask=tMask+(2^AL_ShadowMapCamera(1))
+         endif
+         if iDirShadow>0
+            if iDirShadow=1 then tMask=tMask+(2^AL_ShadowMapCamera(6))
+            if iDirShadow=2 then tMask=tMask+(2^AL_ShadowMapCamera(6))+(2^AL_ShadowMapCamera(7))
+            if iDirShadow=3 then tMask=tMask+(2^AL_ShadowMapCamera(6))+(2^AL_ShadowMapCamera(7))+(2^AL_ShadowMapCamera(8))
+         endif
+         set object mask iObject,tMask
+         if tObject>-1
+            AL_Object(tObject).Mask=tMask
+            AL_Object(tObject).MaskAdvLighting=iAdvLighting
+            AL_Object(tObject).MaskShadow=iShadow
+            AL_Object(tObject).MaskDirShadow=iDirShadow
+            AL_Object(tObject).MaskReflection=iReflection
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Update Object
+`--------------
+function Object_Update(iObject as integer)
+   if AL_Enabled=1
+      local tObject as integer
+      tObject=AL_ObjectArray(iObject)
+      if tObject>-1
+         if AL_Object(tObject).MaskShadow>0
+            if AL_Object(tObject).Dynamic=1
+               AL_Object(tObject).OldPosition.X=AL_Object(tObject).OldPosition.X+999999
+            else
+               AL_Object(tObject).DynamicTimer=0
+               Object_UpdateObject(tObject)
+            endif
+         else
+            AL_Object(tObject).Updated=1
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Object Motion Blur
+`--------------
+function Object_SetMotionBlur(iObject as integer,iLimb as integer,iEffect as integer)
+   local tMotionBlurAttach as integer
+   tMotionBlurAttach=-1
+   if AL_Enabled=1
+      if object exist(iObject)=1
+         if effect exist(iEffect)=1
+            local tObject as integer
+            local tLimb as integer
+            local tEffect as integer
+            local tMotionBlur as integer
+            tObject=AL_ObjectArray(iObject)
+            if tObject>-1
+               if AL_Object(tObject).Dynamic=1
+                  tEffect=AL_EffectArray(iEffect)
+                  if tEffect>-1
+                     if AL_Effect(tEffect).MotionBlur>-1
+                        tMotionBlur=AL_Effect(tEffect).MotionBlur
+                        for o=0 to AL_MotionBlur(tMotionBlur).AttachCount-1
+                           if AL_MotionBlurAttach(AL_MotionBlur(tMotionBlur).MotionBlurAttachStart+o).Object=0 then tMotionBlurAttach=AL_MotionBlur(tMotionBlur).MotionBlurAttachStart+o
+                        next o
+                        if tMotionBlurAttach=-1
+                           if AL_MotionBlur(tMotionBlur).AttachCount<50
+                              tMotionBlurAttach=AL_MotionBlur(tMotionBlur).MotionBlurAttachStart+AL_MotionBlur(tMotionBlur).AttachCount
+                              inc AL_MotionBlur(tMotionBlur).AttachCount
+                           endif
+                        endif
+                        if tMotionBlurAttach>-1
+                           AL_MotionBlurAttach(tMotionBlurAttach).Object=iObject
+                           AL_MotionBlurAttach(tMotionBlurAttach).ObjectArray=tObject
+                           AL_Object(tObject).MotionBlur=1
+                           if iLimb>-1
+                              AL_MotionBlurAttach(tMotionBlurAttach).Limb=iLimb
+                              lock vertexdata for limb iObject,iLimb,1
+                                 for v=0 to get vertexdata vertex count()-1
+                                    set vertexdata uv v,1,tMotionBlurAttach-AL_MotionBlur(tMotionBlur).MotionBlurAttachStart,0
+                                 next v
+                              unlock vertexdata
+                              set limb effect iObject,iLimb,iEffect
+                           else
+                              AL_MotionBlurAttach(tMotionBlurAttach).Limb=-1
+                              tLimb=0
+                              repeat
+                                 lock vertexdata for limb iObject,tLimb,1
+                                    for v=0 to get vertexdata vertex count()-1
+                                       set vertexdata uv v,1,tMotionBlurAttach-AL_MotionBlur(tMotionBlur).MotionBlurAttachStart,0
+                                    next v
+                                 unlock vertexdata
+                                 inc tLimb
+                              until limb exist(iObject,tLimb)=0
+                              set object effect iObject,iEffect
+                           endif
+                        endif
+                     endif
+                  endif
+               endif
+            endif
+         endif
+      endif
+   endif
+endfunction tMotionBlurAttach
+
+`--------------
+` Remove Motion Blur
+`--------------
+function Object_MotionBlurRemove(iObject as integer)
+   if AL_Enabled=1
+      local tObject as integer
+      tObject=AL_ObjectArray(iObject)
+      if tObject>-1
+         AL_Object(tObject).MotionBlur=0
+         for m=0 to AL_MotionBlurAttachCount
+            if AL_MotionBlurAttach(m).Object=iObject
+               AL_MotionBlurAttach(m).Object=0
+               AL_MotionBlurAttach(m).ObjectArray=-1
+               AL_MotionBlurAttach(m).Limb=-1
+            endif
+         next m
+      endif
+   endif
+endfunction
+
+`--------------
+` Add Alpha Object
+`--------------
+function AlphaObject_Add(iObject as integer)
+   if AL_Enabled=1
+      if object exist(iObject)=1
+         local tObject as integer
+         tObject=AL_AlphaObjectArray(iObject)
+         if tObject=-1
+            array insert at bottom AL_AlphaObject()
+            inc AL_AlphaObjectCount
+            AL_AlphaObject(AL_AlphaObjectCount).Number=iObject
+            AlphaObject_Mask(iObject,1,0,0)
+            set object transparency iObject,2
+            texture object iObject,0,AL_Image(2)
+         endif
+      endif
+   endif
+endfunction AL_AlphaObjectCount
+
+`--------------
+` Remove Alpha Object
+`--------------
+function AlphaObject_Remove(iObject as integer)
+   if AL_Enabled=1
+      if object exist(iObject)=1
+         local tObject as integer
+         tObject=AL_AlphaObjectArray(iObject)
+         if tObject>-1
+            array delete element AL_AlphaObject(),tObject
+            dec AL_AlphaObjectCount
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Set Alpha Object Mask
+`--------------
+function AlphaObject_Mask(iObject as integer,iAlpha as boolean,iRefract as boolean,iDistortScatter as boolean)
+   if AL_Enabled=1
+      if object exist(iObject)=1
+         local tMask as integer
+         local tObject as integer
+         tMask=0
+         tObject=AL_AlphaObjectArray(iObject)
+         if iAlpha=1
+            tMask=2^AL_Camera(9)
+         endif
+         if iRefract=1 and AL_RefractionEnabled=1
+            tMask=tMask+(2^AL_Camera(7))
+         endif
+         if iDistortScatter=1 and (AL_DistortionEnabled=1 or AL_ScatteringEnabled=1)
+            tMask=tMask+(2^AL_Camera(5))
+         endif
+         set object mask iObject,tMask
+         if tObject>-1
+            AL_AlphaObject(tObject).Mask=tMask
+            AL_AlphaObject(tObject).MaskAlpha=iAlpha
+            AL_AlphaObject(tObject).MaskRefract=iRefract
+            AL_AlphaObject(tObject).MaskDistortScatter=iDistortScatter
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Alpha Object Additive Blending
+`--------------
+function AlphaObject_AdditiveBlending(iObject as integer,iAdditiveBlending as boolean)
+   if AL_Enabled=1
+      if object exist(iObject)=1
+         local tObject as integer
+         tObject=AL_AlphaObjectArray(iObject)
+         if tObject>-1
+            AL_AlphaObject(tObject).AdditiveBlending=iAdditiveBlending
+            if iAdditiveBlending=1
+               ghost object on iObject
+            else
+               ghost object off iObject
+            endif
+         endif
+      endif
+   endif
+endfunction
+
+`--------------
+` Get Object Update
+`--------------
+function Object_UpdateObject(iObject as integer)
+   local tLightNum as integer
+   local tShadowMap as integer
+   local tShadowMapSide as integer
+   AL_Ldx(1)=object position x(AL_Object(iObject).Number)
+   AL_Ldy(1)=object position y(AL_Object(iObject).Number)
+   AL_Ldz(1)=object position z(AL_Object(iObject).Number)
+   AL_Ldx(2)=AL_Object(iObject).OldPositionf.x
+   AL_Ldy(2)=AL_Object(iObject).OldPositionf.y
+   AL_Ldz(2)=AL_Object(iObject).OldPositionf.z
+   AL_Object(iObject).Updated=1
+   for d=1 to AL_SpotShadowMapCount
+      if AL_SpotShadowMap(d).InUse=1
+         tLightNum=AL_SpotShadowMap(d).Number
+         move object AL_SpotLight(tLightNum).Object,AL_SpotLight(tLightNum).Range/2
+         AL_Ldx(3)=object position x(AL_SpotLight(tLightNum).Object)
+         AL_LdY(3)=object position y(AL_SpotLight(tLightNum).Object)
+         AL_LdZ(3)=object position z(AL_SpotLight(tLightNum).Object)
+         move object AL_SpotLight(tLightNum).Object,-AL_SpotLight(tLightNum).Range/2
+         AL_Ldx(4)=AL_Object(iObject).BoundSize.x+AL_SpotLight(tLightNum).Range*1.5
+         AL_Ldy(4)=AL_Object(iObject).BoundSize.y+AL_SpotLight(tLightNum).Range*1.5
+         AL_Ldz(4)=AL_Object(iObject).BoundSize.z+AL_SpotLight(tLightNum).Range*1.5
+         for c=1 to 2
+            if AL_InDistance(AL_Ldx(c),AL_Ldy(c),AL_Ldz(c),AL_Ldx(3),AL_Ldy(3),AL_Ldz(3),(AL_Object(iObject).Radius)+AL_SpotLight(tLightNum).Range)=1
+               if AL_BoxCollision(AL_Ldx(c),AL_Ldy(c),AL_Ldz(c),AL_Ldx(3),AL_Ldy(3),AL_Ldz(3),AL_Ldx(4),AL_Ldy(4),AL_Ldz(4))=1
+                  if AL_GetSphereInFrustum(d,AL_Ldx(c),AL_Ldy(c),AL_Ldz(c),AL_Object(iObject).Radius)=1
+                     if AL_GetBoxInFrustum(d,AL_Ldx(c),AL_Ldy(c),AL_Ldz(c),AL_Object(iObject).BoundSize.X/2,AL_Object(iObject).BoundSize.Y/2,AL_Object(iObject).BoundSize.Z/2)
+                        if AL_SpotShadowMap(d).Update=0
+                           AL_SpotShadowMap(d).Update=2
+                           if AL_Object(iObject).DynamicTimer=0 then AL_SpotShadowMap(d).LastUpdate=1
+                        endif
+                     endif
+                  endif
+               endif
+            endif
+         next c
+      endif
+   next d
+   for d=1 to AL_PointShadowMapCount
+       if AL_PointShadowMap(d).InUse=1
+          tLightNum=AL_PointShadowMap(d).Number
+          AL_Ldx(3)=AL_PointLight(tLightNum).Position.x
+          AL_LdY(3)=AL_PointLight(tLightNum).Position.y
+          AL_LdZ(3)=AL_PointLight(tLightNum).Position.z
+          AL_Ldx(4)=AL_Object(iObject).BoundSize.X+(AL_PointLight(tLightNum).Range*2)
+          AL_Ldy(4)=AL_Object(iObject).BoundSize.Y+(AL_PointLight(tLightNum).Range*2)
+          AL_Ldz(4)=AL_Object(iObject).BoundSize.Z+(AL_PointLight(tLightNum).Range*2)
+          for c=1 to 2
+            if AL_InDistance(AL_Ldx(c),AL_Ldy(c),AL_Ldz(c),AL_Ldx(3),AL_Ldy(3),AL_Ldz(3),(AL_Object(iObject).Radius)+AL_PointLight(tLightNum).Range)=1
+               if AL_BoxCollision(AL_Ldx(c),AL_Ldy(c),AL_Ldz(c),AL_Ldx(3),AL_Ldy(3),AL_Ldz(3),AL_Ldx(4),AL_Ldy(4),AL_Ldz(4))=1
+                  AL_Ldx(5)=AL_Ldx(c)-AL_Ldx(3)
+                  AL_LdY(5)=AL_Ldy(c)-AL_Ldy(3)
+                  AL_LdZ(5)=AL_Ldz(c)-AL_Ldz(3)
+                  tShadowMapSide=d*6
+                  if AL_Ldx(c)+(AL_Object(iObject).BoundSize.X/2)>AL_Ldx(3)
+                    if AL_Ldy(3)<AL_Ldy(c)+((AL_Object(iObject).BoundSize.Y/2)+(AL_Object(iObject).BoundSize.X/2)+AL_Ldx(5))
+                       if AL_Ldy(3)>AL_Ldy(c)-((AL_Object(iObject).BoundSize.Y/2)+(AL_Object(iObject).BoundSize.X/2)+AL_Ldx(5))
+                          if AL_Ldz(3)<AL_Ldz(c)+((AL_Object(iObject).BoundSize.Z/2)+(AL_Object(iObject).BoundSize.X/2)+AL_Ldx(5))
+                             if AL_Ldz(3)>AL_Ldz(c)-((AL_Object(iObject).BoundSize.Z/2)+(AL_Object(iObject).BoundSize.X/2)+AL_Ldx(5))
+                                if AL_PointShadowSide(tShadowMapSide+0).Update=0
+                                  AL_PointShadowSide(tShadowMapSide+0).Update=2
+                                  if AL_Object(iObject).DynamicTimer=0 then AL_PointShadowSide(tShadowMapSide+0).LastUpdate=1
+                               endif
+                             endif
+                          endif
+                       endif
+                    endif
+                  endif
+                  if AL_Ldy(c)+(AL_Object(iObject).BoundSize.y/2)>AL_Ldy(3)
+                     if AL_Ldx(3)<AL_Ldx(c)+((AL_Object(iObject).BoundSize.X/2)+(AL_Object(iObject).BoundSize.Y/2)+AL_Ldy(5))
+                        if AL_Ldx(3)>AL_Ldx(c)-((AL_Object(iObject).BoundSize.X/2)+(AL_Object(iObject).BoundSize.Y/2)+AL_Ldy(5))
+                           if AL_Ldz(3)<AL_Ldz(c)+((AL_Object(iObject).BoundSize.Z/2)+(AL_Object(iObject).BoundSize.Y/2)+AL_Ldy(5))
+                              if AL_Ldz(3)>AL_Ldz(c)-((AL_Object(iObject).BoundSize.Z/2)+(AL_Object(iObject).BoundSize.Y/2)+AL_Ldy(5))
+                                if AL_PointShadowSide(tShadowMapSide+1).Update=0
+                                  AL_PointShadowSide(tShadowMapSide+1).Update=2
+                                  if AL_Object(iObject).DynamicTimer=0 then AL_PointShadowSide(tShadowMapSide+1).LastUpdate=1
+                                endif
+                              endif
+                           endif
+                        endif
+                     endif
+                  endif
+                  if AL_Ldz(c)+(AL_Object(iObject).BoundSize.z/2)>AL_Ldz(3)
+                     if AL_Ldx(3)<AL_Ldx(c)+((AL_Object(iObject).BoundSize.X/2)+(AL_Object(iObject).BoundSize.Z/2)+AL_Ldz(5))
+                        if AL_Ldx(3)>AL_Ldx(c)-((AL_Object(iObject).BoundSize.X/2)+(AL_Object(iObject).BoundSize.Z/2)+AL_Ldz(5))
+                           if AL_Ldy(3)<AL_Ldy(c)+((AL_Object(iObject).BoundSize.Y/2)+(AL_Object(iObject).BoundSize.Z/2)+AL_Ldz(5))
+                              if AL_Ldy(3)>AL_Ldy(c)-((AL_Object(iObject).BoundSize.Y/2)+(AL_Object(iObject).BoundSize.Z/2)+AL_Ldz(5))
+                                if AL_PointShadowSide(tShadowMapSide+2).Update=0
+                                  AL_PointShadowSide(tShadowMapSide+2).Update=2
+                                  if AL_Object(iObject).DynamicTimer=0 then AL_PointShadowSide(tShadowMapSide+2).LastUpdate=1
+                                endif
+                              endif
+                           endif
+                        endif
+                     endif
+                  endif
+                   if AL_Ldx(c)-(AL_Object(iObject).BoundSize.X/2)<AL_Ldx(3)
+                     if AL_Ldy(3)<AL_Ldy(c)+((AL_Object(iObject).BoundSize.Y/2)+(AL_Object(iObject).BoundSize.X/2)-AL_Ldx(5))
+                        if AL_Ldy(3)>AL_Ldy(c)-((AL_Object(iObject).BoundSize.Y/2)+(AL_Object(iObject).BoundSize.X/2)-AL_Ldx(5))
+                           if AL_Ldz(3)<AL_Ldz(c)+((AL_Object(iObject).BoundSize.Z/2)+(AL_Object(iObject).BoundSize.X/2)-AL_Ldx(5))
+                              if AL_Ldz(3)>AL_Ldz(c)-((AL_Object(iObject).BoundSize.Z/2)+(AL_Object(iObject).BoundSize.X/2)-AL_Ldx(5))
+                                if AL_PointShadowSide(tShadowMapSide+3).Update=0
+                                  AL_PointShadowSide(tShadowMapSide+3).Update=2
+                                  if AL_Object(iObject).DynamicTimer=0 then AL_PointShadowSide(tShadowMapSide+3).LastUpdate=1
+                                endif
+                              endif
+                           endif
+                        endif
+                     endif
+                  endif
+                  if AL_Ldy(c)-(AL_Object(iObject).BoundSize.y/2)<AL_Ldy(3)
+                     if AL_Ldx(3)<AL_Ldx(c)+((AL_Object(iObject).BoundSize.X/2)+(AL_Object(iObject).BoundSize.Y/2)-AL_Ldy(5))
+                        if AL_Ldx(3)>AL_Ldx(c)-((AL_Object(iObject).BoundSize.X/2)+(AL_Object(iObject).BoundSize.Y/2)-AL_Ldy(5))
+                           if AL_Ldz(3)<AL_Ldz(c)+((AL_Object(iObject).BoundSize.Z/2)+(AL_Object(iObject).BoundSize.Y/2)-AL_Ldy(5))
+                              if AL_Ldz(3)>AL_Ldz(c)-((AL_Object(iObject).BoundSize.Z/2)+(AL_Object(iObject).BoundSize.Y/2)-AL_Ldy(5))
+                                if AL_PointShadowSide(tShadowMapSide+4).Update=0
+                                  AL_PointShadowSide(tShadowMapSide+4).Update=2
+                                  if AL_Object(iObject).DynamicTimer=0 then AL_PointShadowSide(tShadowMapSide+4).LastUpdate=1
+                                endif
+                              endif
+                           endif
+                        endif
+                     endif
+                  endif
+                  if AL_Ldz(c)-(AL_Object(iObject).BoundSize.z/2)<AL_Ldz(3)
+                     if AL_Ldx(3)<AL_Ldx(c)+((AL_Object(iObject).BoundSize.X/2)+(AL_Object(iObject).BoundSize.Z/2)-AL_Ldz(5))
+                        if AL_Ldx(3)>AL_Ldx(c)-((AL_Object(iObject).BoundSize.X/2)+(AL_Object(iObject).BoundSize.Z/2)-AL_Ldz(5))
+                           if AL_Ldy(3)<AL_Ldy(c)+((AL_Object(iObject).BoundSize.Y/2)+(AL_Object(iObject).BoundSize.Z/2)-AL_Ldz(5))
+                              if AL_Ldy(3)>AL_Ldy(c)-((AL_Object(iObject).BoundSize.Y/2)+(AL_Object(iObject).BoundSize.Z/2)-AL_Ldz(5))
+                                if AL_PointShadowSide(tShadowMapSide+5).Update=0
+                                  AL_PointShadowSide(tShadowMapSide+5).Update=2
+                                  if AL_Object(iObject).DynamicTimer=0 then AL_PointShadowSide(tShadowMapSide+5).LastUpdate=1
+                                endif
+                              endif
+                           endif
+                        endif
+                     endif
+                  endif
+                endif
+             endif
+          next c
+       endif
+   next d
+   AL_Object(iObject).OldPositionf.x=object position x(AL_Object(iObject).Number)
+   AL_Object(iObject).OldPositionf.y=object position y(AL_Object(iObject).Number)
+   AL_Object(iObject).OldPositionf.z=object position z(AL_Object(iObject).Number)
+endfunction
+
+`--------------
+` Get Object Auto Update
+`--------------
+function Object_AutoUpdateObject()
+   if AL_Enabled=1
+      local tLightNum as integer
+      local tObjectNum as integer
+      local tShadowMap as integer
+      local tShadowMapSide as integer
+      local tDifference as integer
+      for o=0 to AL_ObjectAutoUpdateCount
+         tObjectNum=AL_ObjectAutoUpdate(o)-1
+         AL_Object(tObjectNum).Updated=0
+         if AL_Object(tObjectNum).MaskShadow>0
+            tDifference=0
+            if AL_Object(tObjectNum).OldPosition.x<>int(object position x(AL_Object(tObjectNum).Number)/AL_WorldSize) then tDifference=1
+            if AL_Object(tObjectNum).OldPosition.y<>int(object position y(AL_Object(tObjectNum).Number)/AL_WorldSize) then tDifference=1
+            if AL_Object(tObjectNum).OldPosition.z<>int(object position z(AL_Object(tObjectNum).Number)/AL_WorldSize) then tDifference=1
+            if AL_Object(tObjectNum).OldAngle.x<>int(object Angle x(AL_Object(tObjectNum).Number)) then tDifference=2
+            if AL_Object(tObjectNum).OldAngle.y<>int(object Angle y(AL_Object(tObjectNum).Number)) then tDifference=2
+            if AL_Object(tObjectNum).OldAngle.z<>int(object Angle z(AL_Object(tObjectNum).Number)) then tDifference=2
+            if AL_Object(tObjectNum).OldScale.x<>int(object Size x(AL_Object(tObjectNum).Number,1)/AL_WorldSize) then tDifference=2
+            if AL_Object(tObjectNum).OldScale.y<>int(object Size y(AL_Object(tObjectNum).Number,1)/AL_WorldSize) then tDifference=2
+            if AL_Object(tObjectNum).OldScale.z<>int(object Size z(AL_Object(tObjectNum).Number,1)/AL_WorldSize) then tDifference=2
+            if tDifference>0
+               if tDifference=2
+                  Object_GetBounds(AL_Object(tObjectNum).Number)
+                  AL_Object(tObjectNum).BoundSize.x=AL_ObjectBounds(1)
+                  AL_Object(tObjectNum).BoundSize.y=AL_ObjectBounds(2)
+                  AL_Object(tObjectNum).BoundSize.z=AL_ObjectBounds(3)
+                  AL_Object(tObjectNum).Radius=AL_ObjectBounds(4)
+               endif
+               AL_Object(tObjectNum).OldPosition.x=int(object position x(AL_Object(tObjectNum).Number)/AL_WorldSize)
+               AL_Object(tObjectNum).OldPosition.y=int(object position y(AL_Object(tObjectNum).Number)/AL_WorldSize)
+               AL_Object(tObjectNum).OldPosition.z=int(object position z(AL_Object(tObjectNum).Number)/AL_WorldSize)
+               AL_Object(tObjectNum).OldAngle.x=int(object Angle x(AL_Object(tObjectNum).Number))
+               AL_Object(tObjectNum).OldAngle.y=int(object Angle y(AL_Object(tObjectNum).Number))
+               AL_Object(tObjectNum).OldAngle.z=int(object Angle z(AL_Object(tObjectNum).Number))
+               AL_Object(tObjectNum).OldScale.x=int(object Size x(AL_Object(tObjectNum).Number,1)/AL_WorldSize)
+               AL_Object(tObjectNum).OldScale.y=int(object Size y(AL_Object(tObjectNum).Number,1)/AL_WorldSize)
+               AL_Object(tObjectNum).OldScale.z=int(object Size z(AL_Object(tObjectNum).Number,1)/AL_WorldSize)
+               Object_UpdateObject(tObjectNum)
+               AL_Object(tObjectNum).DynamicTimer=AL_ObjectDynamicTimer
+            endif
+         endif
+         if AL_Object(tObjectNum).DynamicTimer>0
+            dec AL_Object(tObjectNum).DynamicTimer
+            if AL_Object(tObjectNum).DynamicTimer=0
+               AL_Ldx(1)=object position x(AL_Object(tObjectNum).Number)
+               AL_Ldy(1)=object position y(AL_Object(tObjectNum).Number)
+               AL_Ldz(1)=object position z(AL_Object(tObjectNum).Number)
+               for d=1 to AL_SpotShadowMapCount
+                  if AL_SpotShadowMap(d).InUse=1
+                     tLightNum=AL_SpotShadowMap(d).Number
+                     move object AL_SpotLight(tLightNum).Object,AL_SpotLight(tLightNum).Range/2
+                     AL_Ldx(3)=object position x(AL_SpotLight(tLightNum).Object)
+                     AL_LdY(3)=object position y(AL_SpotLight(tLightNum).Object)
+                     AL_LdZ(3)=object position z(AL_SpotLight(tLightNum).Object)
+                     move object AL_SpotLight(tLightNum).Object,-AL_SpotLight(tLightNum).Range/2
+                     AL_Ldx(4)=AL_Object(tObjectNum).BoundSize.X+AL_SpotLight(tLightNum).Range*1.5
+                     AL_Ldy(4)=AL_Object(tObjectNum).BoundSize.Y+AL_SpotLight(tLightNum).Range*1.5
+                     AL_Ldz(4)=AL_Object(tObjectNum).BoundSize.Z+AL_SpotLight(tLightNum).Range*1.5
+                     if AL_InDistance(AL_Ldx(1),AL_Ldy(1),AL_Ldz(1),AL_Ldx(3),AL_Ldy(3),AL_Ldz(3),(AL_Object(tObjectNum).Radius)+AL_SpotLight(tLightNum).Range)=1
+                        if AL_BoxCollision(AL_Ldx(1),AL_Ldy(1),AL_Ldz(1),AL_Ldx(3),AL_Ldy(3),AL_Ldz(3),AL_Ldx(4),AL_Ldy(4),AL_Ldz(4))=1
+                           if AL_GetSphereInFrustum(d,AL_Ldx(1),AL_Ldy(1),AL_Ldz(1),AL_Object(tObjectNum).Radius)=1
+                              if AL_GetBoxInFrustum(d,AL_Ldx(1),AL_Ldy(1),AL_Ldz(1),AL_Object(tObjectNum).BoundSize.X/2,AL_Object(tObjectNum).BoundSize.Y/2,AL_Object(tObjectNum).BoundSize.Z/2)
+                                 AL_SpotShadowMap(d).LastUpdate=1
+                              endif
+                           endif
+                        endif
+                     endif
+                  endif
+               next d
+               for d=1 to AL_PointShadowMapCount
+                  if AL_PointShadowMap(d).InUse=1
+                     tLightNum=AL_PointShadowMap(d).Number
+                     AL_Ldx(3)=AL_PointLight(tLightNum).Position.x
+                     AL_LdY(3)=AL_PointLight(tLightNum).Position.y
+                     AL_LdZ(3)=AL_PointLight(tLightNum).Position.z
+                     AL_Ldx(4)=AL_Object(tObjectNum).BoundSize.x+(AL_PointLight(tLightNum).Range*2)
+                     AL_Ldy(4)=AL_Object(tObjectNum).BoundSize.y+(AL_PointLight(tLightNum).Range*2)
+                     AL_Ldz(4)=AL_Object(tObjectNum).BoundSize.z+(AL_PointLight(tLightNum).Range*2)
+                     if AL_InDistance(AL_Ldx(1),AL_Ldy(1),AL_Ldz(1),AL_Ldx(3),AL_Ldy(3),AL_Ldz(3),(AL_Object(tObjectNum).Radius)+AL_PointLight(tLightNum).Range)=1
+                        if AL_BoxCollision(AL_Ldx(1),AL_Ldy(1),AL_Ldz(1),AL_Ldx(3),AL_Ldy(3),AL_Ldz(3),AL_Ldx(4),AL_Ldy(4),AL_Ldz(4))=1
+                            AL_Ldx(5)=AL_Ldx(1)-AL_Ldx(3)
+                            AL_LdY(5)=AL_Ldy(1)-AL_Ldy(3)
+                            AL_LdZ(5)=AL_Ldz(1)-AL_Ldz(3)
+                            tShadowMapSide=d*6
+                            if AL_Ldx(1)+(AL_Object(tObjectNum).BoundSize.X/2)>AL_Ldx(3)
+                              if AL_Ldy(3)<AL_Ldy(1)+((AL_Object(tObjectNum).BoundSize.Y/2)+(AL_Object(tObjectNum).BoundSize.X/2)+AL_Ldx(5))
+                                 if AL_Ldy(3)>AL_Ldy(1)-((AL_Object(tObjectNum).BoundSize.Y/2)+(AL_Object(tObjectNum).BoundSize.X/2)+AL_Ldx(5))
+                                    if AL_Ldz(3)<AL_Ldz(1)+((AL_Object(tObjectNum).BoundSize.Z/2)+(AL_Object(tObjectNum).BoundSize.X/2)+AL_Ldx(5))
+                                       if AL_Ldz(3)>AL_Ldz(1)-((AL_Object(tObjectNum).BoundSize.Z/2)+(AL_Object(tObjectNum).BoundSize.X/2)+AL_Ldx(5))
+                                          AL_PointShadowSide(tShadowMapSide+0).LastUpdate=1
+                                       endif
+                                    endif
+                                 endif
+                              endif
+                           endif
+                           if AL_Ldy(1)+(AL_Object(tObjectNum).BoundSize.y/2)>AL_Ldy(3)
+                              if AL_Ldx(3)<AL_Ldx(1)+((AL_Object(tObjectNum).BoundSize.X/2)+(AL_Object(tObjectNum).BoundSize.Y/2)+AL_Ldy(5))
+                                 if AL_Ldx(3)>AL_Ldx(1)-((AL_Object(tObjectNum).BoundSize.X/2)+(AL_Object(tObjectNum).BoundSize.Y/2)+AL_Ldy(5))
+                                    if AL_Ldz(3)<AL_Ldz(1)+((AL_Object(tObjectNum).BoundSize.Z/2)+(AL_Object(tObjectNum).BoundSize.Y/2)+AL_Ldy(5))
+                                       if AL_Ldz(3)>AL_Ldz(1)-((AL_Object(tObjectNum).BoundSize.Z/2)+(AL_Object(tObjectNum).BoundSize.Y/2)+AL_Ldy(5))
+                                          AL_PointShadowSide(tShadowMapSide+1).LastUpdate=1
+                                       endif
+                                    endif
+                                 endif
+                              endif
+                           endif
+                           if AL_Ldz(1)+(AL_Object(tObjectNum).BoundSize.z/2)>AL_Ldz(3)
+                              if AL_Ldx(3)<AL_Ldx(1)+((AL_Object(tObjectNum).BoundSize.X/2)+(AL_Object(tObjectNum).BoundSize.Z/2)+AL_Ldz(5))
+                                 if AL_Ldx(3)>AL_Ldx(1)-((AL_Object(tObjectNum).BoundSize.X/2)+(AL_Object(tObjectNum).BoundSize.Z/2)+AL_Ldz(5))
+                                    if AL_Ldy(3)<AL_Ldy(1)+((AL_Object(tObjectNum).BoundSize.Y/2)+(AL_Object(tObjectNum).BoundSize.Z/2)+AL_Ldz(5))
+                                       if AL_Ldy(3)>AL_Ldy(1)-((AL_Object(tObjectNum).BoundSize.Y/2)+(AL_Object(tObjectNum).BoundSize.Z/2)+AL_Ldz(5))
+                                          AL_PointShadowSide(tShadowMapSide+2).LastUpdate=1
+                                       endif
+                                    endif
+                                 endif
+                              endif
+                           endif
+                            if AL_Ldx(1)-(AL_Object(tObjectNum).BoundSize.X/2)<AL_Ldx(3)
+                              if AL_Ldy(3)<AL_Ldy(1)+((AL_Object(tObjectNum).BoundSize.Y/2)+(AL_Object(tObjectNum).BoundSize.X/2)-AL_Ldx(5))
+                                 if AL_Ldy(3)>AL_Ldy(1)-((AL_Object(tObjectNum).BoundSize.Y/2)+(AL_Object(tObjectNum).BoundSize.X/2)-AL_Ldx(5))
+                                    if AL_Ldz(3)<AL_Ldz(1)+((AL_Object(tObjectNum).BoundSize.Z/2)+(AL_Object(tObjectNum).BoundSize.X/2)-AL_Ldx(5))
+                                       if AL_Ldz(3)>AL_Ldz(1)-((AL_Object(tObjectNum).BoundSize.Z/2)+(AL_Object(tObjectNum).BoundSize.X/2)-AL_Ldx(5))
+                                          AL_PointShadowSide(tShadowMapSide+3).LastUpdate=1
+                                       endif
+                                    endif
+                                 endif
+                              endif
+                           endif
+                           if AL_Ldy(1)-(AL_Object(tObjectNum).BoundSize.y/2)<AL_Ldy(3)
+                              if AL_Ldx(3)<AL_Ldx(1)+((AL_Object(tObjectNum).BoundSize.X/2)+(AL_Object(tObjectNum).BoundSize.Y/2)-AL_Ldy(5))
+                                 if AL_Ldx(3)>AL_Ldx(1)-((AL_Object(tObjectNum).BoundSize.X/2)+(AL_Object(tObjectNum).BoundSize.Y/2)-AL_Ldy(5))
+                                    if AL_Ldz(3)<AL_Ldz(1)+((AL_Object(tObjectNum).BoundSize.Z/2)+(AL_Object(tObjectNum).BoundSize.Y/2)-AL_Ldy(5))
+                                       if AL_Ldz(3)>AL_Ldz(1)-((AL_Object(tObjectNum).BoundSize.Z/2)+(AL_Object(tObjectNum).BoundSize.Y/2)-AL_Ldy(5))
+                                          AL_PointShadowSide(tShadowMapSide+4).LastUpdate=1
+                                       endif
+                                    endif
+                                 endif
+                              endif
+                           endif
+                           if AL_Ldz(1)-(AL_Object(tObjectNum).BoundSize.z/2)<AL_Ldz(3)
+                              if AL_Ldx(3)<AL_Ldx(1)+((AL_Object(tObjectNum).BoundSize.X/2)+(AL_Object(tObjectNum).BoundSize.Z/2)-AL_Ldz(5))
+                                 if AL_Ldx(3)>AL_Ldx(1)-((AL_Object(tObjectNum).BoundSize.X/2)+(AL_Object(tObjectNum).BoundSize.Z/2)-AL_Ldz(5))
+                                    if AL_Ldy(3)<AL_Ldy(1)+((AL_Object(tObjectNum).BoundSize.Y/2)+(AL_Object(tObjectNum).BoundSize.Z/2)-AL_Ldz(5))
+                                       if AL_Ldy(3)>AL_Ldy(1)-((AL_Object(tObjectNum).BoundSize.Y/2)+(AL_Object(tObjectNum).BoundSize.Z/2)-AL_Ldz(5))
+                                          AL_PointShadowSide(tShadowMapSide+5).LastUpdate=1
+                                       endif
+                                    endif
+                                 endif
+                              endif
+                           endif
+                        endif
+                     endif
+                  endif
+               next d
+            endif
+         endif
+      next o
+   endif
+endfunction
+
+`--------------
+` Get Object Boxed Rotation Size
+`--------------
+function Object_GetBounds(iObject as integer)
+   if AL_Enabled=1
+      if object exist(iObject)=1
+         AL_ObjectBounds(1)=0
+         AL_ObjectBounds(2)=0
+         AL_ObjectBounds(3)=0
+         local tSizeX as float
+         local tSizeY as float
+         local tSizeZ as float
+         tSizeX=object size x(iObject,1)
+         tSizeY=object size y(iObject,1)
+         tSizeZ=object size z(iObject,1)
+         rotate x matrix4 AL_Matrix(1),wrapvalue(object angle x(iObject))*0.0174532778
+         rotate y matrix4 AL_Matrix(2),wrapvalue(object angle y(iObject))*0.0174532778
+         rotate z matrix4 AL_Matrix(3),wrapvalue(object angle z(iObject))*0.0174532778
+         multiply matrix4 AL_Matrix(4),AL_Matrix(1),AL_Matrix(2)
+         multiply matrix4 AL_Matrix(4),AL_Matrix(4),AL_Matrix(3)
+         set vector3 AL_Vector3(1),tSizeX,tSizeY,tSizeZ
+         transform coords vector3 AL_Vector3(2),AL_Vector3(1),AL_Matrix(4)
+         if abs(x vector3(AL_Vector3(2)))>AL_ObjectBounds(1) then AL_ObjectBounds(1)=abs(x vector3(AL_Vector3(2)))
+         if abs(y vector3(AL_Vector3(2)))>AL_ObjectBounds(2) then AL_ObjectBounds(2)=abs(y vector3(AL_Vector3(2)))
+         if abs(z vector3(AL_Vector3(2)))>AL_ObjectBounds(3) then AL_ObjectBounds(3)=abs(z vector3(AL_Vector3(2)))
+         set vector3 AL_Vector3(1),tSizeX,-tSizeY,tSizeZ
+         transform coords vector3 AL_Vector3(2),AL_Vector3(1),AL_Matrix(4)
+         if abs(x vector3(AL_Vector3(2)))>AL_ObjectBounds(1) then AL_ObjectBounds(1)=abs(x vector3(AL_Vector3(2)))
+         if abs(y vector3(AL_Vector3(2)))>AL_ObjectBounds(2) then AL_ObjectBounds(2)=abs(y vector3(AL_Vector3(2)))
+         if abs(z vector3(AL_Vector3(2)))>AL_ObjectBounds(3) then AL_ObjectBounds(3)=abs(z vector3(AL_Vector3(2)))
+         set vector3 AL_Vector3(1),-tSizeX,tSizeY,tSizeZ
+         transform coords vector3 AL_Vector3(2),AL_Vector3(1),AL_Matrix(4)
+         if abs(x vector3(AL_Vector3(2)))>AL_ObjectBounds(1) then AL_ObjectBounds(1)=abs(x vector3(AL_Vector3(2)))
+         if abs(y vector3(AL_Vector3(2)))>AL_ObjectBounds(2) then AL_ObjectBounds(2)=abs(y vector3(AL_Vector3(2)))
+         if abs(z vector3(AL_Vector3(2)))>AL_ObjectBounds(3) then AL_ObjectBounds(3)=abs(z vector3(AL_Vector3(2)))
+         set vector3 AL_Vector3(1),-tSizeX,-tSizeY,tSizeZ
+         transform coords vector3 AL_Vector3(2),AL_Vector3(1),AL_Matrix(4)
+         if abs(x vector3(AL_Vector3(2)))>AL_ObjectBounds(1) then AL_ObjectBounds(1)=abs(x vector3(AL_Vector3(2)))
+         if abs(y vector3(AL_Vector3(2)))>AL_ObjectBounds(2) then AL_ObjectBounds(2)=abs(y vector3(AL_Vector3(2)))
+         if abs(z vector3(AL_Vector3(2)))>AL_ObjectBounds(3) then AL_ObjectBounds(3)=abs(z vector3(AL_Vector3(2)))
+         set vector3 AL_Vector3(1),tSizeX,tSizeY,-tSizeZ
+         transform coords vector3 AL_Vector3(2),AL_Vector3(1),AL_Matrix(4)
+         if abs(x vector3(AL_Vector3(2)))>AL_ObjectBounds(1) then AL_ObjectBounds(1)=abs(x vector3(AL_Vector3(2)))
+         if abs(y vector3(AL_Vector3(2)))>AL_ObjectBounds(2) then AL_ObjectBounds(2)=abs(y vector3(AL_Vector3(2)))
+         if abs(z vector3(AL_Vector3(2)))>AL_ObjectBounds(3) then AL_ObjectBounds(3)=abs(z vector3(AL_Vector3(2)))
+         set vector3 AL_Vector3(1),tSizeX,-tSizeY,-tSizeZ
+         transform coords vector3 AL_Vector3(2),AL_Vector3(1),AL_Matrix(4)
+         if abs(x vector3(AL_Vector3(2)))>AL_ObjectBounds(1) then AL_ObjectBounds(1)=abs(x vector3(AL_Vector3(2)))
+         if abs(y vector3(AL_Vector3(2)))>AL_ObjectBounds(2) then AL_ObjectBounds(2)=abs(y vector3(AL_Vector3(2)))
+         if abs(z vector3(AL_Vector3(2)))>AL_ObjectBounds(3) then AL_ObjectBounds(3)=abs(z vector3(AL_Vector3(2)))
+         set vector3 AL_Vector3(1),-tSizeX,tSizeY,-tSizeZ
+         transform coords vector3 AL_Vector3(2),AL_Vector3(1),AL_Matrix(4)
+         if abs(x vector3(AL_Vector3(2)))>AL_ObjectBounds(1) then AL_ObjectBounds(1)=abs(x vector3(AL_Vector3(2)))
+         if abs(y vector3(AL_Vector3(2)))>AL_ObjectBounds(2) then AL_ObjectBounds(2)=abs(y vector3(AL_Vector3(2)))
+         if abs(z vector3(AL_Vector3(2)))>AL_ObjectBounds(3) then AL_ObjectBounds(3)=abs(z vector3(AL_Vector3(2)))
+         set vector3 AL_Vector3(1),-tSizeX,-tSizeY,-tSizeZ
+         transform coords vector3 AL_Vector3(2),AL_Vector3(1),AL_Matrix(4)
+         if abs(x vector3(AL_Vector3(2)))>AL_ObjectBounds(1) then AL_ObjectBounds(1)=abs(x vector3(AL_Vector3(2)))
+         if abs(y vector3(AL_Vector3(2)))>AL_ObjectBounds(2) then AL_ObjectBounds(2)=abs(y vector3(AL_Vector3(2)))
+         if abs(z vector3(AL_Vector3(2)))>AL_ObjectBounds(3) then AL_ObjectBounds(3)=abs(z vector3(AL_Vector3(2)))
+         AL_ObjectBounds(1)=AL_ObjectBounds(1)+(AL_WorldSize*5)
+         AL_ObjectBounds(2)=AL_ObjectBounds(2)+(AL_WorldSize*5)
+         AL_ObjectBounds(3)=AL_ObjectBounds(3)+(AL_WorldSize*5)
+         AL_ObjectBounds(4)=AL_ObjectBounds(1)
+         if AL_ObjectBounds(2)>AL_ObjectBounds(4) then AL_ObjectBounds(4)=AL_ObjectBounds(2)
+         if AL_ObjectBounds(3)>AL_ObjectBounds(4) then AL_ObjectBounds(4)=AL_ObjectBounds(3)
+      endif
+   endif
+endfunction
+
+`--------------
+` Get Object Array
+`--------------
+function AL_ObjectArray(iObject as integer)
+   if AL_Enabled=1
+      for o=0 to AL_ObjectCount
+         if AL_Object(o).Number=iObject then exitfunction o
+      next o
+   endif
+endfunction -1
+
+`--------------
+` Get Alpha Rendering Object Array
+`--------------
+function AL_AlphaObjectArray(iObject as integer)
+   if AL_Enabled=1
+      for o=0 to AL_AlphaObjectCount
+         if AL_AlphaObject(o).Number=iObject then exitfunction o
+      next o
+   endif
+endfunction -1

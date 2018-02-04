@@ -1,0 +1,720 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	Controls Module
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides handling for player control input.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+		Matrix1Util_16.dll (IanM) - strings
+		SC_Collision.dll (Sparky)
+		Advanced Lighting (Evolved)
+
+	*******************************************
+	Classes:
+
+		Requires system.dbx
+		Requires world.dbx
+		Requires ui.dbx
+		Requires fx.dbx
+
+		=========================================
+		Defines STATIC CLASS: Camera
+
+			------------------------
+			public functions:
+
+				Camera_updatePhysicalState
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+				_Camera_init()
+					-
+
+
+			------------------------
+			private data:
+
+
+
+		=========================================
+		Defines STATIC CLASS: Controls
+
+			------------------------
+			public functions:
+
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+				_Controls_init()
+					-
+
+
+			------------------------
+			private data:
+
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+controls_module_init:
+
+	<?System_log("controls.dbx", 2, "main", "Begin module load: controls.")?>
+	App_updateSplashScreen("- Controls")
+
+	//Declare Camera -----------------------------------------------------------
+
+	type Camera_type_configData
+		maxRange as float
+		baseDistance as float
+		baseHeightFactor as float
+		defaultFOV as float //35mm = 49.134 fov, 50mm = 35.489
+		precision as float	// > value = < speed = > control. when using an aim skill raise it
+	endtype
+
+	type Camera_type_cameraBaseData
+		tilt as float
+		pan as float
+		zoom as float
+		x as float
+		y as float
+		z as float
+		oldx as float
+		oldy as float
+		oldz as float
+		fx as float //focus loc x
+		fy as float //focus loc y
+		fz as float //focus loc z
+		vx as float //vector of cam -> focus //TODO: this vector is the same as viewZ, use viewZ instead, or use views only in editor/dragging? ??
+		vy as float //vector of cam -> focus
+		vz as float //vector of cam -> focus
+		fov as float
+		offsetAngle as float
+		offsetDist as float
+		distance as float
+		heightFactor as float
+		//TODO: anchorObjectNum ? do we need to distinguish between an anchor object and a focus object?
+		focusObjectNum as integer //target object to focus on
+		focusObjectType as byte //0 basic object, 1 character object
+		focalTargetNum as integer //focusObjectNum = anchor object, focalTargetNum = object hit by raycast on focal vector
+		focalDistance	as float
+		delay as integer
+	endtype
+
+	type Camera_type_statusData
+		hasControl as boolean
+		controlMode as byte //0 cinematic?, 1 anchored
+	endtype
+
+	type STATIC_CLASS_Camera
+		config as Camera_type_configData
+		status as Camera_type_statusData
+		baseData as Camera_type_cameraBaseData
+	endtype
+
+	//private data -------------------------------------------------------------
+
+
+
+	//public data --------------------------------------------------------------
+
+
+
+	//Init ---------------------------------------------------------------------
+
+
+
+	//Declare Controls -----------------------------------------------------------
+
+	//TODO:
+	type Controls_type_assignedKeyDetail
+		device as byte //0 keyboard | 1 mouse
+		bind as integer //key value
+	endtype
+
+	type Controls_type_assignedKeyMovementData
+		forward as integer // as Controls_type_assignedKeyDetail
+		backward as integer
+		left as integer
+		right as integer
+		upward as integer
+		downward as integer
+		speedBoost as integer
+		speedSlow as integer
+		runToggle as integer
+		strafeToggle as integer
+	endtype
+
+	type Controls_type_assignedKeyActionData
+		useInteractable as integer
+	endtype
+
+	type Controls_type_assignedKeyData
+		movement as Controls_type_assignedKeyMovementData
+		action as Controls_type_assignedKeyActionData
+	endtype
+
+	type STATIC_CLASS_Controls
+		assignedKeys as Controls_type_assignedKeyData
+	endtype
+
+	//private data -------------------------------------------------------------
+
+
+
+	//public data --------------------------------------------------------------
+
+
+
+	//Init ---------------------------------------------------------------------
+
+
+
+	//==================================
+
+	GLOBAL Camera as STATIC_CLASS_Camera
+	GLOBAL Controls as STATIC_CLASS_Controls
+
+	//==================================
+
+	_Camera_init()
+	_Controls_init()
+
+	<?System_log("controls.dbx", 2, "main", "End module load: controls.")?>
+
+return
+
+
+function _Camera_init()
+
+	//config
+	Camera.config.baseDistance = 2.5
+	Camera.config.baseHeightFactor = 0.96
+	Camera.config.defaultFOV = 35.489 //50mm
+	Camera.config.precision = 8.0
+	Camera.config.maxRange = FX.configAL.cameraRangeMax
+
+	//init status
+	if UI.status.mouseMode = "gameplay" then Camera.status.hasControl = TRUE
+
+	Camera.status.controlMode = 1 //default to anchored
+
+	//init data
+	Camera.baseData.tilt = camera angle x()
+	Camera.baseData.pan = camera angle y()
+	Camera.baseData.zoom = 1.0
+	Camera.baseData.fov = Camera.config.defaultFOV
+	Camera.baseData.focalTargetNum = -1
+	Camera.baseData.focusObjectNum = -1
+	Camera.baseData.delay = timer()
+
+	//register updates
+	App_addUpdate("Camera_updatePhysicalState", "UI_getInterfaceInput,Controls_getGameplayInput", TRUE) //TODO: char needs to add require for Chars_updateChars
+
+endfunction
+
+
+function Camera_updatePhysicalState()
+
+	<?System_log("controls.dbx", 2, "main", "Begin Update: Camera_updatePhysicalState")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	tTimer = timer()
+
+	//blur on pause then exit
+	if SYSTEM.status.gamePauseState = 1 and AL_Blur > 0
+		set effect constant float PostFilter_GetRenderTargetEffect(AL_Blur),"DOFNearFocus",1.0
+		set effect constant float PostFilter_GetRenderTargetEffect(AL_Blur),"DOFFarFocus",1.0
+		exitfunction
+	endif
+
+	//if we are not directly in control of camera, skip update and exit
+	if UI.status.mouseMode = "gameplay"
+		Camera.status.hasControl = TRUE
+	else
+		Camera.status.hasControl = FALSE
+		exitfunction
+	endif
+
+	Camera.baseData.oldx = Camera.baseData.x
+	Camera.baseData.oldy = Camera.baseData.y
+	Camera.baseData.oldz = Camera.baseData.z
+
+	//update tilt and pan
+	if Camera.status.hasControl
+		if System.timing.delta > 33
+			inc Camera.baseData.tilt, (System.mouseInput.moveY * 0.2)
+			inc Camera.baseData.pan, (System.mouseInput.moveX * 0.2)
+		else
+			Camera.baseData.tilt = curvevalue(Camera.baseData.tilt + System.mouseInput.moveY, Camera.baseData.tilt, Camera.config.precision)
+			Camera.baseData.pan = curvevalue(Camera.baseData.pan + System.mouseInput.moveX, Camera.baseData.pan, Camera.config.precision)
+		endif
+		Camera.baseData.tilt = wrapvalue(Camera.baseData.tilt)
+		Camera.baseData.pan = wrapvalue(Camera.baseData.pan)
+		if Camera.baseData.tilt > 50.0 and Camera.baseData.tilt < 180.0
+			Camera.baseData.tilt = 50.0
+		endif
+		if Camera.baseData.tilt < 310.0 and Camera.baseData.tilt > 180.0
+			Camera.baseData.tilt = 310.0
+		endif
+	endif
+
+	select Camera.status.controlMode
+
+		case 0:
+
+		endcase
+
+		case 1: //anchored cam
+
+			if Camera.baseData.focusObjectNum < 1
+				<?System_log("controls.dbx", 4, "error", "ERROR: Camera is in anchored mode, but is not bound to an object.")?>
+				App_closeGame(TRUE)
+			endif
+
+			//zoom
+			Camera.baseData.zoom = 0.0
+			Camera.baseData.distance = Camera.config.baseDistance * World.envConfig.scaleMeter
+			Camera.baseData.heightFactor = 0.98
+
+			//get new focal anchor point
+			Camera.baseData.fx = object position x(Camera.baseData.focusObjectNum)
+			Camera.baseData.fy = object position y(Camera.baseData.focusObjectNum)
+			Camera.baseData.fz = object position z(Camera.baseData.focusObjectNum)
+
+			//get new cam base position
+			d# = cos(Camera.baseData.tilt) * Camera.baseData.distance
+			Camera.baseData.x = Camera.baseData.fx + sin(Camera.baseData.pan) * d#
+			Camera.baseData.y = Camera.baseData.fy + sin(Camera.baseData.tilt) * Camera.baseData.distance
+			Camera.baseData.z = Camera.baseData.fz + cos(Camera.baseData.pan) * d#
+
+			if Camera.baseData.focusObjectType = 0 //basic object
+				//get new focal vector
+				offsetFocalHeight# = 0.0
+				offsetY# = 0.0
+				Camera.baseData.vx = Camera.baseData.fx - Camera.baseData.x
+				Camera.baseData.vy = Camera.baseData.fy - Camera.baseData.y
+				Camera.baseData.vz = Camera.baseData.fz - Camera.baseData.z
+			endif
+
+			if Camera.baseData.focusObjectType = 1 //character object, adjust camera height to offset character height
+				//get new focal vector
+				offsetFocalHeight# = 10.0
+				offsetY# = object size y(Camera.baseData.focusObjectNum, 1) * Camera.baseData.heightFactor
+				inc Camera.baseData.fy, offsetY#
+				Camera.baseData.vx = Camera.baseData.fx - Camera.baseData.x
+				Camera.baseData.vy = (Camera.baseData.fy + offsetFocalHeight#) - (Camera.baseData.y + offsetY#)
+				Camera.baseData.vz = Camera.baseData.fz - Camera.baseData.z
+			endif
+
+			//update camera
+			position camera Camera.baseData.x, Camera.baseData.y + offsetY#, Camera.baseData.z
+			point camera Camera.baseData.fx, Camera.baseData.fy, Camera.baseData.fz
+
+			/*
+			if MY_CHARACTER.status.action <> Characters.stateId.moving or (MY_CHARACTER.status.action = Characters.stateId.moving and MY_CHARACTER.status.direction <> Characters.stateId.standard)
+				Media_getObjectRefByID(MY_CHARACTER.baseData.objID)
+				if Camera.config.shiftDir
+					yrotate object Media.objectResult.number, wrapvalue(MY_CHARACTER.baseData.facing + 10.0)
+				else
+					yrotate object Media.objectResult.number, wrapvalue(MY_CHARACTER.baseData.facing - 10.0)
+				endif
+			endif
+			*/
+
+			//get focal target distance
+			oldFocalDist# = Camera.baseData.focalDistance
+
+			//NOTE: focustype 0 used the camera position as endpoint, while type 1 used the anchor object as endpoint -> should not make a difference as both should lie on the same vector.
+			limitX# = Camera.baseData.fx + (Camera.baseData.vx * 1024.0/*Camera.config.maxRange*/)
+			limitY# = (Camera.baseData.fy + offsetFocalHeight#) + (Camera.baseData.vy * 1024.0/*Camera.config.maxRange*/)
+			limitZ# = Camera.baseData.fz + (Camera.baseData.vz * 1024.0/*Camera.config.maxRange*/)
+
+			if sc_intersectObject(0, Camera.baseData.fx, (Camera.baseData.fy + offsetFocalHeight#), Camera.baseData.fz, limitX#, limitY#, limitZ#) > 0
+				//hit collision object
+				Camera.baseData.focalTargetNum = sc_getObjectHit()
+				Camera.baseData.focalDistance = sc_getCollisionDistance()
+			else
+				//check for terrain hit
+				Camera.baseData.focalTargetNum = -1
+				Camera.baseData.focalDistance = Terrain_Ray(Camera.baseData.fx, (Camera.baseData.fy + offsetFocalHeight#), Camera.baseData.fz, limitX#, limitY#, limitZ#)
+				//TODO: handle no terrain hit?
+			endif
+
+			Camera.baseData.focalDistance = curvevalue(Camera.baseData.focalDistance, oldFocalDist#, Camera.config.precision * 0.5)
+
+			focalNear# = 10.0
+			focalFar# = Camera.baseData.focalDistance * 3.0
+			if focalFar# < 5000.0 then focalFar# = 5000.0
+			if focalFar# > Camera.config.maxRange then focalFar# = Camera.config.maxRange
+
+			//at night to prevent blur of moon and stars
+			if World.time < 6.0 or World.time > 18.0
+				focalFar# = curvevalue(1000000.0, focalFar#, 10)
+			endif
+
+		endcase
+
+	endselect
+
+	if AL_Blur > 0
+		set effect constant float PostFilter_GetRenderTargetEffect(AL_Blur), "DOFNearFocus", focalNear#
+		//set effect constant float PostFilter_GetRenderTargetEffect(AL_Blur), "DOFFarFocus", focalFar#
+		set effect constant float PostFilter_GetRenderTargetEffect(AL_Blur), "DOFFarFocus", 20000.0 //AL default
+	endif
+
+	//reset mouse position
+	if Camera.status.hasControl and has focus()
+		position mouse App.config.screenCenterX, App.config.screenCenterY
+	endif
+
+	<?System_log("controls.dbx", 2, "main", "End Update: Camera_updatePhysicalState," + str$(hitimer(1000000) - updateMark) + "us")?>
+endfunction
+
+
+//========================================================================================================================================================================
+
+
+function _Controls_init()
+
+	//set default key assignments
+	Controls.assignedKeys.movement.forward = ENUM_KEY_W
+	Controls.assignedKeys.movement.backward = ENUM_KEY_S
+	Controls.assignedKeys.movement.left = ENUM_KEY_A
+	Controls.assignedKeys.movement.right = ENUM_KEY_D
+	Controls.assignedKeys.movement.upward = ENUM_KEY_SPACE
+	Controls.assignedKeys.movement.downward = ENUM_KEY_V
+	Controls.assignedKeys.movement.speedBoost = ENUM_KEY_SHIFTL
+	Controls.assignedKeys.movement.speedSlow = ENUM_KEY_CTRLL
+	Controls.assignedKeys.movement.runToggle = ENUM_KEY_R
+	Controls.assignedKeys.movement.strafeToggle = ENUM_KEY_Q
+
+	Controls.assignedKeys.action.useInteractable = ENUM_KEY_F
+
+	App_addUpdate("Controls_getGameplayInput", "UI_getInterfaceInput", FALSE)
+
+endfunction
+
+
+function Controls_getGameplayInput()
+
+	<?System_log("controls.dbx", 2, "main", "Begin Update: Controls_getGameplayInput")?>
+
+	updateMark as dword
+	updateMark = hitimer(1000000)
+
+	tTimer = timer()
+
+	UI.status.mouseModeForced = ""
+	UI.status.keyModeForced = ""
+
+	//if game not in progress skip update and exit
+	if App.status.loadState < 3
+		exitfunction
+	endif
+
+	//if we are not in control of gameplay, skip update and exit
+	if UI.status.keyMode <> "gameplay" or MY_CHARACTER.status.isLiving = FALSE
+		<?System_log("controls.dbx", 2, "main", "Exit Update: Controls_getGameplayInput," + str$(hitimer(1000000) - updateMark) + "us")?>
+		exitfunction
+	endif
+
+	select Camera.status.controlMode
+
+		case 0: //unused
+
+		endcase
+
+		case 1: //anchored cam
+
+			//get old states and reset
+			//LEAK: ? if no strings maybe not
+			MY_CHARACTER.oldStatus = MY_CHARACTER.status
+
+			if MY_CHARACTER.status.stance = Characters.stateId.sneaking
+				MY_CHARACTER.status.stance = Characters.stateId.passive
+			endif
+
+			if MY_CHARACTER.status.action = Characters.stateId.moving
+				MY_CHARACTER.status.action = Characters.stateId.idle
+			endif
+
+			if MY_CHARACTER.status.locomotion <= Characters.stateId.sprinting
+				MY_CHARACTER.status.locomotion = Characters.stateId.stationary
+			endif
+
+			MY_CHARACTER.status.direction = Characters.stateId.standard
+
+			//get mouse
+
+			<?System_log("controls.dbx", 2, "control", "  mouseMode: " + UI.status.mouseMode)?>
+
+			if UI.status.mouseMode = "gameplay"
+
+				<?System_log("controls.dbx", 2, "control", "  > Handle mouse btn inputs")?>
+
+
+
+			endif
+
+			//get keyboard
+
+			<?System_log("controls.dbx", 2, "control", "  keyMode: " + UI.status.keyMode)?>
+
+			if UI.status.keyMode = "gameplay"
+
+				<?System_log("controls.dbx", 2, "control", "  > Handle key inputs")?>
+
+				if MY_CHARACTER.status.locomotion <> Characters.stateId.forced
+
+					//toggle strafe lock
+					if System_keyInput[Controls.assignedKeys.movement.strafeToggle].isDown and UI.status.inputReady
+						UI.status.inputMark = tTimer
+						MY_CHARACTER.status.strafeLock = 1 - MY_CHARACTER.status.strafeLock
+					endif
+
+					//toggle run lock
+					if System_keyInput[Controls.assignedKeys.movement.runToggle].isDown and UI.status.inputReady
+						<?System_log("controls.dbx", 2, "control", "  > runToggle input triggered")?>
+						UI.status.inputMark = tTimer
+						MY_CHARACTER.status.runLock = 1 - MY_CHARACTER.status.runLock
+						<?System_log("controls.dbx", 2, "control", "  runlock = " + str$(MY_CHARACTER.status.runLock))?>
+					endif
+
+					if MY_CHARACTER.status.runLock and MY_CHARACTER.oldStatus.stance = Characters.stateId.passive
+						if MY_CHARACTER.oldStatus.action = Characters.stateId.moving and MY_CHARACTER.oldStatus.locomotion < Characters.stateId.sprinting
+							MY_CHARACTER.status.locomotion = Characters.stateId.running
+						endif
+					endif
+
+					//jump
+					if System_keyInput[Controls.assignedKeys.movement.upward].isDown and UI.status.inputReady
+						if MY_CHARACTER.status.stance = Characters.stateId.passive and MY_CHARACTER.status.action < Characters.stateId.jumping //no jump while sneaking
+							UI.status.inputMark = tTimer
+							MY_CHARACTER.status.action = Characters.stateId.jumping
+							MY_CHARACTER.status.locomotion = Characters.stateId.forced
+							<?System_log("controls.dbx", 2, "jump", "  >> New jump input triggered. Set action = jumping, locomotion = forced.")?>
+						endif
+					endif
+
+					//crouch/sneak
+					if System_keyInput[Controls.assignedKeys.movement.speedSlow].isDown
+						MY_CHARACTER.status.stance = Characters.stateId.sneaking
+					endif
+
+					//sprint
+					if System_keyInput[Controls.assignedKeys.movement.speedBoost].isDown
+						if MY_CHARACTER.status.stance = Characters.stateId.passive and MY_CHARACTER.oldStatus.action = Characters.stateId.moving and MY_CHARACTER.status.locomotion <> Characters.stateId.forced
+							//cannot sprint while exhausted!
+							if MY_CHARACTER.status.isExhausted = FALSE
+								MY_CHARACTER.status.locomotion = Characters.stateId.sprinting
+								<?System_log("controls.dbx", 2, "control", "    > set locomotion = sprinting")?>
+							endif
+						endif
+					endif
+
+					//use interactable
+					if System_keyInput[Controls.assignedKeys.action.useInteractable].isDown and UI.status.inputReady
+						if Camera.baseData.focalDistance <= World.envConfig.scaleMeter * 2.0 //TODO: dont hard code range
+							UI.status.inputMark = tTimer
+							if Events.interactableTarget.objectID > ""
+								<?System_log("controls.dbx", 1, "control", "  > triggered use " + Events.interactableTarget.onUse)?>
+								if Events.interactableTarget.onUse > ""
+									App_callFunction(Events.interactableTarget.onUse, "next")
+								endif
+							endif
+						endif
+					endif
+
+					//TODO: UI hotkeys are defined by the ui document and managed by the ui module. These are loaded at document load but are not then remappable.
+					//should the loaded hotkey simply set the default? should this be moved fully to controls? should the UI module provide a method to rebind (and persist) these keys?
+					//This is along the lines of 'Esc' to open game menu, 'I' to open inventory.
+
+				endif
+
+				//any/always
+
+				if MY_CHARACTER.status.locomotion <> Characters.stateId.forced
+
+					<?System_log("controls.dbx", 2, "control", "  > Handle any/always move keys")?>
+
+					//move forward
+					if System_keyInput[Controls.assignedKeys.movement.forward].isDown
+						MY_CHARACTER.status.action = Characters.stateId.moving
+						if MY_CHARACTER.status.locomotion = Characters.stateId.stationary
+							MY_CHARACTER.status.locomotion = Characters.stateId.walking
+						endif
+						MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0)
+						MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan + 180.0)
+					endif
+
+					//move backward
+					if System_keyInput[Controls.assignedKeys.movement.backward].isDown
+						MY_CHARACTER.status.action = Characters.stateId.moving
+						if MY_CHARACTER.status.locomotion = Characters.stateId.stationary
+							MY_CHARACTER.status.locomotion = Characters.stateId.walking
+						endif
+						if MY_CHARACTER.status.strafeLock
+							//strafelocked, backup
+							MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0)
+							MY_CHARACTER.baseData.heading = Camera.baseData.pan
+							MY_CHARACTER.status.direction = Characters.stateId.backstep
+						else
+							//not locked, turn and continue forward
+							MY_CHARACTER.baseData.facing = Camera.baseData.pan
+							MY_CHARACTER.baseData.heading = Camera.baseData.pan
+						endif
+					endif
+
+					//move left
+					if System_keyInput[Controls.assignedKeys.movement.left].isDown
+						MY_CHARACTER.status.action = Characters.stateId.moving
+						if MY_CHARACTER.status.locomotion = Characters.stateId.stationary
+							MY_CHARACTER.status.locomotion = Characters.stateId.walking
+						endif
+						if MY_CHARACTER.status.strafeLock
+							//strafelocked
+							if System_keyInput[Controls.assignedKeys.movement.forward].isDown
+								//also moving forward, move diagonally
+								MY_CHARACTER.status.direction = Characters.stateId.standard
+								MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0)
+								MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan + 180.0 - 45.0)
+							else
+								if System_keyInput[Controls.assignedKeys.movement.backward].isDown
+									//also moving backward, move diagonally
+									MY_CHARACTER.status.direction = Characters.stateId.backstep
+									MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0)
+									MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan + 45.0)
+								else
+									//only moving left
+									MY_CHARACTER.status.direction = Characters.stateId.strafeLeft
+									MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0)
+									MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan + 90.0)
+								endif
+							endif
+						else
+							//not locked
+							if System_keyInput[Controls.assignedKeys.movement.forward].isDown
+								//also moving forward, move diagonally
+								MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0 - 45.0)
+								MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan + 180.0 - 45.0)
+							else
+								if System_keyInput[Controls.assignedKeys.movement.backward].isDown
+									//also moving backward, move diagonally
+									MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 45.0)
+									MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan + 45.0)
+								else
+									//only moving left
+									MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 90.0)
+									MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan + 90.0)
+								endif
+							endif
+						endif
+					endif
+
+					//move right
+					if System_keyInput[Controls.assignedKeys.movement.right].isDown
+						MY_CHARACTER.status.action = Characters.stateId.moving
+						if MY_CHARACTER.status.locomotion = Characters.stateId.stationary
+							MY_CHARACTER.status.locomotion = Characters.stateId.walking
+						endif
+						if MY_CHARACTER.status.strafeLock
+							//strafelocked
+							if System_keyInput[Controls.assignedKeys.movement.forward].isDown
+								//also moving forward, move diagonally
+								MY_CHARACTER.status.direction = Characters.stateId.standard
+								MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0)
+								MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan + 180.0 + 45.0)
+							else
+								if System_keyInput[Controls.assignedKeys.movement.backward].isDown
+									//also moving backward, move diagonally
+									MY_CHARACTER.status.direction = Characters.stateId.backstep
+									MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0)
+									MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan - 45.0)
+								else
+									//only moving right
+									MY_CHARACTER.status.direction = Characters.stateId.strafeRight
+									MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0)
+									MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan - 90.0)
+								endif
+							endif
+						else
+							//not locked
+							if System_keyInput[Controls.assignedKeys.movement.forward].isDown
+								//also moving forward, move diagonally
+								MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan + 180.0 + 45.0)
+								MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan + 180.0 + 45.0)
+							else
+								if System_keyInput[Controls.assignedKeys.movement.backward].isDown
+									//also moving backward, move diagonally
+									MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan - 45.0)
+									MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan - 45.0)
+								else
+									//only moving right
+									MY_CHARACTER.baseData.facing = wrapvalue(Camera.baseData.pan - 90.0)
+									MY_CHARACTER.baseData.heading = wrapvalue(Camera.baseData.pan - 90.0)
+								endif
+							endif
+						endif
+					endif
+
+				endif
+			endif
+
+				//mouse steers character if moving and not strafe locked
+			if UI.status.mouseMode = "gameplay"
+				if MY_CHARACTER.status.action = Characters.stateId.moving and MY_CHARACTER.status.strafeLock = FALSE
+					MY_CHARACTER.baseData.facing = curveangle(MY_CHARACTER.baseData.facing + System.mouseInput.moveX, MY_CHARACTER.baseData.facing, Camera.config.precision)
+				endif
+			endif
+
+		endcase
+
+	endselect
+
+	<?System_log("controls.dbx", 2, "main", "End Update: Controls_getGameplayInput," + str$(hitimer(1000000) - updateMark) + "us")?>
+endfunction

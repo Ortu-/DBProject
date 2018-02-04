@@ -1,0 +1,138 @@
+Patch 2
+=======
+
+GENERAL
+-------
+* Uninstall readme note added to START MENU shortcuts listing
+* INC and DEC now work no matter what type of incremental value is given
+* MEMBLOCK FLOAT now returns a correct float value
+* INDIRECT(*) ASSIGNMENTS no longer cast in either direction to avoid confusion
+* Fixed several bugs causing incorrect window handling between project settings and regular commands
+* Patch1 caused certain array handling commands did not work such as ARRAY INSERT AT TOP. Now fixed.
+* SET DISPLAY MODE can now use any size, and the engine will clip the size for ninstandard sizes
+* Debugger can now handle variable string contents greater than 32 characters (ie Text Showcase)
+* If file exist command was not given a valid string it would crash now fixed
+* NOT replaced with uniary boolean and new bitwise symbol '..' added for NOT masking
+* An expression in side a bracket set, in which is a string containing an open bracket no longer errors
+* SET MUSIC VOLUME fixed for all types of music and better 0-100 scaling
+* Fixed exception handling for XOBJECT using "/EHa" mode in release build
+* SELECT command can now handle strings as comparison values
+* #CONSTANTs no longer retain an effect when inside a comment
+* The POINT command now returns a true 32bit value that does not include any Alpha component
+* Comparisons using non Integer DWORD elements now compile correctly
+* Trying to make a mesh from a memblock with old memblock data or corrupt data will gracefully fail
+* Local Arrays now allocate correctly
+* Functions can now return values even when passed back using an array element
+* Functions can now accept a string as an input parameter, and recreate the instance to as not to mess the original
+* A reverse FOR NEXT loop now counts through the correct values backwards
+* Arrays can now accept a dynamic variable value during real-time creation
+* When printing decimal values to the screen the exponent is no longer displayed
+* When using arrays and typed arrays as input params the compiler crashes, now fixed
+* Sometimes the LINE command would pick up the last used texture causing strange colors, now fixed
+* Added proper support for DOUBLE FLOAT and DOUBLE INTEGER comparison maths
+* DOUBLE FLOATS can now be displayed with as many digits as the value contains
+* Parser no longer accepts numerics as LValue elements during an assignment
+* Fixed a bug which stopped the music from looping when a hard goto loop and sync are used without a control loop
+* Fixed a bug whereby DATA statement did not increment the internal line count causing errors to be reported incorrectly
+* String arrays declared without a $ symbol now compiles and runs correctly
+* FTP now allows soft failures of commands once again for failure to connect errors, etc
+* Using an initial negative symbol before a variable causes it to reverse its sign
+* Precedence of * and / reversed for correct mathematics
+* Spaces now allowed inside brackets of a complex variable such as array or type
+
+BASIC3D
+-------
+* Mipmap Generation Flag of SET TEXTURE MODE is now used for specifying mipmap filter mode
+* POINT OBJECT now works again exactly the same as DBV1 for backward compatability
+* Fixed the process of converting strip vertex data to regular triangle meshes, sphere convert bug
+* Fixed a bug which continued to render pixels that where transparent, causing Z problems
+* Fixed the way PLAY and LOOP OBJECT interact to work like DBV1 methods
+* Fixed bug where an object load of an unknown extension will not result in a crash
+* Fog mode in objects was set to false by default, now true to fall in with DBV1 compatability
+* FREE FLIGHT ROTATION commands took radian values, now fixed to use degrees like DBV1
+* MOVE OBJECT Commands now work properly for both rotation and free flight angles
+* LOAD MESH now reports correctly if the load failed
+* Very small meshes (<32 verts) when creating objects would cause internal corruption and crashing
+* 3DS Models now load even if they are relatively specified by filename
+* LIMB POSITION for limb zero now reports a true value even when glued to another object
+* LOCKED OBJECTS now only render to the first camera (zero), and are ignored by all extra cameras
+* Added better polygon collision detection to very small objects Vs very large objects
+* GLUE OBJECT TO LIMB sometimes would validate a limb from the wrong object, now correct
+* Fixed memory leaks in Basic3D and Image DLLs causing some exit crashes
+
+
+MATRIX
+------
+* PREPARE MATRIX TEXTURE now handles texture alignment correctly
+* Matrix no longer defaults to a ghosted state
+* GHOST MATRIX commands now work correctly and addition mode parameter added for backwards compatibility
+* SET MATRIX command now works in the same manner as SET OBJECT property states
+* Removed a 0.03 error correction to texture tile crops to further increase accuracy of large matrix texture plates
+
+SPRITES
+-------
+* Added missing SPRITE VISIBLE() command to Sprite Commands
+* Fixed bug which failed to report true Sprite Angle value
+* SET SPRITE PRIORITY now works properly, though slower than the optimised version that did not work
+* GET EXIST, MIRROR and FLIP now report zero and one instead of an insanely high value
+
+COLLISION
+---------
+* AUTOMATIC CAMERA COLLISION no longer sticks on some shapes
+* Both AUTOMATIC COLLISION Commands now obeys the response mode of one for backtracking
+* Fixed a bug where the box collision would not take the scale of the object into account
+* OBJECT COLLISION CENTER XYZ now report a true collision center even for offcenter meshes
+* OBJECT COLLISION with two specified objects now returns a one, not the secondary parameter
+* Object Collision System for spheres now takes offcenter mesh objects into consideration
+* Object collision that reports against any hit now returns the second object collided with, rather than one
+* Adjusted polygon collision to take true account of the objects scales
+
+CAMERA
+------
+* Added default green colour backdrop to non zero cameras to help rendering detection and use
+* Fixed SET CAMERA TO OBJECT ORIENTATION so it works with all types of object rotation
+* Added Runtime error to TEXTURE BACKDROP an SCROLL BACKDROP indicating obsolete status
+
+TEXT
+----
+* Fixed bug where non zero background colours during a text paste would not update the foreground colour
+* Fixed VAL to allow float values to be returned (ie val("123.45"))
+* Fixed STR$() so it can return integer values greater than 5 digits without showing the exponent data
+
+BSP
+---
+* Cleared notfound_texture_table in Q3 loader to fix origin of exception handler bug
+* For level that use nonstandard texture sizes, the loader now adjusts to fill texture plates
+* Fixed problem with BSP renderer not restoring render states for some levels
+* Fixed response modes for CustomBSP levels
+* Added PROCESS BSP COLLISION command
+* CustomBSP level loading can now handle relative path filenames for texture location
+* Added SET BSP COLLISION HEIGHT ADJUSTMENT command to provide head-adjustment for camera view
+* Fixed ability in CustomBSP for geometry to respond to dynamic lighting effects
+* a BSP rendered to a reflective object will now cull correctly showing a true reflection
+
+IMAGE
+-----
+* Fixed a bug which caused the GET IMAGE to fail sometimes if a nonstandard texture size is used
+* Fixed problem causing images taken using GET IMAGE would report an incorrect size
+* GET IMAGE is no longer restricted to the size of the default screen
+* Fixed resource bug that caused any images after a SET WINDOW ON command to crash on exit
+
+MIGRATION NOTES NOT COVERED BY CURRENT FIXES
+--------------------------------------------
+* 3DS Handling is not as good as X Handling. Use the DBCONV.EXE converter available from us.
+* All 3D MODELS not loading are to be handled through a new system we are working on
+* All TERRAIN and BSP problems will be solved by the aforementioned new system
+* Images in memblocks are now stored based on the display device used. If you are using a 32bit display then an image loaded or grabbed into the application which is then converted to a memblock will be stored so one pixel uses 32bits(4 bytes) of memory.
+* Make sure that only the PK3 files required for the game are located in the project folder as the LOAD BSP command attempts to scan all PK3 files found in its vicinity, sometimes resulting in a media overload.
+* When using GET IMAGE and LOAD IMAGE, DBPro now uses an entire texture surface for each image and may stretch the data
+to make images naturally usable for textures. To avoid this stretch process to gain a DBV1 style pixel accuracy use an additional one as a parameter for each of these commands
+* Be aware some of the flags in SET OBJECT and SET MATRIX have been adjusted to make more sense to a first time user
+* In order to improve performance of tight loops, sync safety measures have been removed from GOTO. A tight GOTO loop with no sync will no longer respond to keyboard input and allow screen refresh unless specifically instructed
+* XOR bitwise operator is now acheived using "~~", see Principals:Operators for more information
+
+LIMITATIONS OF USE
+------------------
+* You cannot pass User Defined Types in or out of functions
+* The CLONE OBJECT will only close the mesh data of the object for mass construction of identical objects, and will not copy the settings, animation and frame hierarchy of the object
+* FADE OBJECT uses the diffuse property of an object, thus COLOR OBJECT will overwrite the effect and vice versa

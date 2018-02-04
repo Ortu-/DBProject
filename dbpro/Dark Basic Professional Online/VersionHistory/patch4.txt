@@ -1,0 +1,116 @@
+Patch 4
+=======
+
+GENERAL
+-------
+* Fixed bug that caused TYPES and ARRAY TYPES in functions to fail to compile and corrupt variable registers
+* Fixed a bug in the executable runner that did not like more than one DBPro program running
+* Fixed a bug that causes some models (bird.x) to crash on loading due to multi-material usage
+* SET WINDOW ON and SET DISPLAY MODE no longer crashes when new objects are created before or after
+* OBJECT IN SCREEN command no longer reports a visible object if it is behind the camera
+* SET MATRIX command help now correctly describes a value of one to set the wireframe mode
+* Material Colours are now retained during single mesh splitting with all diff/emm/spe/amb retained
+* Objects now load even if no texture files are used internally and multi-material meshes are used
+* Normal data is correctly transformed when making new meshes from existing limbs and objects
+* Fixed transparency effect in the SET MATRIX command so it no longer ghosts, just produces black trasparency
+* Matrix now renders correctly when viewed through a reflective surface (SET REFLECTION SHADING ON)
+* Reflection Effect now adds clipping improving its flexibility to now be inserted efficiently inside geometry
+* Image texture handling when texturing a matrix no longer tries to stretch an ill-fitting image twice
+* INTERSECT OBJECT now works properly again and even takes into account the animating limbs of the object
+* Reflection Effect further has a blue fill for areas that are not rendered, allowing reverse-sides to be determined
+* Main Bounds Radius for visibility culling now adjusts to maximum scale of the object
+* Object draw order after the basic overlay phases are now controlled by texture/image index (image 1 draws first, etc)
+* Computing the object bound is now more sophisticated in that it uses more code reuse and produces an accurate sphere
+* Box Collision in all-object check now handles multiple entity collisions correctly producing better sliding data
+* Camera Angle now updated when free flight rotation commands used
+* Camera FOV now no longer affects locked objects restoring the fix made in Patch 3
+* Shadow creation is now aware of maximum vertex index size on the graphics card avoiding a crash
+* Restored transparency mode for matrices so they use the alpha required by PNG and alpha-based images
+* Added new transparency mode (2=drawn at ghost layer/1=draw at normal later/0=no transparency)
+* Animated models now update their shadows correctly, even bone based animations
+* Amended a bug fix from previous beta. Now animated bone animations do not additionally take the frame matrix adjustment
+* Both DrawObject and UpdateShadow no longer use Combined if the mesh uses a bone animation system (which has it already)
+* Refined box collision to work, while retain better sphere collision on complex models such as bone based models
+* Fixed Patch4 problem that caused the BOX GRADIENT command now to fill its colours in correctly
+* All registry commands now manipulate LOCAL_MACHINE settings (rather than mixed local machine and current user)
+* Bone animation loads in even when single mesh uses multi-material components
+* Due to new trasparency system and stencil system, particle phase muved before ghost object draw (fixes particle Z issue)
+* Ghosting of matrix entities when transparency used now fixed to work just like object transparency
+* Ambient Light of Matrix entities correctly adjustable now
+* Ambient levels of loaded models now reset to full R,G,B,A for DBV1 compatibility (specific support to follow)
+* Specular Effects disabled including specular components of all materials (specific support to follow)
+* OBJECT SIZE X,Y,Z now takes into account the scale of the object
+* Bone animation models now start correctly on their first frame rather than reset to the matrix identity
+* FADE OBJECT works once more, and handles ambient and direct light factors when working out the final visual fade level
+* Material Ambience now copied from Material Diffuse for loaded models (for DBV1 and Patch 3.1 compatibility)
+* LOCK and UNLOCK now only perform their code only if the lock flag is properly set rather than absolute called each time
+* AnimationOptions in the X file format can now determine whether position animation is spline or linear interpolated
+* Keyframes are now sorted by time to avoid the animation-skip artifact when data in the original file is not sorted
+* Normals are now updated when bone animations are performed on meshes, giving better lighting on respective models
+* Brand new mutlmaterial handling code added for bone models, allowing full support for C4D X file exports (so far)
+* Models with unusually large animation areas are now culled correctly by pre-calculating largest culling sphere
+* Particles once again use the colour fading system that ties with particle lifespans and gives particles colour
+* Fixed a long term bug that caused fogged ghosted objects to use the fog color twice (bright ghosts), fog override fixed
+* Fixed long terms bugs that caused fogged matrices and particles to be colored twice causing too much brightness
+* Fixed important clean-up system for executables prematurely terminated so DBPData folders are not clogging temp folder
+* Make and Modify Memblock Mesh now works for meshes that have an index data buffer and also multiple FVF types
+* Bug introduced by 3DCP model resurfaced when using APPEND in addition to LOAD, now fixed and bounds recalculated also
+* Improved bone animation code to factor in all the skin weights of the bone animation for greater accuracy
+* CHANGE MESH now works with meshes by creating a basic solid white texture with the brand new mesh
+* GF3 revealed bug that meant VBs where not created big enough to hold all vertex data
+* GF3 revealed bug that caused the stencil buffer to retain corrupt stencil data, fixed by forcing a clear operation
+* Removed overriding influence of returning double integers from a VAL expression. Compiler enhancement planned to replace.
+* LOCKED OBJECTS and NOZDEPTH OBJECTS work together as in Patch 3.1 (locked+nozdepth stages loop)
+* Multimaterial Mesh memory leak fixed
+* Multimaterial Mesh did not create its own texture blending states causing some models not to texture correctly
+* GLUE OBJECT no longer has a one cycle lag, as it now recalculates the parent object prior to glue position assignments
+* Some models used multiple meshes per frame, and a bug existed that only rendered one mesh - now renders all meshes
+* Bone models now update their frames even when the object is not animating or slerping
+* Multimaterial meshes that have a zero primitive count for the material rendered no longer causes other objects to hide
+* Fixed a bug that caused SET MATRIX TEXTURE not to work using correct values. 0 is now wrap as it should be.
+* DBPro no longer refreshes the primary surface until the sync refresh is ready (so sync on will once again hide drawings)
+* Found a bug in the GetBoneInfluences function of DX8 which means expanded vertex data messes up bone animation results
+* NEW RULE TO AVOID BUG: You can have bone animation if the normals data count do not exceed vertex data count in the mesh
+* FASTSYNC could not update the render surface in the last update of the refresh code, works now
+* Vertex Buffer creation size now restricted to a compatible 16bit fmt (tried index32 but could see no performance gain)
+* Icons in the demo version no longer carry redundant 48x48 and Monochrome versions which are not replaced by media icons
+
+Beta7
+-----
+* New Overlay object handling sometimes allowed an object to be rendered twice, now fixed
+* Fixed bug that caused transparent objects to be ghosted after a ghosted object was rendered before it
+* All PLAY OBJECT commands no longer return the frame to the beginning when the sequence ends, only loop does this now
+
+BUG FIXES THAT AFFECT PATCH 3 MIGRATION
+---------------------------------------
+* OBJECT COLLISION and OBJECT HIT now return the ID of the object struck when the second parameter is zero
+* LOAD OBJECT for bone based models how retain the root translation data (can now be offcenter) - adjust with OFFSET LIMB
+* LOAD OBJECT for limb based models loads the limbs in hierarchial order when indexing so limb values may differ
+* OBJECT SPEED, FRAME and INTERPOLATION now return floats rather than integers which may affect code using these commands
+* Render State management has been improved so that lighting settings of one object does not affect subsequent objects
+* COLOR OBJECT does a complete wipe of the base texture now rather than fill only the diffuse element of the object
+* MATRIX TEXTURE TILES are now rotated 180 degrees so that they face the correct orientation in relation to the defaults
+* Bug when glue object to model limbs caused a position scaling error, now fixed (revealed in old face demo)
+* Bug that reversed the Parent and Child parameters of the LINK LIMB command are now fixed
+* Fixed a long standing vertex shader bug which prevented the forth float to be used in the shader in SET V.S VECTOR
+* The BOX primitive is created differently so to invert it you must scale 100,-100,100 and not -100,-100,-100
+* Specular lighting has been enabled in anticipation of new commands that will control it, so lighting is slightly different
+* Deleting cameras no longer causes a resource leak such as that resulting from The Labs demo program
+* Particles are now rendered between the solid and ghost layers, which means particles can sometimes seem dimmer now
+* SYNC OFF (as well as the default sync state) is now processor friendly with a Sleep(1) during idle processes (<%3)
+* Glued Objects are no longer included in the culling procedure allowing them to remain visible from any accociation
+* Fixed some memory leaks in the DBO load, save and clone code and memory leaks caused by unfreed animation data
+
+DBO SYSTEM ENCHANCEMENT
+-----------------------
+The DBO System is the first step towards unifying just about all aspects of DBPro 3D handling. Ultimately all 3D comes down to some very basic code, and we determined the best way to maintain a language such as DBPro was to channel our efforts through as much re-usable code as bumanly possible. Thus the DBO foundation was born.
+
+Known simply as the Dark Basic Object (DBO), it uses a very efficient pipeline to arrange and sort the 3D that will ultimately be drawn to the screen. This improvement has caused a mark improvement in speed. The ethod of heavy code reuse has made the code more stable, though we may experience a few tweek issues along the way as the Basic3D code has almost been completely rewritten/restructured. Although additional functionality is now at our command, the first release of the DBO system will not increase the number of commands. The technology does now allow us to save objects perfectly, clone objects including animation and visual settings.
+
+MIGRATION NOTES
+---------------
+As DBO is new, there are bound to be subtle changes. Sometimes where a very old bug that copied functionality has been fixed. These will result in your applications behaving every so slightly differently. The main difference you may notice is the speed of your applications when using a large number of objects. If you keep your mesh FVF format the same across your 3D geoemtry, you will notice even greater speed gains. There is yet more room for improvement, and more functionality that can be exploited through the new system. The migration woes should not be too severe as this release intends to be a smooth transition from Patch 3.
+
+It is worth noting that 3DS, MDL, MD2 and MD3 are not supported in Patch 4. These are formats we will bring back online in Patch 5. We intend to write these under a common SDK, so that the same approach can be taken by anyone who wishes DBPro to support a third party 3D format.
+
+Additionally, all bugs reported from Patch 3 onwards will be dealt with for Patch 5. Patch4 is a pure performance release and to trial a brand new foundation that will see us comfortably into 2004.

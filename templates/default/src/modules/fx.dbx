@@ -1,0 +1,217 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	Shader Managerment Utility
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides handling of shaders and shader systems.
+
+	*******************************************
+	Plugin Dependancies:
+
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+
+	*******************************************
+	Classes:
+
+		Requires System
+		Requires AdvLighting (Evolved)
+
+		=========================================
+		Defines STATIC CLASS: FX
+
+			------------------------
+			public functions:
+
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+				_FX_init()
+					-
+
+			------------------------
+			private data:
+
+
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+fx_module_init:
+
+	if FX_MODULE_LOADED = FALSE
+
+		<?System_log("fx.dbx", 2, "main", "Begin module load: fx.")?>
+
+		`private data -------------------------------------------------------------
+
+
+
+		`public data --------------------------------------------------------------
+
+
+
+		`==========================================================================================================================
+		`Declare FX -----------------------------------------------------------
+
+		type FX_type_advLightingConfigData
+			enableSpecular as boolean
+			enableRefract as boolean
+			enableDistort as boolean
+			enableSSAO as boolean
+			enableScatter as boolean
+			enableAA as boolean
+			enableBloom as boolean
+			enableDOF as boolean
+			enableBlur as boolean
+			enableLensflare as boolean
+			shadowRes as integer //TODO: shadow as FX_type_advLightingShadowData ???
+			postProcessPercent as byte
+			cameraRangeMax as integer //TODO: camera as FX_type_advLightingCameraData ???
+		endtype
+
+		type STATIC_CLASS_FX
+			configAL as FX_type_advLightingConfigData
+		endtype
+
+		`Init ---------------------------------------------------------------------
+
+		`==================================
+
+		GLOBAL FX as STATIC_CLASS_FX
+
+		`==================================
+
+		_FX_init()
+
+		FX_MODULE_LOADED = TRUE
+
+		<?System_log("fx.dbx", 2, "main", "End module load: fx.")?>
+
+	endif
+return
+
+
+
+function _FX_init()
+
+	FX.configAL.enableSpecular = TRUE
+	FX.configAL.enableRefract = TRUE
+	FX.configAL.enableDistort = TRUE
+	FX.configAL.enableSSAO = TRUE
+	FX.configAL.enableScatter = TRUE
+	FX.configAL.enableAA = TRUE
+	FX.configAL.enableBloom = FALSE
+	FX.configAL.enableDOF = TRUE
+	FX.configAL.enableBlur = FALSE
+	FX.configAL.enableLensflare = FALSE
+	FX.configAL.shadowRes = 512
+	FX.configAL.postProcessPercent = 100
+	FX.configAL.cameraRangeMax = 64000
+
+	`require AL
+	$require("modules/Advanced Lighting/Include/Advanced Lighting.dba")
+	$require("modules/Advanced Lighting/Include/Advanced Lighting/AL_Effect.dba")
+	$require("modules/Advanced Lighting/Include/Advanced Lighting/AL_Object.dba")
+	$require("modules/Advanced Lighting/Include/Advanced Lighting/AL_Lighting.dba")
+	$require("modules/Advanced Lighting/Include/Advanced Lighting/AL_Spot.dba")
+	$require("modules/Advanced Lighting/Include/Advanced Lighting/AL_Point.dba")
+	$require("modules/Advanced Lighting/Include/Advanced Lighting/AL_Directional.dba")
+	$require("modules/Advanced Lighting/Include/Advanced Lighting/AL_PostFilter.dba")
+	$require("modules/Advanced Lighting/Include/Advanced Lighting/AL_Sky.dba")
+	$require("modules/Advanced Lighting/Include/Terrain.dba")
+	$require("modules/Advanced Lighting/Include/Water.dba")
+	$require("modules/Advanced Lighting/Include/Materials.dba")
+
+	`init AL
+	AdvLighting_Setup(App.config.screenWidth, App.config.screenHeight, (App.config.screenWidth * (FX.configAL.postProcessPercent / 100)), (App.config.screenHeight * (FX.configAL.postProcessPercent / 100)), FX.configAL.enableBlur)
+	PostProcessing_SetUp(FX.configAL.enableRefract, FX.configAL.enableDistort, FX.configAL.enableSSAO, FX.configAL.enableScatter, FX.configAL.enableAA, FX.configAL.enableBloom, FX.configAL.enableDOF)
+	AdvLighting_SetCamera(1, FX.configAL.cameraRangeMax, 50, 1.77)
+
+	`fog
+	AdvLighting_SetFog(FX.configAL.cameraRangeMax, 2, 0, 0, 0, 0, 0, 0) //TODO: params to config data
+	AdvLighting_SetHeightFog(1000, 10000, 6, 25000, 1, 0, 0, 0, 128) //TODO: params to config data
+
+	`ambient light
+	tImg = Media_getImageNumber("resource/Advanced Lighting/Textures/Lighting/Ambient.dds", 2, 0)
+	AdvLighting_SetAmbientTexture(tImg)
+
+	`water
+	Water_Create(1, 1, 1, 1, 1, 1)
+	Water_SetScale(15, 600, 25)
+
+	`sky
+	imgStars = Media_getImageNumber("resource/Advanced Lighting/Textures/sky/Stars.dds", 2, 0)
+	imgSun = Media_getImageNumber("resource/Advanced Lighting/Textures/sky/Sun.dds", 0, 0)
+	imgMoon = Media_getImageNumber("resource/Advanced Lighting/Textures/sky/Moon.dds", 0, 0) //TODO: moon phase to config data
+	imgClouds = Media_getImageNumber("resource/Advanced Lighting/Textures/sky/Clouds.dds", 0, 0)
+	imgCloudNoise = Media_getImageNumber("resource/Advanced Lighting/Textures/sky/Cloud Noise.dds", 0, 0)
+	imgClouds3d = Media_getImageNumber("resource/Advanced Lighting/Textures/sky/Clouds 3d.dds", 0, 0)
+
+	Sky_Create()
+	Sky_SetTexture(imgStars)
+	Sky_SetSunTexture(imgSun)
+	Sky_SetPlanetTexture(imgMoon)
+	Sky_SetCloudsTexture(imgClouds, imgCloudNoise)
+	Clouds_Setup()
+	Clouds_SetTexture(imgClouds3d, imgCloudNoise)
+
+	`light
+	TimeOfDay_Setup()
+	DirLight_Create(FX.configAL.enableSpecular, FX.configAL.enableSSAO, 2, FX.configAL.shadowRes) //TODO: 2 -> shadowMode -> add to config data
+	DirLight_SetAngle(60, 90, 0)
+	DirLight_SetPower(0.80)
+	Sky_SetPlanetAngle(223.0, 90.0, 0.0, 0.125)
+	Sky_SetSunAngle(67.0, 90.0, 0.0, 0.09)
+
+	`lensflare
+	if FX.configAL.enableLensflare
+    Flare=LensFlare_Create(13)
+    LensFlare_SetSubFlareAtlas(Flare,0,5):LensFlare_SetSubFlareScale(Flare,0,0.5,0.5,0.5):LensFlare_SetSubFlareOffset(Flare,0,0,0,0.5):LensFlare_SetSubFlareFalloff(Flare,0,0,0,0):LensFlare_SetSubFlareColor(Flare,0,250,250,250,0)
+    LensFlare_SetSubFlareAtlas(Flare,1,10):LensFlare_SetSubFlareScale(Flare,1,0.06,0.06,1):LensFlare_SetSubFlareOffset(Flare,1,0.475,0,0):LensFlare_SetSubFlareFalloff(Flare,1,0,1,2):LensFlare_SetSubFlareColor(Flare,1,60,100,80,0)
+    LensFlare_SetSubFlareAtlas(Flare,2,10):LensFlare_SetSubFlareScale(Flare,2,0.075,0.075,1):LensFlare_SetSubFlareOffset(Flare,2,0.5,0,0):LensFlare_SetSubFlareFalloff(Flare,2,0,1,2):LensFlare_SetSubFlareColor(Flare,2,40,100,60,0)
+    LensFlare_SetSubFlareAtlas(Flare,3,12):LensFlare_SetSubFlareScale(Flare,3,0.02,0.02,1):LensFlare_SetSubFlareOffset(Flare,3,0.6,0,0):LensFlare_SetSubFlareFalloff(Flare,3,0,1,1):LensFlare_SetSubFlareColor(Flare,3,160,160,100,0)
+    LensFlare_SetSubFlareAtlas(Flare,4,10):LensFlare_SetSubFlareScale(Flare,4,0.075,0.075,1):LensFlare_SetSubFlareOffset(Flare,4,0.79,0,0):LensFlare_SetSubFlareFalloff(Flare,4,0,1,2):LensFlare_SetSubFlareColor(Flare,4,130,100,40,0)
+    LensFlare_SetSubFlareAtlas(Flare,5,10):LensFlare_SetSubFlareScale(Flare,5,0.1,0.1,1):LensFlare_SetSubFlareOffset(Flare,5,0.82,0,0):LensFlare_SetSubFlareFalloff(Flare,5,0,1,2):LensFlare_SetSubFlareColor(Flare,5,130,80,60,0)
+    LensFlare_SetSubFlareAtlas(Flare,6,10):LensFlare_SetSubFlareScale(Flare,6,0.125,0.125,1):LensFlare_SetSubFlareOffset(Flare,6,0.85,0,0):LensFlare_SetSubFlareFalloff(Flare,6,0,1,2):LensFlare_SetSubFlareColor(Flare,6,120,60,80,0)
+    LensFlare_SetSubFlareAtlas(Flare,7,12):LensFlare_SetSubFlareScale(Flare,7,0.02,0.02,1):LensFlare_SetSubFlareOffset(Flare,7,1,0,0):LensFlare_SetSubFlareFalloff(Flare,7,0,1,1):LensFlare_SetSubFlareColor(Flare,7,160,160,100,0)
+    LensFlare_SetSubFlareAtlas(Flare,8,11):LensFlare_SetSubFlareScale(Flare,8,0.04,0.04,1):LensFlare_SetSubFlareOffset(Flare,8,1.1,0,0):LensFlare_SetSubFlareFalloff(Flare,8,0,1,1):LensFlare_SetSubFlareColor(Flare,8,160,160,100,0)
+    LensFlare_SetSubFlareAtlas(Flare,9,10):LensFlare_SetSubFlareScale(Flare,9,0.2,0.2,1):LensFlare_SetSubFlareOffset(Flare,9,1.2,0,0):LensFlare_SetSubFlareFalloff(Flare,9,0,1,2):LensFlare_SetSubFlareColor(Flare,9,120,40,160,0)
+    LensFlare_SetSubFlareAtlas(Flare,10,10):LensFlare_SetSubFlareScale(Flare,10,0.25,0.25,1):LensFlare_SetSubFlareOffset(Flare,10,1.3,0,0):LensFlare_SetSubFlareFalloff(Flare,10,0,1,2):LensFlare_SetSubFlareColor(Flare,10,80,60,160,0)
+    LensFlare_SetSubFlareAtlas(Flare,11,10):LensFlare_SetSubFlareScale(Flare,11,0.3,0.3,1):LensFlare_SetSubFlareOffset(Flare,11,1.4,0,0):LensFlare_SetSubFlareFalloff(Flare,11,0,1,2):LensFlare_SetSubFlareColor(Flare,11,40,80,160,0)
+    LensFlare_SetSubFlareAtlas(Flare,12,16):LensFlare_SetSubFlareScale(Flare,12,0.3,0.3,8):LensFlare_SetSubFlareOffset(Flare,12,0.25,0,0.5):LensFlare_SetSubFlareFalloff(Flare,12,0,0.25,10):LensFlare_SetSubFlareColor(Flare,12,40,40,40,0)
+    LensFlare_SetToDirLight(Flare)
+	endif
+
+endfunction

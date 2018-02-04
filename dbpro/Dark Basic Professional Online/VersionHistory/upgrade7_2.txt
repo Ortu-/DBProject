@@ -1,0 +1,15 @@
+Upgrade 7.2
+===========
+
+Compiler
+--------
+ 
+ * Updated Compiler/Viewer executables for Green-Ear
+
+FTP
+---
+
+ * HTTP CONNECT has additional parameter to specify port number (80=HTTP/443=HTTPS)
+ * HTTP REQUEST DATA has additional parameter to specify access type (0=HTTP)
+ * For full access type list, see Platform SDK: Windows Internet: API Flags
+ * Added example to SNIPPETS to demonstrate new HTTP parameters

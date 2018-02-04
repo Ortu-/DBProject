@@ -1,0 +1,77 @@
+rem Tutorial 5
+
+rem Initial settings
+sync on : sync rate 100
+backdrop off : hide mouse
+
+rem Select font
+set text font "arial" : set text size 16
+set text to bold : set text transparent
+
+rem Loading prompt
+sync : center text screen width()/2,screen height()/2,"LOADING" : sync
+
+rem Load all media for game
+gosub _load_game
+
+rem Setup all objects for game
+gosub _setup_game
+
+rem Game loop
+do
+
+ rem Control game elements
+ gosub _control_player
+ gosub _control_gunandbullet
+ gosub _control_enemies
+
+ rem Update screen
+ sync
+
+rem End loop
+loop
+
+rem End program
+end
+
+_control_player:
+
+rem *ADDCODE* TUT5C
+
+rem *ADDCODE* TUT5D
+
+rem *ADDCODE* TUT5B
+
+return
+
+_control_gunandbullet:
+return
+
+_control_enemies:
+return
+
+_control_stats:
+return
+
+_setup_game:
+
+ rem Setup camera
+ set camera range 0.1,5000
+ autocam off
+
+ rem Setup sky model
+ set object SkyObj,1,0,0,0,0,0,0
+ scale object SkyObj,20,20,20
+
+ rem *ADDCODE* TUT5A
+
+return
+
+_load_game:
+
+ rem Load BSP world and sky model
+ load bsp "world\ikzdm1.pk3","ikzdm1.bsp"
+ SkyObj=1 : load object "models\sky\am.x",SkyObj
+
+return
+

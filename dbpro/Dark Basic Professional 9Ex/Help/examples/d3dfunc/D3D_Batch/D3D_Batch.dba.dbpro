@@ -1,0 +1,41 @@
+; **** DarkBASIC Professional Project ****
+; Created by CodeSurge IDE
+version=DBP1.00
+project name=D3D_Batch
+
+; ****Source file information****
+main=D3D_Batch.dba
+final source=_Temp.dbsource
+
+;***Executable filename***
+executable=Temp.exe
+build type=exe
+
+compression=NO
+encryption=NO
+card options window=NO
+
+; Debugger
+CLI=NO
+
+; *****Display Settings*****
+app title=D3D_Batch
+graphics mode=window
+fullscreen resolution=1024x768x32
+window resolution=800x600
+
+
+;*****Media files, icons, cursors*****
+media root path=C:\Documents and Settings\Jason\My Documents\DB Pro\Plugins\D3DFunc\D3DFunc V3.7\Help\examples\d3dfunc\D3D_Batch\
+
+;****Version Information****
+VerComments=
+VerCompany=
+VerFileDesc=
+VerFileNumber=
+VerInternal=
+VerCopyright=
+VerTrademark=
+VerFilename=
+VerProduct=
+VerProductNumber=

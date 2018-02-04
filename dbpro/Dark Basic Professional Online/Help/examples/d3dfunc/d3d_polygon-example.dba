@@ -1,0 +1,74 @@
+Rem D3D_Polygon Example
+Rem Written by Jason Clogg
+Rem 06/04/2008
+
+set display mode 800, 600, 16
+
+set window on
+
+Rem Initialise D3DFunc dll
+
+d3d_init
+
+sync on: backdrop on: color backdrop 0
+
+Rem Variables to control object rotation
+cw#=0
+acw#=0
+
+spintmr=timer()
+
+do
+
+Rem Each of these commands is in a pair
+Rem One for filled box, and one for the outline
+
+d3d_polygon 100,100,50,3,1,cw#,rgb(255,0,0)
+d3d_polygon 100,100,50,3,0,cw#
+
+d3d_polygon 300,100,50,4,1,acw#,rgb(255,255,0)
+d3d_polygon 300,100,50,4,0,acw#
+
+d3d_polygon 500,100,50,5,1,cw#,rgb(0,128,0)
+d3d_polygon 500,100,50,5,0,cw#
+
+d3d_polygon 700,100,50,6,1,acw#,rgb(0,0,255)
+d3d_polygon 700,100,50,6,0,acw#
+
+d3d_polygon 100,300,50,7,1,cw#,rgb(255,0,0)
+d3d_polygon 100,300,50,7,0,cw#
+
+d3d_polygon 300,300,50,8,1,acw#,rgb(255,255,0)
+d3d_polygon 300,300,50,8,0,acw#
+
+d3d_polygon 500,300,50,9,1,cw#,rgb(0,128,0)
+d3d_polygon 500,300,50,9,0,cw#
+
+d3d_polygon 700,300,50,10,1,acw#,rgb(0,0,255)
+d3d_polygon 700,300,50,10,0,acw#
+
+d3d_polygon 100,500,50,11,1,cw#,rgb(255,0,0)
+d3d_polygon 100,500,50,11,0,cw#
+
+d3d_polygon 300,500,50,12,1,acw#,rgb(255,255,0)
+d3d_polygon 300,500,50,12,0,acw#
+
+d3d_polygon 500,500,50,13,1,cw#,rgb(0,128,0)
+d3d_polygon 500,500,50,13,0,cw#
+
+d3d_polygon 700,500,50,14,1,acw#,rgb(0,0,255)
+d3d_polygon 700,500,50,14,0,acw#
+
+Rem Update Object Rotation
+
+if timer()-spintmr>25
+  spintmr=timer()
+  inc cw#,2
+  dec acw#,2
+  cw#=wrapvalue(cw#)
+  acw#=wrapvalue(acw#)
+endif
+
+sync
+
+loop

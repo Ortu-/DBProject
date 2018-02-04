@@ -1,0 +1,633 @@
+`====================================================
+` Water Functions
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+`--------------
+` Build Water
+`--------------
+function Water_Create(iWaves as boolean,iCaustics as boolean,iReflection as boolean,iDetailMap as boolean,iSpecular as boolean,iChromaticAberration as boolean)
+   if Water_Enabled=0
+
+   `Variables
+      global Water_Enabled as boolean
+      global Water_Shaders as integer
+      global Water_AreaFog as integer
+      global Water_Mode as boolean
+      global Water_Reflection as boolean
+      global Water_Size as float
+      global Water_TileSize as float
+      global Water_Height as float
+      global Water_WaveHeight as float
+      global Water_FogRange as float
+      global Water_FogHeight as float
+      global Water_FogColor as AL_Vec3float
+      Water_Enabled=1
+      if iWaves=0 then Water_Shaders=1
+      if iWaves=1 then Water_Shaders=4
+      Water_Reflection=iReflection
+      Water_Size=400
+
+   `Arrays
+      global dim Water_Object(5) as integer
+      global dim Water_Effect(5) as integer
+      global dim Water_Image(3) as integer
+      global dim Water_ShaderIndex(1,4) as integer
+
+   `Load textures
+      Water_Image(1)=find free image()
+      load image AL_Directory+"Resources/Waves.dds",Water_Image(1)
+      Water_Image(2)=find free image()
+      load image AL_Directory+"Resources/Detail Waves.dds",Water_Image(2)
+      Water_Image(3)=find free image()
+      load image AL_Directory+"Resources/Screen Distort.dds",Water_Image(3)
+
+   `Load objects
+      Effect_LockIdentifier(AL_Directory+"Alpha/Water/Water1.fx")
+      Effect_SetIdentifier("EnableReflection",iReflection)
+      Effect_SetIdentifier("EnableSpecular",iSpecular)
+      Effect_UnLockIdentifier()
+      Water_Object(0)=find free object()
+      load object AL_Directory+"Resources/Water Edge.dbo",Water_Object(0)
+      Water_Effect(0)=find free effect()
+      load effect AL_Directory+"Alpha/Water/Water1.fx",Water_Effect(0),0,0
+      if Water_Shaders=4
+         Effect_LockIdentifier(AL_Directory+"Alpha/Water/WaterX.fx")
+         Effect_SetIdentifier("EnableReflection",iReflection)
+         Effect_SetIdentifier("EnableDetailMap",iDetailMap)
+         Effect_SetIdentifier("EnableSpecular",iSpecular)
+         Effect_SetIdentifier("EnableChromaticAberration",iChromaticAberration)
+         Effect_UnLockIdentifier()
+         Effect_LockIdentifier(AL_Directory+"Alpha/Water/WaterZ.fx")
+         Effect_SetIdentifier("EnableReflection",iReflection)
+         Effect_SetIdentifier("EnableDetailMap",iDetailMap)
+         Effect_SetIdentifier("EnableSpecular",iSpecular)
+         Effect_SetIdentifier("EnableChromaticAberration",iChromaticAberration)
+         Effect_UnLockIdentifier()
+         Water_Object(1)=find free object()
+         load object AL_Directory+"Resources/PlainPZ.dbo",Water_Object(1)
+         Water_Effect(1)=find free effect()
+         load effect AL_Directory+"Alpha/Water/WaterZ.fx",Water_Effect(1),0,0
+         Water_Object(2)=find free object()
+         load object AL_Directory+"Resources/PlainPX.dbo",Water_Object(2)
+         Water_Effect(2)=find free effect()
+         load effect AL_Directory+"Alpha/Water/WaterX.fx",Water_Effect(2),0,0
+         Water_Object(3)=find free object()
+         load object AL_Directory+"Resources/PlainNZ.dbo",Water_Object(3)
+         Water_Effect(3)=find free effect()
+         load effect AL_Directory+"Alpha/Water/WaterZ.fx",Water_Effect(3),0,0
+         Water_Object(4)=find free object()
+         load object AL_Directory+"Resources/PlainNX.dbo",Water_Object(4)
+         Water_Effect(4)=find free effect()
+         load effect AL_Directory+"Alpha/Water/WaterX.fx",Water_Effect(4),0,0
+      else
+         Effect_LockIdentifier(AL_Directory+"Alpha/Water/Water2.fx")
+         Effect_SetIdentifier("EnableReflection",iReflection)
+         Effect_SetIdentifier("EnableDetailMap",iDetailMap)
+         Effect_SetIdentifier("EnableSpecular",iSpecular)
+         Effect_SetIdentifier("EnableChromaticAberration",iChromaticAberration)
+         Effect_UnLockIdentifier()
+         Water_Object(1)=find free object()
+         make object plain Water_Object(1),100,100
+         rotate limb Water_Object(1),0,90,0,0
+         make mesh from object 1,Water_Object(1)
+         delete object Water_Object(1)
+         make object Water_Object(1),1,0
+         Water_Effect(1)=find free effect()
+         load effect AL_Directory+"Alpha/Water/Water2.fx",Water_Effect(1),0,0
+      endif
+      for t=0 to Water_Shaders
+         if t>0 and Water_Shaders=4 then remove limb Water_Object(t),4:remove limb Water_Object(t),3
+         set object effect Water_Object(t),Water_Effect(t)
+         texture object Water_Object(t),1,Water_Image(1)
+         texture object Water_Object(t),2,Water_Image(1)
+         texture object Water_Object(t),3,Water_Image(2)
+         texture object Water_Object(t),4,AL_Image(4)
+         texture object Water_Object(t),5,AL_Image(3)
+         AlphaEffect_Add(Water_Effect(t))
+         AlphaObject_Add(Water_Object(t))
+      next t
+      Water_Effect(5)=find free effect()
+      load effect AL_Directory+"Alpha/Water/Underwater.fx",Water_Effect(5),0,1
+      Water_Object(5)=find free object()
+      make object plain Water_Object(5),2,2,1
+      set object effect Water_Object(5),Water_Effect(5)
+      texture object Water_Object(5),0,Water_Image(3)
+      set object mask Water_Object(5),2^AL_Camera(5)
+
+   `Water fog
+      if iCaustics=1
+         Water_AreaFog=FogArea_Create(1)
+         FogArea_SetCaustics(Water_AreaFog,Water_Image(2),0,1,0,600)
+      else
+         Water_AreaFog=FogArea_Create(0)
+      endif
+
+   `Set Water
+      Water_SetVisible(1)
+      Water_SetScale(16,725,40)
+      Water_SetFogColor(1500,100,20,35,50,20,35,50)
+
+   endif
+endfunction
+
+`--------------
+` Set Water Visible
+`--------------
+function Water_SetVisible(iVisible as boolean)
+   if iVisible=0 and Water_Enabled=1
+      Water_Enabled=2
+      Water_Mode=0
+      for t=0 to Water_Shaders
+         hide object Water_Object(t)
+         exclude object on Water_Object(t)
+      next t
+      FogArea_Visible(Water_AreaFog,0)
+   endif
+   if iVisible=1 and Water_Enabled=2
+      Water_Enabled=1
+      for t=0 to Water_Shaders
+         show object Water_Object(t)
+         exclude object off Water_Object(t)
+      next t
+      FogArea_Visible(Water_AreaFog,1)
+   endif
+endfunction
+
+`--------------
+` Set Water Scale
+`--------------
+function Water_SetScale(iTileSize as float,iHeight as float,iWaveHeight as float)
+   if Water_Enabled>0
+      Water_TileSize=iTileSize
+      Water_Height=iHeight
+      Water_WaveHeight=iWaveHeight
+      set vector4 AL_Vector4(1),Water_Size,Water_Size,Water_TileSize/100,Water_TileSize*32
+      set vector4 AL_Vector4(2),Water_TileSize*Water_Size,Water_TileSize*Water_Size,(0.5/Water_Size),(0.5/Water_Size)
+      set vector4 AL_Vector4(3),Water_Height,Water_WaveHeight,(AL_CameraData(2)/100.0)*2,Water_TileSize*224
+      for e=0 to Water_Shaders
+         set effect constant vector Water_Effect(e),"WaterTileSize",AL_Vector4(2)
+         set effect constant vector Water_Effect(e),"WaterSize",AL_Vector4(1)
+         set effect constant vector Water_Effect(e),"WaterHeight",AL_Vector4(3)
+      next e
+      for e=0 to AL_EffectCount
+         set effect constant float AL_Effect(e).Number,"ClipHeight",Water_Height-(Water_WaveHeight * 0.5)
+      next e
+   endif
+endfunction
+
+`--------------
+` Set Water Color
+`--------------
+function Water_SetColor(iRed1 as float,iGreen1 as float,iBlue1 as float,iRed2 as float,iGreen2 as float,iBlue2 as float)
+   if Water_Enabled>0
+      set vector4 AL_Vector4(1),iRed1/255,iGreen1/255,iBlue1/255,0
+      set vector4 AL_Vector4(2),iRed2/255,iGreen2/255,iBlue2/255,0
+      for e=0 to Water_Shaders
+         set effect constant vector Water_Effect(e),"WaterColor",AL_Vector4(1)
+         set effect constant vector Water_Effect(e),"ReflectColor",AL_Vector4(2)
+      next e
+   endif
+endfunction
+
+`--------------
+` Set Fog Color
+`--------------
+function Water_SetFogColor(iRange as float,iHeight as float,iRed1 as integer,iGreen1 as integer,iBlue1 as integer,iRed2 as integer,iGreen2 as integer,iBlue2 as integer)
+   if Water_Enabled>0
+      Water_FogRange=iRange
+      Water_FogHeight=iHeight
+      FogArea_SetColor(Water_AreaFog,iRed1,iGreen1,iBlue1,255)
+      FogArea_SetColor2(Water_AreaFog,iRed2,iGreen2,iBlue2)
+      FogArea_SetRange(Water_AreaFog,Water_FogRange,Water_FogHeight,Water_FogHeight)
+      set vector4 AL_Vector4(1),Water_FogColor.x/255,Water_FogColor.y/255,Water_FogColor.z/255,Water_FogRange*10
+      for e=0 to Water_Shaders
+         set effect constant vector Water_Effect(e),"WaterFogColor",AL_Vector4(1)
+      next e
+   endif
+endfunction
+
+`--------------
+` Update Water
+`--------------
+function Water_Update()
+   if Water_Enabled=1
+      local tSize as float
+      local tSizeM as float
+      local tPosition as AL_Vec3Float
+      local tOldPosZ as float
+      local tWrap as AL_Vec2Float
+      local tWrapMod as AL_Vec2Integer
+      local tCull as float
+      tSize=Water_TileSize
+      if AL_CameraPos.y>Water_Height-(Water_WaveHeight*0.25)
+         position camera AL_Camera(3),AL_CameraPos.x,Water_Height-(AL_CameraPos.y-Water_Height),AL_CameraPos.z
+         Rotate camera AL_Camera(3),-AL_CameraAng.x,AL_CameraAng.y,AL_CameraAng.z
+         if Water_Mode=0
+            Water_Mode=1
+            for e=0 to Water_Shaders:set effect technique Water_Effect(e),"AboveWater":next e
+            hide object Water_Object(5):exclude object on Water_Object(5)
+            if AL_CloudsEnable=1
+               set object mask AL_CloudsObject(2),(2^AL_Camera(9))+(2^AL_Camera(5))
+               set object mask AL_CloudsObject(3),(2^AL_Camera(9))+(2^AL_Camera(5))
+            endif
+         endif
+         FogArea_SetOrientation(Water_AreaFog,AL_CameraPos.x,-10,AL_CameraPos.z,-90,0,0,AL_CameraData(2),AL_CameraData(2),10+Water_Height-(Water_WaveHeight*0.666))
+      else
+         if Water_Mode=1
+            Water_Mode=0
+            for e=0 to Water_Shaders:set effect technique Water_Effect(e),"UnderWater":next e
+            show object Water_Object(5):exclude object off Water_Object(5)
+            if AL_CloudsEnable=1
+               set object mask AL_CloudsObject(2),(2^AL_Camera(7))+(2^AL_Camera(5))
+               set object mask AL_CloudsObject(3),(2^AL_Camera(7))+(2^AL_Camera(5))
+            endif
+         endif
+         position object Water_Object(5),camera position x(),camera position y(),camera position z()
+         rotate object Water_Object(5),camera angle x(),camera angle y(),camera angle z()
+         FogArea_SetOrientation(waterfog,AL_CameraPos.x,-50,AL_CameraPos.z,-90,0,0,Water_FogRange*2,Water_FogRange*2,50+Water_Height)
+      endif
+      for t=0 to Water_Shaders
+         position object Water_Object(t),AL_CameraPos.x,0,AL_CameraPos.z
+         scale object Water_Object(t),AL_CameraData(2),Water_Height,AL_CameraData(2)
+         Water_ShaderIndex(1,t)=0
+      next t
+      if Water_Shaders=4
+         for t=1 to 3
+            tSize=tSize*2
+            tSizeM=1
+            tPosition.x=int((abs(AL_CameraPos.x)+(tSize * 0.5))/tSize)*tSize
+            tPosition.y=int((abs(AL_CameraPos.z)+(tSize * 0.5))/tSize)*tSize
+            tOldPosZ=tPosition.z
+            tPosition.z=tPosition.z+(tSize*16)
+            if AL_CameraPos.x<0 then tPosition.x=-tPosition.x
+            if AL_CameraPos.z<0 then tPosition.y=-tPosition.y
+            tWrap.x=(wrapvalue(((AL_CameraPos.x+tSize)/(tSize*2))*360)/360)*(tSize*2)
+            tWrap.y=(wrapvalue(((AL_CameraPos.z+tSize)/(tSize*2))*360)/360)*(tSize*2)
+            tWrapMod.x=int(tWrap.x/(tSize * 0.5))
+            tWrapMod.y=int(tWrap.y/(tSize * 0.5))
+            tWrap.x=1-(tWrap.x/(tSize*2))
+            tWrap.y=1-(tWrap.y/(tSize*2))
+            tCull=tPosition.z
+            if Water_WaveHeight>tCull then tCull=Water_WaveHeight
+            if AL_GetSphereInFrustum(0,tPosition.x,Water_Height+(Water_WaveHeight * 0.5),(tPosition.y+tPosition.z)-(tSize*8),tCull)=1
+               if AL_GetBoxInFrustum(0,tPosition.x,Water_Height+(Water_WaveHeight * 0.5),(tPosition.y+tPosition.z),tPosition.z,Water_WaveHeight*10,Water_TileSize)=1 or AL_GetBoxInFrustum(0,tPosition.x,Water_Height+(Water_WaveHeight * 0.5),(tPosition.y+tOldPosZ),tOldPosZ+Water_TileSize,Water_WaveHeight*10,Water_TileSize)=1
+                  show limb Water_Object(1),t-1
+                  exclude limb off Water_Object(1),t-1
+                  null=get object effect(Water_Object(1),t-1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.y=3 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-(tSize * 0.5),0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.y=3 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-tSize,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.y=1 or tWrapMod.y=2 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-(tSize * 0.5),0
+                  if tWrapMod.y=3 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-((tSize*2)-(tSize * 0.5)),0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+3,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.y=1 or tWrapMod.y=2 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-tSize,0
+                  if tWrapMod.y=3 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-(tSize*2),0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+4,AL_Vector4(1)
+                  Water_ShaderIndex(0,0)=0
+                  if tWrapMod.x=0 or tWrapMod.x=3 then Water_ShaderIndex(0,0)=1
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  if tWrapMod.y=3 then set vector4 AL_Vector4(1),0,1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,0,0
+                  if tWrapMod.y=3 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  if tWrapMod.y>0 then set vector4 AL_Vector4(1),0,1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+3,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,0,0
+                  if tWrapMod.y>0 then set vector4 AL_Vector4(1),1-Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.y=3 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+4,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,0
+                  if tWrapMod.y=3 then set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+5,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.y>0 then set vector4 AL_Vector4(1),1-Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.y=3 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,1,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+6,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,0
+                  if tWrapMod.y>0 then set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+7,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.y>0 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,1,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+8,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+9,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tWrap.y,tSize/(Water_TileSize*2),0,0
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),1-tWrap.x,tSize/(Water_TileSize*2),0,0
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tWrap.x,tSize/(Water_TileSize*2),0,0
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  set effect constant vector element "WaterIndex4",Water_ShaderIndex(1,3),AL_Vector4(1)
+                  Water_ShaderIndex(0,1)=0
+                  Water_ShaderIndex(0,2)=0
+                  Water_ShaderIndex(0,3)=0
+                  Water_ShaderIndex(0,4)=0
+                  if tWrapMod.y=0
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,1)=1
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,2)=1
+                  endif
+                  if tWrapMod.y=1 or tWrapMod.y=2
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,1)=1:Water_ShaderIndex(0,3)=1
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,2)=1:Water_ShaderIndex(0,4)=1
+                  endif
+                  if tWrapMod.y=3
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,2)=-2
+                     if tWrapMod.x=1 or tWrapMod.x=2 then Water_ShaderIndex(0,1)=-2
+                     if tWrapMod.x=1 or tWrapMod.x=2 then Water_ShaderIndex(0,2)=-2
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,1)=-2
+                  endif
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,1),Water_ShaderIndex(0,2),Water_ShaderIndex(0,3),Water_ShaderIndex(0,4)
+                  set effect constant vector element "WaterIndex4",Water_ShaderIndex(1,3)+1,AL_Vector4(1)
+                  Water_ShaderIndex(0,1)=0
+                  Water_ShaderIndex(0,2)=0
+                  Water_ShaderIndex(0,3)=0
+                  Water_ShaderIndex(0,4)=0
+                  if tWrapMod.y=0
+                     if tWrapMod.x=1 or tWrapMod.x=2 then Water_ShaderIndex(0,1)=1
+                     if tWrapMod.x=1 or tWrapMod.x=2 then Water_ShaderIndex(0,2)=1
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,2)=1
+                  endif
+                  if tWrapMod.y=1 or tWrapMod.y=2
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,1)=1:Water_ShaderIndex(0,3)=1
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,2)=-2
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,1)=-2
+                  endif
+                  if tWrapMod.y=3
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,2)=-2
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,1)=-2
+                  endif
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,1),Water_ShaderIndex(0,2),Water_ShaderIndex(0,3),Water_ShaderIndex(0,4)
+                  set effect constant vector element "WaterIndex4",Water_ShaderIndex(1,3)+2,AL_Vector4(1)
+                  release effect pointer
+               else
+                  hide limb Water_Object(1),t-1
+                  exclude limb on Water_Object(1),t-1
+               endif
+            else
+               hide limb Water_Object(1),t-1
+               exclude limb on Water_Object(1),t-1
+            endif
+            if AL_GetSphereInFrustum(0,(tPosition.x+tPosition.z)-(tSize*8),Water_Height+(Water_WaveHeight * 0.5),tPosition.y,tCull)=1
+               if AL_GetBoxInFrustum(0,(tPosition.x+tPosition.z),Water_Height+(Water_WaveHeight * 0.5),tPosition.y,Water_TileSize,Water_WaveHeight*10,tPosition.z)=1 or AL_GetBoxInFrustum(0,(tPosition.x+tOldPosZ),Water_Height+(Water_WaveHeight * 0.5),tPosition.y,Water_TileSize,Water_WaveHeight*10,tOldPosZ+Water_TileSize)=1
+                  show limb Water_Object(2),t-1
+                  exclude limb off Water_Object(2),t-1
+                  null=get object effect(Water_Object(2),t-1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.x=3 then set vector4 AL_Vector4(1),tPosition.x-(tSize * 0.5),0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.x=3 then set vector4 AL_Vector4(1),tPosition.x-tSize,0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.x=1 or tWrapMod.x=2 then set vector4 AL_Vector4(1),tPosition.x-(tSize * 0.5),0,tPosition.y,0
+                  if tWrapMod.x=3 then set vector4 AL_Vector4(1),tPosition.x-((tSize*2)-(tSize * 0.5)),0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+3,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.x=1 or tWrapMod.x=2 then set vector4 AL_Vector4(1),tPosition.x-tSize,0,tPosition.y,0
+                  if tWrapMod.x=3 then set vector4 AL_Vector4(1),tPosition.x-(tSize*2),0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+4,AL_Vector4(1)
+                  Water_ShaderIndex(0,0)=1
+                  if tWrapMod.y=0 or tWrapMod.y=3 then Water_ShaderIndex(0,0)=0
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  if tWrapMod.x=3 then set vector4 AL_Vector4(1),0,1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,0,0
+                  if tWrapMod.x=3 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  if tWrapMod.x>0 then set vector4 AL_Vector4(1),0,1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+3,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,0,0
+                  if tWrapMod.x>0 then set vector4 AL_Vector4(1),1-Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.x=3 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+4,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,0
+                  if tWrapMod.x=3 then set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+5,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.x>0 then set vector4 AL_Vector4(1),1-Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.x=3 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,1,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+6,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,0
+                  if tWrapMod.x>0 then set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+7,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.x>0 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,1,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+8,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+9,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tWrap.x,tSize/(Water_TileSize*2),0,0
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3),AL_Vector4(1)
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3)+1,AL_Vector4(1)
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3)+2,AL_Vector4(1)
+                  release effect pointer
+               else
+                  hide limb Water_Object(2),t-1
+                  exclude limb on Water_Object(2),t-1
+               endif
+            else
+               hide limb Water_Object(2),t-1
+               exclude limb on Water_Object(2),t-1
+            endif
+            if AL_GetSphereInFrustum(0,tPosition.x,Water_Height+(Water_WaveHeight * 0.5),(tPosition.y-tPosition.z)+(tSize*8),tCull)=1
+               if AL_GetBoxInFrustum(0,tPosition.x,Water_Height+(Water_WaveHeight * 0.5),(tPosition.y-tPosition.z),tPosition.z,Water_WaveHeight*10,Water_TileSize)=1 or AL_GetBoxInFrustum(0,tPosition.x,Water_Height+(Water_WaveHeight * 0.5),(tPosition.y-tOldPosZ),tOldPosZ+Water_TileSize,Water_WaveHeight*10,Water_TileSize)=1
+                  show limb Water_Object(3),t-1
+                  exclude limb off Water_Object(3),t-1
+                  null=get object effect(Water_Object(3),t-1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.y=0 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+(tSize * 0.5),0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,Blend#
+                  if tWrapMod.y=0 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+tSize,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,Blend#
+                  if tWrapMod.y=1 or tWrapMod.y=2 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+(tSize * 0.5),0
+                  if tWrapMod.y=0 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+((tSize*2)-(tSize * 0.5)),0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+3,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,Blend#
+                  if tWrapMod.y=1 or tWrapMod.y=2 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+tSize,0
+                  if tWrapMod.y=0 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+(tSize*2),0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+4,AL_Vector4(1)
+                  Water_ShaderIndex(0,0)=0
+                  if tWrapMod.x=0 or tWrapMod.x=3 then Water_ShaderIndex(0,0)=1
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  if tWrapMod.y=0 then set vector4 AL_Vector4(1),0,1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,0,0
+                  if tWrapMod.y=0 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  if tWrapMod.y<3 then set vector4 AL_Vector4(1),0,1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+3,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,0,0
+                  if tWrapMod.y<3 then set vector4 AL_Vector4(1),1-Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.y=0 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+4,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,0
+                  if tWrapMod.y=0 then set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+5,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.y<3 then set vector4 AL_Vector4(1),1-Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.y=0 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,1,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+6,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,0
+                  if tWrapMod.y<3 then set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+7,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.y<3 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,1,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+8,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+9,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),1-tWrap.y,tSize/(Water_TileSize*2),0,0
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tWrap.x,tSize/(Water_TileSize*2),0,0
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),1-tWrap.x,tSize/(Water_TileSize*2),0,0
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  set effect constant vector element "WaterIndex4",Water_ShaderIndex(1,3),AL_Vector4(1)
+                  Water_ShaderIndex(0,1)=0
+                  Water_ShaderIndex(0,2)=0
+                  Water_ShaderIndex(0,3)=0
+                  Water_ShaderIndex(0,4)=0
+                  if tWrapMod.y=0
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,1)=-2
+                     if tWrapMod.x=1 or tWrapMod.x=2 then Water_ShaderIndex(0,1)=-2
+                     if tWrapMod.x=1 or tWrapMod.x=2 then Water_ShaderIndex(0,2)=-2
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,2)=-2
+                  endif
+                  if tWrapMod.y=1 or tWrapMod.y=2
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,2)=1:Water_ShaderIndex(0,4)=1
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,1)=1:Water_ShaderIndex(0,3)=1
+                  endif
+                  if tWrapMod.y=3
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,2)=1
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,1)=1
+                  endif
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,1),Water_ShaderIndex(0,2),Water_ShaderIndex(0,3),Water_ShaderIndex(0,4)
+                  set effect constant vector element "WaterIndex4",Water_ShaderIndex(1,3)+1,AL_Vector4(1)
+                  Water_ShaderIndex(0,1)=0
+                  Water_ShaderIndex(0,2)=0
+                  Water_ShaderIndex(0,3)=0
+                  Water_ShaderIndex(0,4)=0
+                  if tWrapMod.y=0
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,1)=-2
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,2)=-2
+                  endif
+                  if tWrapMod.y=1 or tWrapMod.y=2
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,1)=-2
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,2)=-2
+                  endif
+                  if tWrapMod.y=3
+                     if tWrapMod.x=0 then Water_ShaderIndex(0,2)=1
+                     if tWrapMod.x=1 or tWrapMod.x=2 then Water_ShaderIndex(0,1)=1
+                     if tWrapMod.x=1 or tWrapMod.x=2 then Water_ShaderIndex(0,2)=1
+                     if tWrapMod.x=3 then Water_ShaderIndex(0,1)=1
+                  endif
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,1),Water_ShaderIndex(0,2),Water_ShaderIndex(0,3),Water_ShaderIndex(0,4)
+                  set effect constant vector element "WaterIndex4",Water_ShaderIndex(1,3)+2,AL_Vector4(1)
+                  release effect pointer
+               else
+                  hide limb Water_Object(3),t-1
+                  exclude limb on Water_Object(3),t-1
+               endif
+            else
+               hide limb Water_Object(3),t-1
+               exclude limb on Water_Object(3),t-1
+            endif
+            if AL_GetSphereInFrustum(0,(tPosition.x-tPosition.z)+(tSize*8),Water_Height+(Water_WaveHeight * 0.5),tPosition.y,tCull)=1
+               if AL_GetBoxInFrustum(0,(tPosition.x-tPosition.z),Water_Height+(Water_WaveHeight * 0.5),tPosition.y,Water_TileSize,Water_WaveHeight*10,tPosition.z)=1 or AL_GetBoxInFrustum(0,(tPosition.x-tOldPosZ),Water_Height+(Water_WaveHeight * 0.5),tPosition.y,Water_TileSize,Water_WaveHeight*10,tOldPosZ+Water_TileSize)=1
+                  show limb Water_Object(4),t-1
+                  exclude limb off Water_Object(4),t-1
+                  null=get object effect(Water_Object(4),t-1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.x=0 then set vector4 AL_Vector4(1),tPosition.x+(tSize * 0.5),0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.x=0 then set vector4 AL_Vector4(1),tPosition.x+tSize,0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.x=1 or tWrapMod.x=2 then set vector4 AL_Vector4(1),tPosition.x+(tSize * 0.5),0,tPosition.y,0
+                  if tWrapMod.x=0 then set vector4 AL_Vector4(1),tPosition.x+((tSize*2)-(tSize * 0.5)),0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+3,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+                  if tWrapMod.x=1 or tWrapMod.x=2 then set vector4 AL_Vector4(1),tPosition.x+tSize,0,tPosition.y,0
+                  if tWrapMod.x=0 then set vector4 AL_Vector4(1),tPosition.x+(tSize*2),0,tPosition.y,0
+                  set effect constant vector element "WaterIndex1",Water_ShaderIndex(1,1)+4,AL_Vector4(1)
+                  Water_ShaderIndex(0,0)=1
+                  if tWrapMod.y=0 or tWrapMod.y=3 then Water_ShaderIndex(0,0)=0
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2),AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  if tWrapMod.x=0 then set vector4 AL_Vector4(1),0,1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+1,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,0,0
+                  if tWrapMod.x=0 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+2,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,0,0,0
+                  if tWrapMod.x<3 then set vector4 AL_Vector4(1),0,1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+3,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,0,0
+                  if tWrapMod.x<3 then set vector4 AL_Vector4(1),1-Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.x=0 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+4,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,0
+                  if tWrapMod.x=0 then set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+5,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.x<3 then set vector4 AL_Vector4(1),1-Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.x=0 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,1,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+6,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,0
+                  if tWrapMod.x<3 then set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+7,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),1,0,0
+                  if tWrapMod.x<3 then set vector4 AL_Vector4(1),Water_ShaderIndex(0,0),0,1,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+8,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),0,1,0,1
+                  set effect constant vector element "WaterIndex2",Water_ShaderIndex(1,2)+9,AL_Vector4(1)
+                  set vector4 AL_Vector4(1),1-tWrap.x,tSize/(Water_TileSize*2),0,0
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3),AL_Vector4(1)
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3)+1,AL_Vector4(1)
+                  set effect constant vector element "WaterIndex3",Water_ShaderIndex(1,3)+2,AL_Vector4(1)
+                  release effect pointer
+               else
+                  hide limb Water_Object(4),t-1
+                  exclude limb on Water_Object(4),t-1
+               endif
+            else
+               hide limb Water_Object(4),t-1
+               exclude limb on Water_Object(4),t-1
+            endif
+            inc Water_ShaderIndex(1,1),5
+            inc Water_ShaderIndex(1,2),10
+            inc Water_ShaderIndex(1,3),3
+         next t
+      endif
+   endif
+endfunction

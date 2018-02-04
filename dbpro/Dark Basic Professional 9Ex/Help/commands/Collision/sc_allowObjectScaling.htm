@@ -1,0 +1,31 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+
+SC_allowObjectScaling
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    SC_allowObjectScaling  objNum
+
+<BR><BR>
+        <u>-objNum</u>:    the object you want to be able to scale<br>
+	    <br>
+		Normally, after setupObject is called, no further scaling of the object will be recorded <br>
+		in the collision data. If you are not planning to scale the object after setup then this <br>
+		is fine and you do not need to call this command. This command will allow 'updateObject' <br>
+		to update the object's size as well as it's position and rotation. However, checking lots <br>
+		of collision against an object that is allowed to scale will be slightly slower.<br>
+		You cannot turn off scaling to make it faster again, the only way is to re-setup <br>
+		the object to overwrite the data.<br>
+
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>

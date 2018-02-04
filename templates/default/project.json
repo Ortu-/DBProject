@@ -1,0 +1,15 @@
+{
+  "name": "MyProgram",
+  "phase": "prototype",
+  "version": "1.0.0",
+  "author": "MyName",
+  "textEditor": "C:\\windows\\notepad.exe",
+  "compilers": [
+    {"DBPro U77": "C:\\dev\\dbproject\\dbpro\\Dark Basic Professional Online\\Compiler\\DBPCompiler.exe"},
+    {"DBPro 9Ex": "C:\\dev\\dbproject\\dbpro\\Dark Basic Professional 9Ex\\Compiler\\DBPCompiler.exe"},
+  ],
+  "scopes": [
+    {"debug": "<? ?>"},
+    {"production": ""}
+  ]
+}

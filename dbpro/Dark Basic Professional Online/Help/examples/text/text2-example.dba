@@ -1,0 +1,59 @@
+rem Text Functionality
+
+rem Check for all fonts
+PERFORM CHECKLIST FOR FONTS
+
+rem Test loop
+do
+
+rem Produce random values
+checklistindex=1+rnd(checklist quantity()-1)
+FontName$=checklist string$(checklistindex)
+RgbValue=rgb(rnd(255),rnd(255),rnd(255))
+X=mousex()
+Y=mousey()
+SizeValue=6+rnd(10)
+Character$=chr$(65+rnd(25))
+RandomValue=1+rnd(9)
+Word$="Supercalifragelisticexpialidocious"
+StringValue$=str$(rnd(123))
+
+rem Try each command at random
+cls rgb(0,64,0)
+TEXT X, Y-20, Word$
+CENTER TEXT X, Y, Word$
+if rnd(5)=1 then INK RgbValue,0
+if rnd(1000)=1 then SET TEXT FONT FontName$
+if rnd(1000)=1 then SET TEXT SIZE SizeValue
+if rnd(1000)=1 then SET TEXT OPAQUE
+if rnd(1000)=1 then SET TEXT TRANSPARENT
+if rnd(1000)=1 then SET TEXT TO NORMAL
+if rnd(1000)=1 then SET TEXT TO ITALIC
+if rnd(1000)=1 then SET TEXT TO BOLD
+if rnd(1000)=1 then SET TEXT TO BOLDITALIC
+
+rem Display data
+print "TEXT EXPRESSION DATA"
+print
+print "background:";TEXT BACKGROUND TYPE()
+print "font:";TEXT FONT$()
+print "size:";TEXT SIZE()
+print "style:";TEXT STYLE()
+print "width:";TEXT WIDTH(Word$)
+print "height:";TEXT HEIGHT(Word$)
+print
+print "asc:";ASC(Character$)
+print "bin$:";BIN$(RandomValue)
+print "chr$:";CHR$(32+RandomValue)
+print "hex$:";HEX$(RandomValue)
+print "left$:";LEFT$(Word$,RandomValue)
+print "len:";LEN(Word$)
+print "lower$:";LOWER$(Word$)
+print "upper$:";UPPER$(Word$)
+print "mid$:";MID$(Word$,RandomValue)
+print "right$:";RIGHT$(Word$,RandomValue)
+print "str$:";STR$(RandomValue)
+print "val:";VAL(StringValue$)
+print "space$:";SPACE$(RandomValue);"."
+
+loop

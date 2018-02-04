@@ -1,0 +1,19 @@
+<html><head><title>Matrix1Util_22 - File Settings - DATAFILE STRING TYPE</title><!-- <style type="text/css">a { margin-left: 40px } p { margin-left: 40px }</style> --></head><body color=black background="../gfx/dbpro_bg.jpg" bgproperties=fixed><font face="Verdana, Arial, Helvetica, sans-serif" size=2><table width='100%' border='0' cellpadding='0' cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr><tr><td align='center'><b><font size="4">Matrix1 Utility Plug-ins</font></b></td></tr></table><br><h1>DATAFILE STRING TYPE</h1><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Syntax</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> DATAFILE STRING TYPE FileId, String Type<br>
+ String Type = DATAFILE STRING TYPE ( FileId )</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Description</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='2'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2> This command is used to determine how strings are written to and read from the data file. A newly opened file is set to string mode 1.<br>
+<br>
+ - 0 = String data is terminated by a newline (ascii value 10)<br>
+ - 1 = String data is terminated by a CRLF combination (ascii value 10, preceded by an optional ascii value 13)<br>
+ - 2 = String data is terminated by a NULL byte (ascii value 0)<br>
+ - 3 = String data is terminated by a CR (ascii value 13)<br>
+ - 4 = String data is preceded by a single byte value containing the size of the string.<br>
+ - 5 = String data is preceded by a two byte value containing the size of the string.<br>
+ - 6 = String data is preceded by a four byte value containing the size of the string.<br>
+ - 7 = Read string data is as mode 1, while written string data is unterminated.<br>
+<br>
+ For mode 4, the maximum string size is 255 characters.<br>
+ For mode 5, the maximum string size is 65535 characters.<br>
+ For mode 6, the maximum string size is limited by available memory.<br>
+<br>
+ If a string exceeds the maximum string size allowed when using types 4, 5 or 6, then the string will be silently truncated as it is written.<br>
+<br>
+ NOTE: This command has no effect on the DATAFILE DATASTRING$ or WRITE DATAFILE DATASTRING commands.</font></td></tr></table><br><table width='100%' cellpadding='2'><tr><td bgcolor='#0d4283'><font color='#ffffff' size='4'><b>Go back to ...</b></font></td></tr></table><br><table width='90%' align='center' cellpadding='0'><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1Util_22_index.html">Matrix1Util_22 Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Index.html">Matrix1 Utils Main Index</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Matrix1_Commands.html">Matrix1 Utils Command List</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../Commands.htm">Commands Menu</a></font></td><tr><td><font face="Verdana, Arial, Helvetica, sans-serif" size=2><a href="../main.htm">Main Menu</A></font></td></table><p align="center"><font size="1">Copyright &copy; Ian Mold - Matrix1 Software 2006 - 2011</font></p><table width='100%' border='0' Cellpadding='0' Cellspacing='0'><tr><td align='center'><img src='../gfx/dbph_head_1.jpg'></td></tr></table></font></body></html>

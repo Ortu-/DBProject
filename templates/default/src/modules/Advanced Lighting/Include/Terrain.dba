@@ -1,0 +1,1297 @@
+`====================================================
+` Terrain Functions
+`====================================================
+` By EVOLVED
+` www.evolved-software.com
+`====================================================
+
+`--------------
+` Build Empty Terrain
+`--------------
+
+terrain_init:
+
+	type Terrain_type_statusData
+		enabled as boolean
+		initialized as boolean
+	endtype
+
+
+return
+
+global Terrain_FirstLoad = 0
+
+function Terrain_Create(iSizeX as integer,iSizeZ as integer,iHeight as integer)
+	if Terrain_Enabled=0
+
+	`Variables
+		local tMemblock as integer
+		global Terrain_Enabled as integer
+		global Terrain_Size as AL_Vec2float
+		global Terrain_TextureSize as AL_Vec3float
+		global Terrain_TileSize as float
+		global Terrain_Height as float
+		global Terrain_DetailMapping as boolean
+		global Terrain_RayPosition as AL_Vec3float
+		global dim Terrain_Texture(3) as integer
+		global dim Terrain_AtlasTextureFile(9,1) as string
+		Terrain_Enabled=1
+		Terrain_Size.x=iSizeX
+		Terrain_Size.y=iSizeZ
+
+	`Terrain textures
+		tMemblock=find free memblock()
+		make memblock tMemblock,12+(iSizeX*iSizeZ*4)
+		write memblock dword tMemblock,0,iSizeX
+		write memblock dword tMemblock,4,iSizeZ
+		write memblock dword tMemblock,8,32
+		for x=0 to iSizeX-1
+			for z=0 to iSizeZ-1
+				Pos=12+(z*(iSizeX*4))+(x*4)
+				write memblock byte tMemblock,Pos+2,127
+				write memblock byte tMemblock,Pos+1,127
+				write memblock byte tMemblock,Pos+0,iHeight
+				write memblock byte tMemblock,Pos+3,0
+			next z
+		next x
+		Terrain_Texture(1)=find free image()
+		make image from memblock Terrain_Texture(1),tMemblock
+		delete memblock tMemblock
+		make memblock tMemblock,12+(iSizeX*iSizeZ*4)
+		write memblock dword tMemblock,0,iSizeX
+		write memblock dword tMemblock,4,iSizeZ
+		write memblock dword tMemblock,8,32
+		for x=0 to iSizeX-1
+			for z=0 to iSizeZ-1
+				Pos=12+(z*(iSizeX*4))+(x*4)
+				write memblock byte tMemblock,Pos+2,255
+				write memblock byte tMemblock,Pos+1,0
+				write memblock byte tMemblock,Pos+0,0
+				write memblock byte tMemblock,Pos+3,0
+			next z
+		next x
+		Terrain_Texture(2)=find free image()
+		make image from memblock Terrain_Texture(2),tMemblock
+		delete memblock tMemblock
+		make memblock tMemblock,12+(iSizeX*iSizeZ*4)
+		write memblock dword tMemblock,0,iSizeX
+		write memblock dword tMemblock,4,iSizeZ
+		write memblock dword tMemblock,8,32
+		for x=0 to iSizeX-1
+			for z=0 to iSizeZ-1
+				Pos=12+(z*(iSizeX*4))+(x*4)
+				write memblock byte tMemblock,Pos+2,128
+				write memblock byte tMemblock,Pos+1,128
+				write memblock byte tMemblock,Pos+0,128
+				write memblock byte tMemblock,Pos+3,0
+			next z
+		next x
+		Terrain_Texture(3)=find free image()
+		make image from memblock Terrain_Texture(3),tMemblock
+		delete memblock tMemblock
+
+	`Arrays
+		global dim Terrain_Object(4) as integer
+		global dim Terrain_Effect(8) as integer
+		global dim Terrain_ShaderIndex(1,4) as integer
+		global dim Terrain_Height(Terrain_Size.x,Terrain_Size.y) as float
+		for x=0 to 1024-1
+			for z=0 to 1024-1
+				Terrain_Height(x,z)=iHeight
+			next z
+		next x
+
+	`Load terrain objects
+		Terrain_Object(1)=find free object()
+		load object AL_Directory+"Resources/PlainPZ.dbo",Terrain_Object(1)
+		Terrain_Object(2)=find free object()
+		load object AL_Directory+"Resources/PlainPX.dbo",Terrain_Object(2)
+		Terrain_Object(3)=find free object()
+		load object AL_Directory+"Resources/PlainNZ.dbo",Terrain_Object(3)
+		Terrain_Object(4)=find free object()
+		load object AL_Directory+"Resources/PlainNX.dbo",Terrain_Object(4)
+		Terrain_Effect(1)=find free effect()
+		load effect AL_Directory+"Terrain/TerrainZ.fx",Terrain_Effect(1),0,0
+		Terrain_Effect(2)=find free effect()
+		load effect AL_Directory+"Terrain/TerrainZN.fx",Terrain_Effect(2),0,0
+		Terrain_Effect(3)=find free effect()
+		load effect AL_Directory+"Terrain/TerrainX.fx",Terrain_Effect(3),0,0
+		Terrain_Effect(4)=find free effect()
+		load effect AL_Directory+"Terrain/TerrainXN.fx",Terrain_Effect(4),0,0
+		Terrain_Effect(5)=find free effect()
+		load effect AL_Directory+"Terrain/TerrainZ.fx",Terrain_Effect(5),0,0
+		Terrain_Effect(6)=find free effect()
+		load effect AL_Directory+"Terrain/TerrainZN.fx",Terrain_Effect(6),0,0
+		Terrain_Effect(7)=find free effect()
+		load effect AL_Directory+"Terrain/TerrainX.fx",Terrain_Effect(7),0,0
+		Terrain_Effect(8)=find free effect()
+		load effect AL_Directory+"Terrain/TerrainXN.fx",Terrain_Effect(8),0,0
+		for t=1 to 4
+			Object_Add(Terrain_Object(t))
+			Object_SetReflection(Terrain_Object(t),1)
+			Effect_Add(Terrain_Effect(((t-1)*2)+1))
+			Effect_Add(Terrain_Effect(((t-1)*2)+2))
+			set limb effect Terrain_Object(t),0,Terrain_Effect(((t-1)*2)+2)
+			set limb effect Terrain_Object(t),1,Terrain_Effect(((t-1)*2)+1)
+			set limb effect Terrain_Object(t),2,Terrain_Effect(((t-1)*2)+1)
+			set limb effect Terrain_Object(t),3,Terrain_Effect(((t-1)*2)+1)
+			set limb effect Terrain_Object(t),4,Terrain_Effect(((t-1)*2)+1)
+			texture object Terrain_Object(t),0,Terrain_Texture(1)
+			texture object Terrain_Object(t),1,Terrain_Texture(2)
+			texture object Terrain_Object(t),2,Terrain_Texture(3)
+		next  t
+
+	`Set Terrain
+		Terrain_SetScale(100,5000)
+		Terrain_SetTextureSize(0.4,0.2)
+
+	endif
+endfunction
+
+`--------------
+` Build Terrain
+`--------------
+//function Terrain_Load(iHeight as string,iBlend as string,iColor as string)
+function Terrain_Load(iHeight as integer,iBlend as integer,iColor as integer)
+	if Terrain_Enabled=0// and file exist(iHeight)=1 and file exist(iBlend)=1 and file exist(iColor)=1
+
+	<?System_log("terrain.dba", 3, "main", "Start Load Terrain.")?>
+
+	`Variables
+		local tMemblock as integer
+
+		global Terrain_Enabled as integer
+		global Terrain_Size as AL_Vec2float
+		global Terrain_TextureSize as AL_Vec3float
+		global Terrain_TileSize as float
+		global Terrain_Height as float
+		global Terrain_DetailMapping as boolean
+		global Terrain_RayPosition as AL_Vec3float
+	 if Terrain_FirstLoad = 0
+		global dim Terrain_Texture(3) as integer
+		global dim Terrain_AtlasTextureFile(9,1) as string
+	 endif
+		Terrain_Enabled=1
+
+		`Terrain textures
+		Terrain_Texture(1) = iHeight
+		Terrain_Texture(2) = iBlend
+		Terrain_Texture(3) = iColor
+
+	`Terrain size
+		Terrain_Size.x=image width(Terrain_Texture(1))
+		Terrain_Size.y=image height(Terrain_Texture(1))
+
+	`Arrays
+	 //if Terrain_FirstLoad = 0
+		global dim Terrain_Object(4) as integer
+		global dim Terrain_Effect(8) as integer
+		global dim Terrain_ShaderIndex(1,4) as integer
+		global dim Terrain_Height(Terrain_Size.x,Terrain_Size.y) as float
+	 //endif
+
+	`Heightmap data
+		tMemblock=find free memblock()
+		make memblock from image tMemblock,Terrain_Texture(1)
+		for x=0 to Terrain_Size.x-1
+			for y=0 to Terrain_Size.y-1
+				Pos=12+(y*(Terrain_Size.x*4))+(x*4)
+				ff#=memblock byte(tMemblock,Pos+3)
+				Terrain_Height(x,y)=memblock byte(tMemblock,Pos+0)+(ff#/255)
+			next y
+		next x
+		delete memblock tMemblock
+
+	`Load terrain objects
+		Terrain_Object(1)=find free object()
+			load object AL_Directory+"Resources/PlainPZ.dbo",Terrain_Object(1)
+		Terrain_Object(2)=find free object()
+			load object AL_Directory+"Resources/PlainPX.dbo",Terrain_Object(2)
+		Terrain_Object(3)=find free object()
+			load object AL_Directory+"Resources/PlainNZ.dbo",Terrain_Object(3)
+		Terrain_Object(4)=find free object()
+			load object AL_Directory+"Resources/PlainNX.dbo",Terrain_Object(4)
+
+		/*
+		Terrain_Effect(1)=find free effect()
+			load effect AL_Directory+"Terrain/TerrainZ.fx",Terrain_Effect(1),0,0
+		Terrain_Effect(2)=find free effect()
+			load effect AL_Directory+"Terrain/TerrainZN.fx",Terrain_Effect(2),0,0
+		Terrain_Effect(3)=find free effect()
+			load effect AL_Directory+"Terrain/TerrainX.fx",Terrain_Effect(3),0,0
+		Terrain_Effect(4)=find free effect()
+			load effect AL_Directory+"Terrain/TerrainXN.fx",Terrain_Effect(4),0,0
+		Terrain_Effect(5)=find free effect()
+			load effect AL_Directory+"Terrain/TerrainZ.fx",Terrain_Effect(5),0,0
+		Terrain_Effect(6)=find free effect()
+			load effect AL_Directory+"Terrain/TerrainZN.fx",Terrain_Effect(6),0,0
+		Terrain_Effect(7)=find free effect()
+			load effect AL_Directory+"Terrain/TerrainX.fx",Terrain_Effect(7),0,0
+		Terrain_Effect(8)=find free effect()
+			load effect AL_Directory+"Terrain/TerrainXN.fx",Terrain_Effect(8),0,0
+			*/
+
+			tEffectNum = Media_getEffectNumber(AL_Directory+"Terrain/TerrainZ.fx", 0)
+				Terrain_Effect(1) = tEffectNum
+			tEffectNum = Media_getEffectNumber(AL_Directory+"Terrain/TerrainZN.fx", 0)
+				Terrain_Effect(2) = tEffectNum
+			tEffectNum = Media_getEffectNumber(AL_Directory+"Terrain/TerrainX.fx", 0)
+				Terrain_Effect(3) = tEffectNum
+			tEffectNum = Media_getEffectNumber(AL_Directory+"Terrain/TerrainXN.fx", 0)
+				Terrain_Effect(4) = tEffectNum
+			tEffectNum = Media_getEffectNumber(AL_Directory+"Terrain/TerrainZ.fx", 0)
+				Terrain_Effect(5) = tEffectNum
+			tEffectNum = Media_getEffectNumber(AL_Directory+"Terrain/TerrainZN.fx", 0)
+				Terrain_Effect(6) = tEffectNum
+			tEffectNum = Media_getEffectNumber(AL_Directory+"Terrain/TerrainX.fx", 0)
+				Terrain_Effect(7) = tEffectNum
+			tEffectNum = Media_getEffectNumber(AL_Directory+"Terrain/TerrainXN.fx", 0)
+				Terrain_Effect(8) = tEffectNum
+
+		for t=1 to 4
+			Object_Add(Terrain_Object(t))
+			Object_SetReflection(Terrain_Object(t),1)
+			Effect_Add(Terrain_Effect(((t-1)*2)+1))
+			Effect_Add(Terrain_Effect(((t-1)*2)+2))
+			set limb effect Terrain_Object(t),0,Terrain_Effect(((t-1)*2)+2)
+			set limb effect Terrain_Object(t),1,Terrain_Effect(((t-1)*2)+1)
+			set limb effect Terrain_Object(t),2,Terrain_Effect(((t-1)*2)+1)
+			set limb effect Terrain_Object(t),3,Terrain_Effect(((t-1)*2)+1)
+			set limb effect Terrain_Object(t),4,Terrain_Effect(((t-1)*2)+1)
+			texture object Terrain_Object(t),0,Terrain_Texture(1)
+			texture object Terrain_Object(t),1,Terrain_Texture(2)
+			texture object Terrain_Object(t),2,Terrain_Texture(3)
+		next  t
+
+	`Set Terrain
+		Terrain_SetScale(100,5000)
+		Terrain_SetTextureSize(0.4,0.2)
+
+	endif
+	Terrain_FirstLoad = 1
+endfunction
+
+`--------------
+` Delete Terrain
+`--------------
+function Terrain_Delete()
+	if Terrain_Enabled > 0
+
+		for t=1 to 4
+			set pixel shader off Terrain_Object(t)
+			set vertex shader off Terrain_Object(t)
+			//TODO: unassign texture stages?
+			Effect_Remove(Terrain_Effect(((t-1)*2)+1))
+			Effect_Remove(Terrain_Effect(((t-1)*2)+2))
+			Object_Remove(Terrain_Object(t))
+			delete object Terrain_Object(t)
+			<?System_log("terrain.dba", 1, "main", " > unloaded terrain object " + str$(t))?>
+		next t
+
+		<?System_log("terrain.dba", 1, "main", " > unloaded terrain.")?>
+
+		/*
+		for t=1 to 8
+			if effect exist(Terrain_Effect(t))
+				delete effect Terrain_Effect(t)
+				<?System_log("terrain.dba", 1, "main", " > unloaded terrain effect " + str$(t))?>
+			endif
+		next
+		*/
+
+		Terrain_Enabled=0
+
+		undim Terrain_Object()
+		undim Terrain_Effect()
+		undim Terrain_ShaderIndex()
+		undim Terrain_Height()
+	<?System_log("terrain.dba", 1, "main", "  1")?>
+
+		/*
+		empty array Terrain_Object()
+		<?System_log("terrain.dba", 1, "main", "  1")?>
+			undim Terrain_Object()
+		<?System_log("terrain.dba", 1, "main", "  2")?>
+		empty array Terrain_Effect()
+		<?System_log("terrain.dba", 1, "main", "  3")?>
+			undim Terrain_Effect()
+			<?System_log("terrain.dba", 1, "main", "  4")?>
+		empty array Terrain_ShaderIndex()
+		<?System_log("terrain.dba", 1, "main", "  5")?>
+			undim Terrain_ShaderIndex()
+			<?System_log("terrain.dba", 1, "main", "  6")?>
+		//empty array Terrain_Height()
+		<?System_log("terrain.dba", 1, "main", "  7")?>
+			undim Terrain_Height()
+			<?System_log("terrain.dba", 1, "main", "  8")?>
+		*/
+
+	/*
+		//empty array Terrain_Texture()
+	<?System_log("terrain.dba", 1, "main", "  9")?>
+		//undim Terrain_Texture()
+	<?System_log("terrain.dba", 1, "main", "  10")?>
+		//empty array Terrain_AtlasTextureFile()
+	<?System_log("terrain.dba", 1, "main", "  11")?>
+		//undim Terrain_AtlasTextureFile()
+	<?System_log("terrain.dba", 1, "main", "  12")?>
+	*/
+
+		<?System_log("terrain.dba", 1, "main", " > unloaded terrain arrays")?>
+	endif
+endfunction
+
+`--------------
+` Terrain Set Visible
+`--------------
+function Terrain_SetVisible(iVisible as boolean)
+	if iVisible=0 and Terrain_Enabled=1
+		Terrain_Enabled=2
+		for t=1 to 4
+			hide object Terrain_Object(t)
+			exclude object on Terrain_Object(t)
+		next t
+	endif
+	if iVisible=1 and Terrain_Enabled=2
+		Terrain_Enabled=1
+		for t=1 to 4
+			show object Terrain_Object(t)
+			exclude object off Terrain_Object(t)
+		next t
+	endif
+endfunction
+
+`--------------
+` Set Terrain Scale
+`--------------
+function Terrain_SetScale(iTileSize as float,iHeight as float)
+	if Terrain_Enabled>0
+		Terrain_TileSize=iTileSize
+		Terrain_Height=iHeight
+		set vector4 AL_Vector4(1),Terrain_Size.x,Terrain_Size.y,Terrain_TileSize/100,Terrain_TileSize
+		for e=1 to 8
+			 set effect constant vector Terrain_Effect(e),"TerrainSize",AL_Vector4(1)
+		next e
+		set vector4 AL_Vector4(1),Terrain_TileSize*Terrain_Size.x,Terrain_TileSize*Terrain_Size.y,(0.5/Terrain_Size.x),(0.5/Terrain_Size.y)
+		for e=1 to 8
+			 set effect constant vector Terrain_Effect(e),"TerrainTileSize",AL_Vector4(1)
+			 set effect constant float Terrain_Effect(e),"TerrainHeight",Terrain_Height
+		next e
+	endif
+endfunction
+
+`--------------
+` Texture Terrain
+`--------------
+function Terrain_SetTexture(iAtlas1 as integer,iAtlas2 as integer,iAtlas3 as integer,iAtlas4 as integer,iAtlasNormal as integer)
+	if Terrain_Enabled>0
+		for t=1 to 4
+			texture object Terrain_Object(t),3,iAtlas1
+			texture object Terrain_Object(t),4,iAtlas2
+			texture object Terrain_Object(t),5,iAtlas3
+			texture object Terrain_Object(t),6,iAtlas4
+			texture object Terrain_Object(t),7,iAtlasNormal
+		next t
+		Terrain_TextureSize.x=image width(iAtlas1)/2
+		set vector4 AL_Vector4(1),Terrain_TextureSize.x,Terrain_TextureSize.x*(Terrain_TextureSize.z/Terrain_TextureSize.y),1/((Terrain_TextureSize.x+31)/Terrain_TextureSize.x),0
+		for t=1 to 8
+			set effect constant vector Terrain_Effect(t),"TextureSize",AL_Vector4(1)
+		next t
+	endif
+endfunction
+
+`--------------
+` Set Terrain Layer UV
+`--------------
+function Terrain_SetTextureSize(iUv as float,iVerticalUv as float)
+	if Terrain_Enabled>0
+		Terrain_TextureSize.y=iUv
+		Terrain_TextureSize.z=iVerticalUv
+		set vector4 AL_Vector4(1),Terrain_TextureSize.y,Terrain_TextureSize.y,Terrain_TextureSize.z,Terrain_TextureSize.z
+		for t=1 to 8
+			set effect constant vector Terrain_Effect(t),"TileUVScale",AL_Vector4(1)
+		next t
+		set vector4 AL_Vector4(1),Terrain_TextureSize.x,Terrain_TextureSize.x*(Terrain_TextureSize.z/Terrain_TextureSize.y),1/((Terrain_TextureSize.x+31)/Terrain_TextureSize.x),0
+		for t=1 to 8
+			set effect constant vector Terrain_Effect(t),"TextureSize",AL_Vector4(1)
+		next t
+	endif
+endfunction
+
+`--------------
+` Add Atlas Texture
+`--------------
+function Terrain_AddAtlasTexture(iBase as string,iNormal as string,iStage as integer)
+	if Terrain_Enabled=1
+		Terrain_AtlasTextureFile(iStage,0)=iBase
+		Terrain_AtlasTextureFile(iStage,1)=iNormal
+	endif
+endfunction
+
+`--------------
+` Build Atlas Texture
+`--------------
+function Terrain_BuildAtlasTexture(iAtlas1 as integer,iAtlas2 as integer,iAtlas3 as integer,iAtlas4 as integer,iAtlasNormal as integer)
+	if Terrain_Enabled=1
+		local tFxy as AL_Vec2Float
+		local tIxy as AL_Vec2Integer
+		local tStage as integer
+		local tImage as integer
+		local dim tMemblock(4) as integer
+		local dim tImageSize(3) as AL_Vec2Float
+		tImage=find free image()
+		for t=0 to 3
+			for f=0 to 1
+				if tMemblock(1)=0 then tMemblock(1)=find free memblock()
+				load image Terrain_AtlasTextureFile(tStage,0),tImage
+				make memblock from image tMemblock(1),tImage
+				delete image tImage
+				tImageSize(1).x=memblock dword(tMemblock(1),0)
+				tImageSize(1).y=memblock dword(tMemblock(1),4)
+				if tMemblock(2)=0 then tMemblock(2)=find free memblock()
+				load image Terrain_AtlasTextureFile(tStage,1),tImage
+				make memblock from image tMemblock(2),tImage
+				delete image tImage
+				tImageSize(2).x=memblock dword(tMemblock(2),0)
+				tImageSize(2).y=memblock dword(tMemblock(2),4)
+				if f=0
+					tImageSize(3).x=tImageSize(1).x*2
+					tImageSize(3).y=tImageSize(1).y
+					if tMemblock(3)=0 then tMemblock(3)=find free memblock()
+					make memblock tMemblock(3),12+(tImageSize(3).x*tImageSize(3).y*4)
+					write memblock dword tMemblock(3),0,tImageSize(3).x
+					write memblock dword tMemblock(3),4,tImageSize(3).y
+					write memblock dword tMemblock(3),8,32
+				endif
+				if tStage=0
+					if tMemblock(4)=0 then tMemblock(4)=find free memblock()
+					make memblock tMemblock(4),12+(tImageSize(3).x*tImageSize(3).y*4)
+					write memblock dword tMemblock(4),0,tImageSize(3).x
+					write memblock dword tMemblock(4),4,tImageSize(3).y
+					write memblock dword tMemblock(4),8,32
+				endif
+				for x=0 to tImageSize(1).x-1
+					 for y=0 to tImageSize(1).y-1
+							tIxy.x=x+(f*(tImageSize(3).x/2))
+							tIxy.y=y
+							Pos1=12+(tIxy.y*(tImageSize(3).x*4))+(tIxy.x*4)
+							tFxy.x=x
+							if f=1 then tFxy.x=tImageSize(1).x-x
+							tFxy.y=y
+							tFxy.x=(tFxy.x*((tImageSize(1).x+32)/tImageSize(1).x))
+							tIxy.x=(wrapvalue((tFxy.x/tImageSize(1).x)*360)/360)*tImageSize(1).x
+							tIxy.y=(wrapvalue((tFxy.y/tImageSize(1).y)*360)/360)*tImageSize(1).y
+							Pos2=12+(tIxy.y*(tImageSize(1).x*4))+(tIxy.x*4)
+							tFxy.x=x
+							if f=1 then tFxy.x=tImageSize(2).x-x
+							tFxy.y=y
+							tFxy.x=(tFxy.x*((tImageSize(2).x+32)/tImageSize(2).x))
+							tIxy.x=(wrapvalue((tFxy.x/tImageSize(2).x)*360)/360)*tImageSize(2).x
+							tIxy.y=(wrapvalue((tFxy.y/tImageSize(2).y)*360)/360)*tImageSize(2).y
+							Pos3=12+(tIxy.y*(tImageSize(2).x*4))+(tIxy.x*4)
+							write memblock byte tMemblock(3),Pos1+2,memblock byte(tMemblock(1),Pos2+2)
+							write memblock byte tMemblock(3),Pos1+1,memblock byte(tMemblock(1),Pos2+1)
+							write memblock byte tMemblock(3),Pos1+0,memblock byte(tMemblock(1),Pos2+0)
+							write memblock byte tMemblock(3),Pos1+3,memblock byte(tMemblock(2),Pos3+2)
+							tIxy.x=x
+							if tStage>3 then tIxy.x=x+(tImageSize(3).x/2)
+							tIxy.y=y
+							Pos1=12+(tIxy.y*(tImageSize(3).x*4))+(tIxy.x*4)
+							tFxy.x=x
+							if tStage>3 then tFxy.x=tImageSize(2).x-x
+							tFxy.y=y
+							tFxy.x=(tFxy.x*((tImageSize(2).x+32)/tImageSize(2).x))
+							tIxy.x=(wrapvalue((tFxy.x/tImageSize(2).x)*360)/360)*tImageSize(2).x
+							tIxy.y=(wrapvalue((tFxy.y/tImageSize(2).y)*360)/360)*tImageSize(2).y
+							Pos2=12+(tIxy.y*(tImageSize(2).x*4))+(tIxy.x*4)
+							if tStage=0 or tStage=4 then write memblock byte tMemblock(4),Pos1+2,memblock byte(tMemblock(2),Pos2+1)
+							if tStage=1 or tStage=5 then write memblock byte tMemblock(4),Pos1+1,memblock byte(tMemblock(2),Pos2+1)
+							if tStage=2 or tStage=6 then write memblock byte tMemblock(4),Pos1+0,memblock byte(tMemblock(2),Pos2+1)
+							if tStage=3 or tStage=7 then write memblock byte tMemblock(4),Pos1+3,memblock byte(tMemblock(2),Pos2+1)
+					 next y
+				next x
+				delete memblock tMemblock(1)
+				delete memblock tMemblock(2)
+				inc tStage
+			next f
+			if t=0
+				if image exist(iAtlas1)=1 then delete image iAtlas1
+				make image from memblock iAtlas1,tMemblock(3)
+			endif
+			if t=1
+				if image exist(iAtlas2)=1 then delete image iAtlas2
+				make image from memblock iAtlas2,tMemblock(3)
+			endif
+			if t=2
+				if image exist(iAtlas3)=1 then delete image iAtlas3
+				make image from memblock iAtlas3,tMemblock(3)
+			endif
+			if t=3
+				if image exist(iAtlas4)=1 then delete image iAtlas4
+				make image from memblock iAtlas4,tMemblock(3)
+			endif
+			delete memblock tMemblock(3)
+		next t
+		if image exist(iAtlasNormal)=1 then delete image iAtlasNormal
+		make image from memblock iAtlasNormal,tMemblock(4)
+		delete memblock tMemblock(4)
+	endif
+endfunction
+
+`--------------
+` Get Terrain Height
+`--------------
+function Terrain_GetHeight(iPosX as float,iPosZ as float)
+	if Terrain_Enabled>0
+		local tFloatxy as AL_Vec3Float
+		local rHeight as float
+		rHeight=0
+		Ix=int(iPosX/Terrain_TileSize)
+		Iz=int(iPosZ/Terrain_TileSize)
+		Ix2=int(iPosX/(Terrain_TileSize*2))*2
+		Iz2=int(iPosZ/(Terrain_TileSize*2))*2
+		if Ix>-1 and Iz>-1 and Ix<Terrain_Size.x and Iz<Terrain_Size.y
+			tFloatxy.x=(iPosX-(Ix*Terrain_TileSize))/Terrain_TileSize
+			tFloatxy.z=(iPosZ-(Iz*Terrain_TileSize))/Terrain_TileSize
+			if (Ix2-Ix)=0 and (Iz2-Iz)=0
+				if (((1-tFloatxy.z)+tFloatxy.x)-(tFloatxy.z+(1-tFloatxy.x)))>0
+					rHeight=Terrain_HeightWrap(Ix+1,Iz)+((Terrain_HeightWrap(Ix,Iz)-Terrain_HeightWrap(Ix+1,Iz))*(1-tFloatxy.x))+((Terrain_HeightWrap(Ix+1,Iz+1)-Terrain_HeightWrap(Ix+1,Iz))*tFloatxy.z)
+				else
+					rHeight=Terrain_HeightWrap(Ix,Iz+1)+((Terrain_HeightWrap(Ix+1,Iz+1)-Terrain_HeightWrap(Ix,Iz+1))*tFloatxy.x)+((Terrain_HeightWrap(Ix,Iz)-Terrain_HeightWrap(Ix,Iz+1))*(1-tFloatxy.z))
+				endif
+			endif
+			if (Ix2-Ix)=-1 and (Iz2-Iz)=-1
+				if (((1-tFloatxy.z)+tFloatxy.x)-(tFloatxy.z+(1-tFloatxy.x)))>0
+					rHeight=Terrain_HeightWrap(Ix+1,Iz)+((Terrain_HeightWrap(Ix,Iz)-Terrain_HeightWrap(Ix+1,Iz))*(1-tFloatxy.x))+((Terrain_HeightWrap(Ix+1,Iz+1)-Terrain_HeightWrap(Ix+1,Iz))*tFloatxy.z)
+				else
+					rHeight=Terrain_HeightWrap(Ix,Iz+1)+((Terrain_HeightWrap(Ix+1,Iz+1)-Terrain_HeightWrap(Ix,Iz+1))*tFloatxy.x)+((Terrain_HeightWrap(Ix,Iz)-Terrain_HeightWrap(Ix,Iz+1))*(1-tFloatxy.z))
+				endif
+			endif
+			if (Ix2-Ix)=-1 and (Iz2-Iz)=0
+				if (((1-tFloatxy.x)-tFloatxy.z)-(tFloatxy.z-(1-tFloatxy.x)))>0
+					rHeight=Terrain_HeightWrap(Ix,Iz)+((Terrain_HeightWrap(Ix+1,Iz)-Terrain_HeightWrap(Ix,Iz))*tFloatxy.x)+((Terrain_HeightWrap(Ix,Iz+1)-Terrain_HeightWrap(Ix,Iz))*tFloatxy.z)
+				else
+					rHeight=Terrain_HeightWrap(Ix+1,Iz+1)+((Terrain_HeightWrap(Ix+1,Iz)-Terrain_HeightWrap(Ix+1,Iz+1))*(1-tFloatxy.z))+((Terrain_HeightWrap(Ix,Iz+1)-Terrain_HeightWrap(Ix+1,Iz+1))*(1-tFloatxy.x))
+				endif
+			endif
+			if (Ix2-Ix)=0 and (Iz2-Iz)=-1
+				if (((1-tFloatxy.x)-tFloatxy.z)-(tFloatxy.z-(1-tFloatxy.x)))>0
+					rHeight=Terrain_HeightWrap(Ix,Iz)+((Terrain_HeightWrap(Ix+1,Iz)-Terrain_HeightWrap(Ix,Iz))*tFloatxy.x)+((Terrain_HeightWrap(Ix,Iz+1)-Terrain_HeightWrap(Ix,Iz))*tFloatxy.z)
+				else
+					rHeight=Terrain_HeightWrap(Ix+1,Iz+1)+((Terrain_HeightWrap(Ix+1,Iz)-Terrain_HeightWrap(Ix+1,Iz+1))*(1-tFloatxy.z))+((Terrain_HeightWrap(Ix,Iz+1)-Terrain_HeightWrap(Ix+1,Iz+1))*(1-tFloatxy.x))
+				endif
+			endif
+		endif
+		rHeight=(rHeight*(Terrain_Height/255))+Terrain_PositionY
+	endif
+endfunction rHeight
+
+`--------------
+` Height Wrap
+`--------------
+function Terrain_HeightWrap(ix as float,iz as float)
+	local tReturn as float
+	x=(wrapvalue((ix/Terrain_Size.x)*360)/360)*Terrain_Size.x
+	z=(wrapvalue((iz/Terrain_Size.y)*360)/360)*Terrain_Size.y
+	tReturn=Terrain_Height(x,z)
+endfunction tReturn
+
+`--------------
+` Cast ray on terrain
+`--------------
+function Terrain_Ray(iPosX as float,iPosY as float,iPosZ as float,iToPosX as float,iToPosY as float,iToPosZ as float)
+	local tRays as integer
+	local tAccuracy as integer
+	local tFromPos as AL_Vec3Float
+	local tToPos as AL_Vec3Float
+	local tTestPos as AL_Vec3Float
+	tRays=30
+	`tAccuracy=15
+	tAccuracy=25
+	tFromPos.x=iPosX
+	tFromPos.y=iPosY
+	tFromPos.z=iPosZ
+	tToPos.x=iToPosX
+	tToPos.y=iToPosY
+	tToPos.z=iToPosZ
+	repeat
+		for r=1 to tRays
+			tTestPos.x=tFromPos.x+(r*((tToPos.x-tFromPos.x)/tRays))
+			tTestPos.y=tFromPos.y+(r*((tToPos.y-tFromPos.y)/tRays))
+			tTestPos.z=tFromPos.z+(r*((tToPos.z-tFromPos.z)/tRays))
+			if tTestPos.y<Terrain_GetHeight(tTestPos.x,tTestPos.z)
+				tFromPos.x=tFromPos.x+((r-1)*((tToPos.x-tFromPos.x)/tRays))
+				tFromPos.y=tFromPos.y+((r-1)*((tToPos.y-tFromPos.y)/tRays))
+				tFromPos.z=tFromPos.z+((r-1)*((tToPos.z-tFromPos.z)/tRays))
+				tToPos=tTestPos
+				exit
+			endif
+		next r
+		if r>tRays-1 then Acc=tAccuracy:tdis=1
+		set vector3 AL_Vector3(1),tFromPos.x-tToPos.x,tFromPos.y-tToPos.y,tFromPos.z-tToPos.z
+		if length vector3(AL_Vector3(1))<5 then Acc=tAccuracy
+		inc Acc
+	until Acc>tAccuracy
+	Terrain_RayPosition.x=tToPos.x
+	Terrain_RayPosition.y=Terrain_GetHeight(tToPos.x,tToPos.z)
+	Terrain_RayPosition.z=tToPos.z
+	set vector3 AL_Vector3(1),iPosX-Terrain_RayPosition.x,iPosY-Terrain_RayPosition.y,iPosZ-Terrain_RayPosition.z
+	Dist#=length vector3(AL_Vector3(1))
+endfunction Dist#
+
+`--------------
+` Update Terrain
+`--------------
+function Terrain_Update()
+	if Terrain_Enabled=1
+		local tSize as float
+		local tPosition as AL_Vec3Float
+		local tWrap as AL_Vec2Float
+		local tWrapMod as AL_Vec2Integer
+		tSize=Terrain_TileSize
+		position object Terrain_Object(1),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+		position object Terrain_Object(2),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+		position object Terrain_Object(3),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+		position object Terrain_Object(4),AL_CameraPos.x,AL_CameraPos.y,AL_CameraPos.z
+		for t=1 to 4
+			Terrain_ShaderIndex(1,t)=0
+		next t
+		for t=1 to 5
+			tSize=tSize*2
+			tPosition.x=int((abs(AL_CameraPos.x)+(tSize/2))/tSize)*tSize
+			tPosition.y=int((abs(AL_CameraPos.z)+(tSize/2))/tSize)*tSize
+			tOldPosZ=tPosition.z
+			tPosition.z=tPosition.z+(tSize*16)
+			if AL_CameraPos.x<0 then tPosition.x=-tPosition.x
+			if AL_CameraPos.z<0 then tPosition.y=-tPosition.y
+			tWrap.x=(wrapvalue(((AL_CameraPos.x+tSize)/(tSize*2))*360)/360)*(tSize*2)
+			tWrap.y=(wrapvalue(((AL_CameraPos.z+tSize)/(tSize*2))*360)/360)*(tSize*2)
+			tWrapMod.x=int(tWrap.x/(tSize/2))
+			tWrapMod.y=int(tWrap.y/(tSize/2))
+			tWrap.x=1-(tWrap.x/(tSize*2))
+			tWrap.y=1-(tWrap.y/(tSize*2))
+			null=get object effect(Terrain_Object(1),t-1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1),AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.y=3 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-(tSize/2),0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.y=3 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-tSize,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.y=1 or tWrapMod.y=2 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-(tSize/2),0
+			if tWrapMod.y=3 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-((tSize*2)-(tSize/2)),0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+3,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.y=1 or tWrapMod.y=2 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-tSize,0
+			if tWrapMod.y=3 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y-(tSize*2),0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+4,AL_Vector4(1)
+			Terrain_ShaderIndex(0,0)=0
+			if tWrapMod.x=0 or tWrapMod.x=3 then Terrain_ShaderIndex(0,0)=1
+			set vector4 AL_Vector4(1),0,0,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2),AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			if tWrapMod.y=3 then set vector4 AL_Vector4(1),0,1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,0,0
+			if tWrapMod.y=3 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			if tWrapMod.y>0 then set vector4 AL_Vector4(1),0,1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+3,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,0,0
+			if tWrapMod.y>0 then set vector4 AL_Vector4(1),1-Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.y=3 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+4,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,0
+			if tWrapMod.y=3 then set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+5,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.y>0 then set vector4 AL_Vector4(1),1-Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.y=3 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,1,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+6,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,0
+			if tWrapMod.y>0 then set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+7,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.y>0 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,1,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+8,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+9,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tWrap.y,tSize/(Terrain_TileSize*2),0,0
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3),AL_Vector4(1)
+			set vector4 AL_Vector4(1),1-tWrap.x,tSize/(Terrain_TileSize*2),0,0
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tWrap.x,tSize/(Terrain_TileSize*2),0,0
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			set effect constant vector element "TerrainIndex4",Terrain_ShaderIndex(1,3),AL_Vector4(1)
+			Terrain_ShaderIndex(0,1)=0
+			Terrain_ShaderIndex(0,2)=0
+			Terrain_ShaderIndex(0,3)=0
+			Terrain_ShaderIndex(0,4)=0
+			if tWrapMod.y=0
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,1)=1
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,2)=1
+			endif
+			if tWrapMod.y=1 or tWrapMod.y=2
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,1)=1:Terrain_ShaderIndex(0,3)=1
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,2)=1:Terrain_ShaderIndex(0,4)=1
+			endif
+			if tWrapMod.y=3
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,2)=-2
+				if tWrapMod.x=1 or tWrapMod.x=2 then Terrain_ShaderIndex(0,1)=-2
+				if tWrapMod.x=1 or tWrapMod.x=2 then Terrain_ShaderIndex(0,2)=-2
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,1)=-2
+			endif
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,1),Terrain_ShaderIndex(0,2),Terrain_ShaderIndex(0,3),Terrain_ShaderIndex(0,4)
+			set effect constant vector element "TerrainIndex4",Terrain_ShaderIndex(1,3)+1,AL_Vector4(1)
+			Terrain_ShaderIndex(0,1)=0
+			Terrain_ShaderIndex(0,2)=0
+			Terrain_ShaderIndex(0,3)=0
+			Terrain_ShaderIndex(0,4)=0
+			if tWrapMod.y=0
+				if tWrapMod.x=1 or tWrapMod.x=2 then Terrain_ShaderIndex(0,1)=1
+				if tWrapMod.x=1 or tWrapMod.x=2 then Terrain_ShaderIndex(0,2)=1
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,2)=1
+			endif
+			if tWrapMod.y=1 or tWrapMod.y=2
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,1)=1:Terrain_ShaderIndex(0,3)=1
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,2)=-2
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,1)=-2
+			endif
+			if tWrapMod.y=3
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,2)=-2
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,1)=-2
+			endif
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,1),Terrain_ShaderIndex(0,2),Terrain_ShaderIndex(0,3),Terrain_ShaderIndex(0,4)
+			set effect constant vector element "TerrainIndex4",Terrain_ShaderIndex(1,3)+2,AL_Vector4(1)
+			release effect pointer
+			null=get object effect(Terrain_Object(2),t-1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1),AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.x=3 then set vector4 AL_Vector4(1),tPosition.x-(tSize/2),0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.x=3 then set vector4 AL_Vector4(1),tPosition.x-tSize,0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.x=1 or tWrapMod.x=2 then set vector4 AL_Vector4(1),tPosition.x-(tSize/2),0,tPosition.y,0
+			if tWrapMod.x=3 then set vector4 AL_Vector4(1),tPosition.x-((tSize*2)-(tSize/2)),0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+3,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.x=1 or tWrapMod.x=2 then set vector4 AL_Vector4(1),tPosition.x-tSize,0,tPosition.y,0
+			if tWrapMod.x=3 then set vector4 AL_Vector4(1),tPosition.x-(tSize*2),0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+4,AL_Vector4(1)
+			Terrain_ShaderIndex(0,0)=1
+			if tWrapMod.y=0 or tWrapMod.y=3 then Terrain_ShaderIndex(0,0)=0
+			set vector4 AL_Vector4(1),0,0,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2),AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			if tWrapMod.x=3 then set vector4 AL_Vector4(1),0,1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,0,0
+			if tWrapMod.x=3 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			if tWrapMod.x>0 then set vector4 AL_Vector4(1),0,1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+3,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,0,0
+			if tWrapMod.x>0 then set vector4 AL_Vector4(1),1-Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.x=3 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+4,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,0
+			if tWrapMod.x=3 then set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+5,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.x>0 then set vector4 AL_Vector4(1),1-Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.x=3 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,1,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+6,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,0
+			if tWrapMod.x>0 then set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+7,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.x>0 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,1,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+8,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+9,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tWrap.x,tSize/(Terrain_TileSize*2),0,0
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3),AL_Vector4(1)
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3)+1,AL_Vector4(1)
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3)+2,AL_Vector4(1)
+			release effect pointer
+			null=get object effect(Terrain_Object(3),t-1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1),AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.y=0 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+(tSize/2),0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.y=0 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+tSize,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.y=1 or tWrapMod.y=2 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+(tSize/2),0
+			if tWrapMod.y=0 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+((tSize*2)-(tSize/2)),0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+3,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.y=1 or tWrapMod.y=2 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+tSize,0
+			if tWrapMod.y=0 then set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y+(tSize*2),0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+4,AL_Vector4(1)
+			Terrain_ShaderIndex(0,0)=0
+			if tWrapMod.x=0 or tWrapMod.x=3 then Terrain_ShaderIndex(0,0)=1
+			set vector4 AL_Vector4(1),0,0,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2),AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			if tWrapMod.y=0 then set vector4 AL_Vector4(1),0,1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,0,0
+			if tWrapMod.y=0 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			if tWrapMod.y<3 then set vector4 AL_Vector4(1),0,1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+3,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,0,0
+			if tWrapMod.y<3 then set vector4 AL_Vector4(1),1-Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.y=0 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+4,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,0
+			if tWrapMod.y=0 then set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+5,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.y<3 then set vector4 AL_Vector4(1),1-Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.y=0 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,1,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+6,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,0
+			if tWrapMod.y<3 then set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+7,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.y<3 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,1,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+8,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+9,AL_Vector4(1)
+			set vector4 AL_Vector4(1),1-tWrap.y,tSize/(Terrain_TileSize*2),0,0
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3),AL_Vector4(1)
+			set vector4 AL_Vector4(1),tWrap.x,tSize/(Terrain_TileSize*2),0,0
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),1-tWrap.x,tSize/(Terrain_TileSize*2),0,0
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			set effect constant vector element "TerrainIndex4",Terrain_ShaderIndex(1,3),AL_Vector4(1)
+			Terrain_ShaderIndex(0,1)=0
+			Terrain_ShaderIndex(0,2)=0
+			Terrain_ShaderIndex(0,3)=0
+			Terrain_ShaderIndex(0,4)=0
+			if tWrapMod.y=0
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,1)=-2
+				if tWrapMod.x=1 or tWrapMod.x=2 then Terrain_ShaderIndex(0,1)=-2
+				if tWrapMod.x=1 or tWrapMod.x=2 then Terrain_ShaderIndex(0,2)=-2
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,2)=-2
+			endif
+			if tWrapMod.y=1 or tWrapMod.y=2
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,2)=1:Terrain_ShaderIndex(0,4)=1
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,1)=1:Terrain_ShaderIndex(0,3)=1
+			endif
+			if tWrapMod.y=3
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,2)=1
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,1)=1
+			endif
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,1),Terrain_ShaderIndex(0,2),Terrain_ShaderIndex(0,3),Terrain_ShaderIndex(0,4)
+			set effect constant vector element "TerrainIndex4",Terrain_ShaderIndex(1,3)+1,AL_Vector4(1)
+			Terrain_ShaderIndex(0,1)=0
+			Terrain_ShaderIndex(0,2)=0
+			Terrain_ShaderIndex(0,3)=0
+			Terrain_ShaderIndex(0,4)=0
+			if tWrapMod.y=0
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,1)=-2
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,2)=-2
+			endif
+			if tWrapMod.y=1 or tWrapMod.y=2
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,1)=-2
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,2)=-2
+			endif
+			if tWrapMod.y=3
+				if tWrapMod.x=0 then Terrain_ShaderIndex(0,2)=1
+				if tWrapMod.x=1 or tWrapMod.x=2 then Terrain_ShaderIndex(0,1)=1
+				if tWrapMod.x=1 or tWrapMod.x=2 then Terrain_ShaderIndex(0,2)=1
+				if tWrapMod.x=3 then Terrain_ShaderIndex(0,1)=1
+			endif
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,1),Terrain_ShaderIndex(0,2),Terrain_ShaderIndex(0,3),Terrain_ShaderIndex(0,4)
+			set effect constant vector element "TerrainIndex4",Terrain_ShaderIndex(1,3)+2,AL_Vector4(1)
+			release effect pointer
+			null=get object effect(Terrain_Object(4),t-1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1),AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.x=0 then set vector4 AL_Vector4(1),tPosition.x+(tSize/2),0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.x=0 then set vector4 AL_Vector4(1),tPosition.x+tSize,0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.x=1 or tWrapMod.x=2 then set vector4 AL_Vector4(1),tPosition.x+(tSize/2),0,tPosition.y,0
+			if tWrapMod.x=0 then set vector4 AL_Vector4(1),tPosition.x+((tSize*2)-(tSize/2)),0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+3,AL_Vector4(1)
+			set vector4 AL_Vector4(1),tPosition.x,0,tPosition.y,0
+			if tWrapMod.x=1 or tWrapMod.x=2 then set vector4 AL_Vector4(1),tPosition.x+tSize,0,tPosition.y,0
+			if tWrapMod.x=0 then set vector4 AL_Vector4(1),tPosition.x+(tSize*2),0,tPosition.y,0
+			set effect constant vector element "TerrainIndex1",Terrain_ShaderIndex(1,1)+4,AL_Vector4(1)
+			Terrain_ShaderIndex(0,0)=1
+			if tWrapMod.y=0 or tWrapMod.y=3 then Terrain_ShaderIndex(0,0)=0
+			set vector4 AL_Vector4(1),0,0,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2),AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			if tWrapMod.x=0 then set vector4 AL_Vector4(1),0,1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+1,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,0,0
+			if tWrapMod.x=0 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+2,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,0,0,0
+			if tWrapMod.x<3 then set vector4 AL_Vector4(1),0,1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+3,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,0,0
+			if tWrapMod.x<3 then set vector4 AL_Vector4(1),1-Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.x=0 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+4,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,0
+			if tWrapMod.x=0 then set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+5,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.x<3 then set vector4 AL_Vector4(1),1-Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.x=0 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,1,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+6,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,0
+			if tWrapMod.x<3 then set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+7,AL_Vector4(1)
+			set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),1,0,0
+			if tWrapMod.x<3 then set vector4 AL_Vector4(1),Terrain_ShaderIndex(0,0),0,1,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+8,AL_Vector4(1)
+			set vector4 AL_Vector4(1),0,1,0,1
+			set effect constant vector element "TerrainIndex2",Terrain_ShaderIndex(1,2)+9,AL_Vector4(1)
+			set vector4 AL_Vector4(1),1-tWrap.x,tSize/(Terrain_TileSize*2),0,0
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3),AL_Vector4(1)
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3)+1,AL_Vector4(1)
+			set effect constant vector element "TerrainIndex3",Terrain_ShaderIndex(1,3)+2,AL_Vector4(1)
+			release effect pointer
+			inc Terrain_ShaderIndex(1,1),5
+			inc Terrain_ShaderIndex(1,2),10
+			inc Terrain_ShaderIndex(1,3),3
+		next t
+	endif
+endfunction
+
+`--------------
+` Frustum Culling
+`--------------
+function Terrain_FrustumCull()
+	if Terrain_Enabled=1
+		local tSize as float
+		local tOldPosZ as float
+		local tCull as float
+		local tPosition as AL_Vec3Float
+		tSize=Terrain_TileSize
+		for t=1 to 5
+			tSize=tSize*2
+			tPosition.x=int((abs(AL_CameraPos.x)+(tSize/2))/tSize)*tSize
+			tPosition.y=int((abs(AL_CameraPos.z)+(tSize/2))/tSize)*tSize
+			tOldPosZ=tPosition.z
+			tPosition.z=tPosition.z+(tSize*16)
+			if AL_CameraPos.x<0 then tPosition.x=-tPosition.x
+			if AL_CameraPos.z<0 then tPosition.y=-tPosition.y
+			tCull=tPosition.z/1.5
+			if Terrain_Height/1.5>tCull then tCull=Terrain_Height/1.5
+			if AL_GetSphereInFrustum(0,tPosition.x,Terrain_Height/2,(tPosition.y+tPosition.z)-(tSize*8),tCull)=1
+				if AL_GetBoxInFrustum(0,tPosition.x,Terrain_Height/2,(tPosition.y+tPosition.z),tPosition.z,Terrain_Height/2,Terrain_TileSize)=1 or AL_GetBoxInFrustum(0,tPosition.x,Terrain_Height/2,(tPosition.y+tOldPosZ),tOldPosZ+Terrain_TileSize,Terrain_Height/2,Terrain_TileSize)=1
+					show limb Terrain_Object(1),t-1
+					exclude limb off Terrain_Object(1),t-1
+				else
+					hide limb Terrain_Object(1),t-1
+					exclude limb on Terrain_Object(1),t-1
+				endif
+			else
+				hide limb Terrain_Object(1),t-1
+				exclude limb on Terrain_Object(1),t-1
+			endif
+			if AL_GetSphereInFrustum(0,(tPosition.x+tPosition.z)-(tSize*8),Terrain_Height/2,tPosition.y,tCull)=1
+				if AL_GetBoxInFrustum(0,(tPosition.x+tPosition.z),Terrain_Height/2,tPosition.y,Terrain_TileSize,Terrain_Height,tPosition.z)=1 or AL_GetBoxInFrustum(0,(tPosition.x+tOldPosZ),Terrain_Height/2,tPosition.y,Terrain_TileSize,Terrain_Height,tOldPosZ+Terrain_TileSize)=1
+					show limb Terrain_Object(2),t-1
+					exclude limb off Terrain_Object(2),t-1
+				else
+					hide limb Terrain_Object(2),t-1
+					exclude limb on Terrain_Object(2),t-1
+				endif
+			else
+				hide limb Terrain_Object(2),t-1
+				exclude limb on Terrain_Object(2),t-1
+			endif
+			if AL_GetSphereInFrustum(0,tPosition.x,Terrain_Height/2,(tPosition.y-tPosition.z)+(tSize*8),tCull)=1
+				if AL_GetBoxInFrustum(0,tPosition.x,Terrain_Height/2,(tPosition.y-tPosition.z),tPosition.z,Terrain_Height/2,Terrain_TileSize)=1 or AL_GetBoxInFrustum(0,tPosition.x,Terrain_Height/2,(tPosition.y-tOldPosZ),tOldPosZ+Terrain_TileSize,Terrain_Height/2,Terrain_TileSize)=1
+					show limb Terrain_Object(3),t-1
+					exclude limb off Terrain_Object(3),t-1
+				else
+					hide limb Terrain_Object(3),t-1
+					exclude limb on Terrain_Object(3),t-1
+				endif
+			else
+				hide limb Terrain_Object(3),t-1
+				exclude limb on Terrain_Object(3),t-1
+			endif
+			if AL_GetSphereInFrustum(0,(tPosition.x-tPosition.z)+(tSize*8),Terrain_Height/2,tPosition.y,tCull)=1
+				if AL_GetBoxInFrustum(0,(tPosition.x-tPosition.z),Terrain_Height/2,tPosition.y,Terrain_TileSize,Terrain_Height/2,tPosition.z)=1 or AL_GetBoxInFrustum(0,(tPosition.x-tOldPosZ),Terrain_Height/2,tPosition.y,Terrain_TileSize,Terrain_Height/2,tOldPosZ+Terrain_TileSize)=1
+					show limb Terrain_Object(4),t-1
+					exclude limb off Terrain_Object(4),t-1
+				else
+					hide limb Terrain_Object(4),t-1
+					exclude limb on Terrain_Object(4),t-1
+				endif
+			else
+				hide limb Terrain_Object(4),t-1
+				exclude limb on Terrain_Object(4),t-1
+			endif
+		next t
+	endif
+endfunction
+
+`--------------
+` Light Culling
+`--------------
+function Terrain_LightCull(iPosX as float,iPosY as float,iPosZ as float,iRange as float)
+	if Terrain_Enabled=1
+		local tSize as float
+		local tOldPosZ as float
+		local tPosition as AL_Vec3Float
+		tSize=Terrain_TileSize
+		for x=1 to 4
+			for t=1 to 5
+				hide limb Terrain_Object(x),t-1
+				exclude limb on Terrain_Object(x),t-1
+			next t
+		next x
+		for t=1 to 5
+			tSize=tSize*2
+			tPosition.x=int((abs(AL_CameraPos.x)+(tSize/2))/tSize)*tSize
+			tPosition.y=int((abs(AL_CameraPos.z)+(tSize/2))/tSize)*tSize
+			tOldPosZ=tPosition.z
+			tPosition.z=tPosition.z+(tSize*16)
+			if AL_CameraPos.x<0 then tPosition.x=-tPosition.x
+			if AL_CameraPos.z<0 then tPosition.y=-tPosition.y
+			if AL_BoxCollision(iPosX,iPosY,iPosZ,tPosition.x,Terrain_Height/2,tPosition.y+(tPosition.z-(tSize*8)),(tPosition.z*2)+iRange,Terrain_Height+iRange,(tSize*16)+iRange)=1
+				if Terrain_LightGroundHeigth(iPosX,iPosY,iPosZ,iRange/2)=1
+					show limb Terrain_Object(1),t-1
+					exclude limb off Terrain_Object(1),t-1
+				endif
+			endif
+			if AL_BoxCollision(iPosX,iPosY,iPosZ,tPosition.x+(tPosition.z-(tSize*8)),Terrain_Height/2,tPosition.y,(tSize*16)+iRange,Terrain_Height+iRange,(tPosition.z*2)+iRange)=1
+				if Terrain_LightGroundHeigth(iPosX,iPosY,iPosZ,iRange/2)=1
+					show limb Terrain_Object(2),t-1
+					exclude limb off Terrain_Object(2),t-1
+				endif
+			endif
+			if AL_BoxCollision(iPosX,iPosY,iPosZ,tPosition.x,Terrain_Height/2,tPosition.y-(tPosition.z-(tSize*8)),(tPosition.z*2)+iRange,Terrain_Height+iRange,(tSize*16)+iRange)=1
+				if Terrain_LightGroundHeigth(iPosX,iPosY,iPosZ,iRange/2)=1
+					show limb Terrain_Object(3),t-1
+					exclude limb off Terrain_Object(3),t-1
+				endif
+			endif
+			if AL_BoxCollision(iPosX,iPosY,iPosZ,tPosition.x-(tPosition.z-(tSize*8)),Terrain_Height/2,tPosition.y,(tSize*16)+iRange,Terrain_Height+iRange,(tPosition.z*2)+iRange)=1
+				if Terrain_LightGroundHeigth(iPosX,iPosY,iPosZ,iRange/2)=1
+					show limb Terrain_Object(4),t-1
+					exclude limb off Terrain_Object(4),t-1
+				endif
+			endif
+		next t
+	endif
+endfunction
+
+`--------------
+` Directional Light Culling
+`--------------
+function Terrain_LightDirCull(iRange as float)
+	if Terrain_Enabled=1
+		local tSize as float
+		local tScale as float
+		local tOldPosZ as float
+		local tPosition as AL_Vec3Float
+		local tPos as AL_Vec3Float
+		tSize=Terrain_TileSize
+		tScale=iRange
+		for x=1 to 4
+			for t=1 to 5
+				hide limb Terrain_Object(x),t-1
+				exclude limb on Terrain_Object(x),t-1
+			next t
+		next x
+		for t=1 to 5
+			tSize=tSize*2
+			tPosition.x=int((abs(AL_CameraPos.x)+(tSize/2))/tSize)*tSize
+			tPosition.y=int((abs(AL_CameraPos.z)+(tSize/2))/tSize)*tSize
+			tOldPosZ=tPosition.z
+			tPosition.z=tPosition.z+(tSize*16)
+			if AL_CameraPos.x<0 then tPosition.x=-tPosition.x
+			if AL_CameraPos.z<0 then tPosition.y=-tPosition.y
+			for x=0 to floor(AL_CameraData(2)/tScale)
+				tPos.x=x Vector3(AL_Vector3(4))-(AL_DirLightDirection.x*tScale*x)
+				tPos.y=y Vector3(AL_Vector3(4))-(AL_DirLightDirection.y*tScale*x)
+				tPos.z=z Vector3(AL_Vector3(4))-(AL_DirLightDirection.z*tScale*x)
+				if AL_BoxCollision(tPos.x,tPos.y,tPos.z,tPosition.x,Terrain_Height/2,(tPosition.y+(tPosition.z-(tSize*8))),(tPosition.z*2)+tScale,Terrain_Height+tScale,(tSize*16)+tScale)=1
+					show limb Terrain_Object(1),t-1
+					exclude limb off Terrain_Object(1),t-1
+				endif
+				if AL_BoxCollision(tPos.x,tPos.y,tPos.z,(tPosition.x+(tPosition.z-(tSize*8))),Terrain_Height/2,tPosition.y,(tSize*16)+tScale,Terrain_Height+tScale,(tPosition.z*2)+tScale)=1
+					show limb Terrain_Object(2),t-1
+					exclude limb off Terrain_Object(2),t-1
+				endif
+				if AL_BoxCollision(tPos.x,tPos.y,tPos.z,tPosition.x,Terrain_Height/2,(tPosition.y-(tPosition.z-(tSize*8))),(tPosition.z*2)+tScale,Terrain_Height+tScale,(tSize*16)+tScale)=1
+					show limb Terrain_Object(3),t-1
+					exclude limb off Terrain_Object(3),t-1
+				endif
+				if AL_BoxCollision(tPos.x,tPos.y,tPos.z,(tPosition.x-(tPosition.z-(tSize*8))),Terrain_Height/2,tPosition.y,(tSize*16)+tScale,Terrain_Height+tScale,(tPosition.z*2)+tScale)=1
+					show limb Terrain_Object(4),t-1
+					exclude limb off Terrain_Object(4),t-1
+				endif
+			next x
+		next t
+	endif
+endfunction
+
+`--------------
+` Spot Light Update From Terrain
+`--------------
+function Terrain_LightSpotUpdate(iSpotShadowUpdate as integer)
+	if Terrain_Enabled=1
+		local tLight as integer
+		local tSize as float
+		local tOldPosZ as float
+		local tPosition as AL_Vec3Float
+		tLight=AL_SpotShadowMap(iSpotShadowUpdate).Number
+		tSize=Terrain_TileSize
+		for t=1 to 3
+			tSize=tSize*2
+			tPosition.x=int((abs(AL_CameraPos.x)+(tSize/2))/tSize)*tSize
+			tPosition.y=int((abs(AL_CameraPos.z)+(tSize/2))/tSize)*tSize
+			tOldPosZ=tPosition.z
+			tPosition.z=tPosition.z+(tSize*16)
+			if AL_CameraPos.x<0 then tPosition.x=-tPosition.x
+			if AL_CameraPos.z<0 then tPosition.y=-tPosition.y
+			if AL_SpotShadowMap(iSpotShadowUpdate).Update=1
+				if AL_BoxCollision(AL_SpotLight(tLight).Position.x,AL_SpotLight(tLight).Position.y,AL_SpotLight(tLight).Position.z,tPosition.x,Terrain_Height/2,tPosition.y+(tPosition.z-(tSize/2)),(tPosition.z*2)+(AL_SpotLight(tLight).Range*2),Terrain_Height+(AL_SpotLight(tLight).Range*2),tSize+(AL_SpotLight(tLight).Range*2))=1
+					if AL_SpotShadowMap(iSpotShadowUpdate).UpdateFromTerrainP.y<>int(AL_CameraPos.z/(tSize*0.25))*(tSize*0.25)
+						AL_SpotShadowMap(iSpotShadowUpdate).UpdateFromTerrainP.y=int(AL_CameraPos.z/(tSize*0.25))*(tSize*0.25)
+						if Terrain_LightGroundHeigth(AL_SpotLight(tLight).Position.x,AL_SpotLight(tLight).Position.y,AL_SpotLight(tLight).Position.z,AL_SpotLight(tLight).Range)=1
+							AL_SpotShadowMap(iSpotShadowUpdate).Update=1
+						endif
+					endif
+				endif
+			endif
+			if AL_SpotShadowMap(iSpotShadowUpdate).Update=1
+				if AL_BoxCollision(AL_SpotLight(tLight).Position.x,AL_SpotLight(tLight).Position.y,AL_SpotLight(tLight).Position.z,tPosition.x+(tPosition.z-(tSize/2)),Terrain_Height/2,tPosition.y,tSize+(AL_SpotLight(tLight).Range*2),Terrain_Height+(AL_SpotLight(tLight).Range*2),(tPosition.z*2)+(AL_SpotLight(tLight).Range*2))=1
+					if AL_SpotShadowMap(iSpotShadowUpdate).UpdateFromTerrainP.x<>int(AL_CameraPos.x/(tSize*0.25))*(tSize*0.25)
+						AL_SpotShadowMap(iSpotShadowUpdate).UpdateFromTerrainP.x=int(AL_CameraPos.x/(tSize*0.25))*(tSize*0.25)
+						if Terrain_LightGroundHeigth(AL_SpotLight(tLight).Position.x,AL_SpotLight(tLight).Position.y,AL_SpotLight(tLight).Position.z,AL_SpotLight(tLight).Range)=1
+							AL_SpotShadowMap(iSpotShadowUpdate).Update=1
+						endif
+					endif
+				endif
+			endif
+			if AL_SpotShadowMap(iSpotShadowUpdate).Update=1
+				if AL_BoxCollision(AL_SpotLight(tLight).Position.x,AL_SpotLight(tLight).Position.y,AL_SpotLight(tLight).Position.z,tPosition.x,Terrain_Height/2,tPosition.y-(tPosition.z-(tSize/2)),(tPosition.z*2)+(AL_SpotLight(tLight).Range*2),Terrain_Height+(AL_SpotLight(tLight).Range*2),tSize+(AL_SpotLight(tLight).Range*2))=1
+					if AL_SpotShadowMap(iSpotShadowUpdate).UpdateFromTerrainN.y<>int(AL_CameraPos.z/(tSize*0.25))*(tSize*0.25)
+						AL_SpotShadowMap(iSpotShadowUpdate).UpdateFromTerrainN.y=int(AL_CameraPos.z/(tSize*0.25))*(tSize*0.25)
+						if Terrain_LightGroundHeigth(AL_SpotLight(tLight).Position.x,AL_SpotLight(tLight).Position.y,AL_SpotLight(tLight).Position.z,AL_SpotLight(tLight).Range)=1
+							AL_SpotShadowMap(iSpotShadowUpdate).Update=1
+						endif
+					endif
+				endif
+			endif
+			if AL_SpotShadowMap(iSpotShadowUpdate).Update=1
+				if AL_BoxCollision(AL_SpotLight(tLight).Position.x,AL_SpotLight(tLight).Position.y,AL_SpotLight(tLight).Position.z,tPosition.x-(tPosition.z-(tSize/2)),Terrain_Height/2,tPosition.y,tSize+(AL_SpotLight(tLight).Range*2),Terrain_Height+(AL_SpotLight(tLight).Range*2),(tPosition.z*2)+(AL_SpotLight(tLight).Range*2))=1
+					if AL_SpotShadowMap(iSpotShadowUpdate).UpdateFromTerrainN.x<>int(AL_CameraPos.x/(tSize*0.25))*(tSize*0.25)
+						AL_SpotShadowMap(iSpotShadowUpdate).UpdateFromTerrainN.x=int(AL_CameraPos.x/(tSize*0.25))*(tSize*0.25)
+						if Terrain_LightGroundHeigth(AL_SpotLight(tLight).Position.x,AL_SpotLight(tLight).Position.y,AL_SpotLight(tLight).Position.z,AL_SpotLight(tLight).Range)=1
+							AL_SpotShadowMap(iSpotShadowUpdate).Update=1
+						endif
+					endif
+				endif
+			endif
+		next t
+	endif
+endfunction
+
+`--------------
+` Point Light Update From Terrain
+`--------------
+function Terrain_LightPointUpdate(iPointShadowUpdate as integer)
+	if Terrain_Enabled=1
+		local tLight as integer
+		local tSide as integer
+		local tSize as float
+		local tOldPosZ as float
+		local tPosition as AL_Vec3Float
+		tLight=AL_PointShadowMap(iPointShadowUpdate).Number
+		tSide=iPointShadowUpdate*6
+		tSize=Terrain_TileSize
+		for t=1 to 3
+			tSize=tSize*2
+			tPosition.x=int((abs(AL_CameraPos.x)+(tSize/2))/tSize)*tSize
+			tPosition.y=int((abs(AL_CameraPos.z)+(tSize/2))/tSize)*tSize
+			tOldPosZ=tPosition.z
+			tPosition.z=tPosition.z+(tSize*16)
+			if AL_CameraPos.x<0 then tPosition.x=-tPosition.x
+			if AL_CameraPos.z<0 then tPosition.y=-tPosition.y
+			if AL_PointShadowSide(tSide).Update<>1
+				if AL_BoxCollision(AL_PointLight(tLight).Position.x,AL_PointLight(tLight).Position.y,AL_PointLight(tLight).Position.z,tPosition.x,Terrain_Height/2,tPosition.y+(tPosition.z-(tSize/2)),(tPosition.z*2)+(AL_PointLight(tLight).Range*2),Terrain_Height+(AL_PointLight(tLight).Range*2),tSize+(AL_PointLight(tLight).Range*2))=1
+					if AL_PointShadowMap(iPointShadowUpdate).UpdateFromTerrainP.y<>int(AL_CameraPos.z/(tSize*0.25))*(tSize*0.25)
+						AL_PointShadowMap(iPointShadowUpdate).UpdateFromTerrainP.y=int(AL_CameraPos.z/(tSize*0.25))*(tSize*0.25)
+						if Terrain_LightGroundHeigth(AL_PointLight(tLight).Position.x,AL_PointLight(tLight).Position.y,AL_PointLight(tLight).Position.z,AL_PointLight(tLight).Range)=1
+							for s=0 to 5:AL_PointShadowSide(tSide+s).Update=1:next s
+						endif
+					endif
+				endif
+			endif
+			if AL_PointShadowSide(tSide).Update<>1
+				if AL_BoxCollision(AL_PointLight(tLight).Position.x,AL_PointLight(tLight).Position.y,AL_PointLight(tLight).Position.z,tPosition.x+(tPosition.z-(tSize/2)),Terrain_Height/2,tPosition.y,tSize+(AL_PointLight(tLight).Range*2),Terrain_Height+(AL_PointLight(tLight).Range*2),(tPosition.z*2)+(AL_PointLight(tLight).Range*2))=1
+					if AL_PointShadowMap(iPointShadowUpdate).UpdateFromTerrainP.x<>int(AL_CameraPos.x/(tSize*0.25))*(tSize*0.25)
+						AL_PointShadowMap(iPointShadowUpdate).UpdateFromTerrainP.x=int(AL_CameraPos.x/(tSize*0.25))*(tSize*0.25)
+						if Terrain_LightGroundHeigth(AL_PointLight(tLight).Position.x,AL_PointLight(tLight).Position.y,AL_PointLight(tLight).Position.z,AL_PointLight(tLight).Range)=1
+							for s=0 to 5:AL_PointShadowSide(tSide+s).Update=1:next s
+						endif
+					endif
+				endif
+			endif
+			if AL_PointShadowSide(tSide).Update<>1
+				if AL_BoxCollision(AL_PointLight(tLight).Position.x,AL_PointLight(tLight).Position.y,AL_PointLight(tLight).Position.z,tPosition.x,Terrain_Height/2,tPosition.y-(tPosition.z-(tSize/2)),(tPosition.z*2)+(AL_PointLight(tLight).Range*2),Terrain_Height+(AL_PointLight(tLight).Range*2),tSize+(AL_PointLight(tLight).Range*2))=1
+					if AL_PointShadowMap(iPointShadowUpdate).UpdateFromTerrainN.y<>int(AL_CameraPos.z/(tSize*0.25))*(tSize*0.25)
+						AL_PointShadowMap(iPointShadowUpdate).UpdateFromTerrainN.y=int(AL_CameraPos.z/(tSize*0.25))*(tSize*0.25)
+						if Terrain_LightGroundHeigth(AL_PointLight(tLight).Position.x,AL_PointLight(tLight).Position.y,AL_PointLight(tLight).Position.z,AL_PointLight(tLight).Range)=1
+							for s=0 to 5:AL_PointShadowSide(tSide+s).Update=1:next s
+						endif
+					endif
+				endif
+			endif
+			if AL_PointShadowSide(tSide).Update<>1
+				if AL_BoxCollision(AL_PointLight(tLight).Position.x,AL_PointLight(tLight).Position.y,AL_PointLight(tLight).Position.z,tPosition.x-(tPosition.z-(tSize/2)),Terrain_Height/2,tPosition.y,tSize+(AL_PointLight(tLight).Range*2),Terrain_Height+(AL_PointLight(tLight).Range*2),(tPosition.z*2)+(AL_PointLight(tLight).Range*2))=1
+					if AL_PointShadowMap(iPointShadowUpdate).UpdateFromTerrainN.x<>int(AL_CameraPos.x/(tSize*0.25))*(tSize*0.25)
+						AL_PointShadowMap(iPointShadowUpdate).UpdateFromTerrainN.x=int(AL_CameraPos.x/(tSize*0.25))*(tSize*0.25)
+						if Terrain_LightGroundHeigth(AL_PointLight(tLight).Position.x,AL_PointLight(tLight).Position.y,AL_PointLight(tLight).Position.z,AL_PointLight(tLight).Range)=1
+							for s=0 to 5:AL_PointShadowSide(tSide+s).Update=1:next s
+						endif
+					endif
+				endif
+			endif
+		next t
+	endif
+endfunction
+
+`--------------
+` Light ground heigth
+`--------------
+function Terrain_LightGroundHeigth(iPosX as float,iPosY as float,iPosZ as float,iRange as float)
+	for x=-1 to 1
+		for z=-1 to 1
+			if (iPosY-Terrain_GetHeight(iPosX+(x*iRange),iPosZ+(z*iRange)))-iRange<0
+				exitfunction 1
+			endif
+		next z
+	next x
+endfunction 0

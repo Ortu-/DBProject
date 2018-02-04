@@ -1,0 +1,219 @@
+
+/*
+	-------------------------------------------------------------------------------------
+	Sqlite Database Utility
+	-------------------------------------------------------------------------------------
+	Author: Josh Kirklin (Ortu) http://joshkirklin.com | http://github.com/ortu-
+	-------------------------------------------------------------------------------------
+	Contributors:
+	-------------------------------------------------------------------------------------
+	License: Source in this file is released under the terms of the MIT License:
+
+		https://opensource.org/licenses/MIT
+
+		Copyright(c) 2016 Josh Kirklin
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	-------------------------------------------------------------------------------------
+
+	Description:
+
+		Provides handling of database connections to local sqlite3 databases.
+
+	*******************************************
+	Plugin Dependancies:
+
+		SQLITE.dll (Duff)
+		Matrix1Util_02.dll (IanM) - timing
+		Matrix1Util_05.dll (IanM) - find free
+		Matrix1Util_07.dll (IanM) - general
+
+	*******************************************
+	Classes:
+
+		Requires System
+
+		=========================================
+		Defines STATIC CLASS: Sqlite
+
+			------------------------
+			public functions:
+
+				Sqlite_getConnection(rDBName as string)
+					- Returns an available connection to the specified database.
+					- If no connections are available, it will open a new connection.
+
+				Sqlite_restConnection(rConnectionID as integer)
+					- Marks the connection as available to be reused by Sqlite_getConnection later.
+
+				Sqlite_closeConnection(rConnectionID as integer)
+					- Closes the connection.
+
+				Sqlite_closeAll()
+					- Closes all connections.
+
+
+			------------------------
+			public data
+
+
+
+			------------------------
+			private functions
+
+				_Sqlite_init()
+					- Module initialization
+
+				_Sqlite_connect(rDBName as string, userName as string, password as string)
+					- Called internally by Sqlite_getConnection as needed.
+
+			------------------------
+			private data:
+
+				_Sqlite_connections[] as Sqlite_type_connectionData
+					-
+
+	*******************************************
+	Notes:
+
+
+
+*/
+
+sqlite_module_init:
+
+	if SQLITE_MODULE_LOADED = FALSE
+
+		<?System_log("sqlite.dbx", 2, "main", "Begin module load: sqlite.")?>
+
+		#CONSTANT SQLITE_USERNAME ""
+		#CONSTANT SQLITE_PASSWORD ""
+		#CONSTANT SQLITE_MAX_CONNECTIONS 20
+
+		#CONSTANT SQLITE_getRecordInt sqlite record row integer by column name
+		#CONSTANT SQLITE_getRecordFloat sqlite record row float by column name
+		#CONSTANT SQLITE_getRecordString sqlite record row string by column name$
+		#CONSTANT SQLITE_getRecordFile sqlite record row file from blob by column name
+
+		`Declare Sqlite -----------------------------------------------------------
+
+		type Sqlite_type_connectionData
+			name as string
+			connectionID as integer
+			isActive as boolean
+		endtype
+
+		type STATIC_CLASS_Sqlite
+			connectionListHandle as integer
+		endtype
+
+		`private data -------------------------------------------------------------
+
+		dim _Sqlite_connections[SQLITE_MAX_CONNECTIONS] as Sqlite_type_connectionData
+
+		`public data --------------------------------------------------------------
+
+
+
+		`Init ---------------------------------------------------------------------
+
+		`==================================
+
+		GLOBAL Sqlite as STATIC_CLASS_Sqlite
+
+		`==================================
+
+		_Sqlite_init()
+
+		SQLITE_MODULE_LOADED = TRUE
+
+		<?System_log("sqlite.dbx", 2, "main", "End module load: sqlite.")?>
+
+	endif
+return
+
+
+function _Sqlite_init()
+
+	Sqlite.connectionListHandle = find free freelist()
+	make freelist Sqlite.connectionListHandle, 1, SQLITE_MAX_CONNECTIONS, -1
+
+endfunction
+
+
+function _Sqlite_connect(rDBName as string, userName as string, password as string)
+	tID = get from freelist(Sqlite.connectionListHandle)
+	if tID > 0
+		if sqlite open database(tID, rDBName, userName, password) > -1
+			array insert at bottom _Sqlite_connections[]
+			_Sqlite_connections[].name = rDBName
+			_Sqlite_connections[].connectionID = tID
+			<?System_log("sqlite.dbx", 2, "data", "Connected to DB: " + rDBName + " on ID: " + str$(tID))?>
+		else
+			tID = -1
+			System_log("sqlite.dbx", 4, "error", "ERROR: Failed to connect to DB: " + rDBName)
+		endif
+	else
+			tID = -1
+			System_log("sqlite.dbx", 4, "error", "ERROR: Failed to connect to DB: " + rDBName + ". Too many open connections.")
+	endif
+endfunction tID
+
+
+function Sqlite_getConnection(rDBName as string)
+
+	<?System_log("sqlite.dbx", 1, "data", "Requesting DB connection for: " + rDBName)?>
+
+	tID = -1
+
+	for i = 0 to array count(_Sqlite_connections[])
+		if _Sqlite_connections[i].name = rDBName
+			if _Sqlite_connections[i].isActive = FALSE
+				tID = _Sqlite_connections[i].connectionID
+				_Sqlite_connections[i].isActive = TRUE
+				<?System_log("sqlite.dbx", 1, "data", "Located inactive DB connection " + str$(tID) + " for " + rDBName + ". Returning.")?>
+				exitfunction tID
+			endif
+		endif
+	next i
+
+	`no available connection, attempt to open a new connection
+	tID = _Sqlite_connect(rDBName, SQLITE_USERNAME, SQLITE_PASSWORD)
+endfunction tID
+
+
+function Sqlite_restConnection(rConnectionID as integer)
+	for i = 0 to array count(_Sqlite_connections[])
+		if _Sqlite_connections[i].connectionID = rConnectionID
+			_Sqlite_connections[i].isActive = FALSE
+			<?System_log("sqlite.dbx", 1, "data", "Resting DB connection " + str$(rConnectionID))?>
+		endif
+	next i
+endfunction
+
+
+function Sqlite_closeConnection(rConnectionID as integer)
+	for i = 0 to array count(_Sqlite_connections[])
+		if _Sqlite_connections[i].connectionID = rConnectionID
+			res = sqlite close database(_Sqlite_connections[i].connectionID)
+			array delete element _Sqlite_connections[], i
+			return to freelist Sqlite.connectionListHandle, rConnectionID
+			<?System_log("sqlite.dbx", 2, "data", "Closed DB connection: " + str$(rConnectionID))?>
+			exitfunction
+		endif
+	next i
+endfunction
+
+
+function Sqlitelite_closeAll()
+	for i = 0 to array count(_Sqlite_connections[])
+		res = sqlite close database(_Sqlite_connections[i].connectionID)
+		return to freelist Sqlite.connectionListHandle, _Sqlite_connections[i].connectionID
+		<?System_log("sqlite.dbx", 2, "data", "Closed DB connection: " + str$(_Sqlite_connections[i].connectionID))?>
+	next i
+	empty array _Sqlite_connections[]
+endfunction

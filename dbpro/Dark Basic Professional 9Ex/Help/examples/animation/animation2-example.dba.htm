@@ -1,0 +1,66 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Courier SIZE=2><pre><FONT FACE=Courier SIZE=2>rem Animation Functionality
+AnimNumber=1
+
+rem DVD Animation
+Title=1 : Chapter=1
+load dvd animation 1
+if total dvd chapters(Title,Chapter)>0
+ set dvd chapter AnimNumber,Title,Chapter
+ play animation AnimNumber,0,0,640,480
+ sleep 5000
+ delete animation AnimNumber
+endif
+
+rem Full Screen Animation
+load animation "mpg\dbintro.mpg",AnimNumber
+play animation AnimNumber,0,0,640,480
+sleep 2000
+delete animation AnimNumber
+
+rem Looping Animation
+load animation "mpg\dbintro.mpg",AnimNumber
+loop animation AnimNumber
+sleep 2000
+delete animation AnimNumber
+
+rem Controlled Animation
+load animation "mpg\dbintro.mpg",AnimNumber
+play animation AnimNumber,160,120 : sleep 2000
+stop animation AnimNumber
+play animation AnimNumber,0,0,640,480 : sleep 2000
+place animation AnimNumber,320,240,640,480 : sleep 2000
+pause animation AnimNumber : sleep 1000
+resume animation AnimNumber : sleep 2000
+
+rem New Animation Commands
+TwiceSpeed=200
+HalfVolume=50
+set animation speed AnimNumber,TwiceSpeed
+set animation volume AnimNumber,HalfVolume
+
+rem Animation Through Bitmap
+BitmapNumber=1
+play animation AnimNumber,BitmapNumber,0,0,640,240 : sleep 2000
+loop animation AnimNumber,BitmapNumber,0,240,640,480 : sleep 2000
+
+rem Animation Expression Data
+while scancode()=0
+ cls
+ print "ANIMATION DATA"
+ print
+ print "exist:";animation exist(AnimNumber)
+ print "width:";animation width(AnimNumber)
+ print "height:";animation height(AnimNumber)
+ print "looped:";animation looping(AnimNumber)
+ print "playing:";animation playing(AnimNumber)
+ print "paused:";animation paused(AnimNumber)
+ print "x:";animation position x(AnimNumber)
+ print "y:";animation position y(AnimNumber)
+ print "speed:";animation speed(AnimNumber)
+ print "volume:";animation volume(AnimNumber)
+ print
+ print "Press Any Key"
+endwhile
+
+rem Delete Animation
+delete animation AnimNumber</pre></FONT></BODY>

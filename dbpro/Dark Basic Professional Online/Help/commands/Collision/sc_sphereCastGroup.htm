@@ -1,0 +1,32 @@
+<BODY COLOR=black BACKGROUND=..\gfx/backdrop.jpg BGPROPERTIES=FIXED><FONT FACE=Verdana SIZE=2><FONT SIZE=3><B>
+SC_sphereCastGroup
+
+</B></FONT><BR>
+<br>
+
+
+SYNTAX<BR>
+
+    return integer=SC_sphereCastGroup ( groupNum, oldx, oldy, oldz, x, y, z, radius, excludeObj )
+
+<BR><BR>
+
+        <u>-groupNum</u>:       the object you want to check for collision use 0 for all objects<br>
+        <u>-oldx...z</u>:     the start and end points of the sphere to check.<br>
+        <u>-radius</u>:       the radius of the sphere you want to cast.<br>
+        <u>-excludeObj</u>:   an object to exclude from the collision check.<br>
+        <u>returns</u>:       the object number collided with first is returned<br>
+                              returns 0 if no collision occured.<br>
+   						<br>
+        Similar to SC_sphereCast, except it checks groups of objects. 
+        see <a href="sc_sphereCast.htm">SC_sphereCast</a><br><br>
+
+        Objects assigned group 0 during setup have no group and are ignored in group checks.<br><br>
+
+<BR><BR>
+RELATED INFO<BR>
+<a href="..\Collision.htm">Collision Commands Menu<BR>
+</a><a href="..\..\index.htm">Index</a><BR>
+<BR>
+<BR>
+</FONT></BODY>
